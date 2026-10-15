@@ -1,0 +1,31 @@
+/* ---- меню и панели в стиле шелла ---- */
+menupopup, panel {
+    --panel-padding: 6px !important;
+    --panel-shadow-margin: 8px !important;
+    --arrowpanel-padding: 6px !important;
+}
+menupopup {
+    --panel-border-radius: var(--qs-radius) !important;
+    --menuitem-border-radius: var(--qs-radius-small) !important;
+    --menuitem-padding: 6px 10px !important;
+}
+menupopup menuitem, menupopup menu {
+    border-radius: var(--qs-radius-small) !important;
+    margin-inline: 4px !important;
+    min-height: 30px !important;
+}
+menupopup menuitem:is([_moz-menuactive], :hover), menupopup menu:is([_moz-menuactive], :hover) {
+    background-color: color-mix(in srgb, var(--qs-accent) 16%, transparent) !important;
+}
+menupopup menuseparator { margin-inline: 10px !important; opacity: 0.4 !important; }
+/* главное меню ☰, загрузки, расширения */
+.panel-subview-body { padding: 4px !important; }
+toolbarbutton.subviewbutton, .subviewbutton {
+    border-radius: var(--qs-radius-small) !important;
+    margin-inline: 2px !important;
+    min-height: 32px !important;
+}
+.subviewbutton:hover { background-color: color-mix(in srgb, var(--qs-accent) 16%, transparent) !important; }
+.panel-header { border-radius: var(--qs-radius-small) !important; }
+/* всплывающие подсказки */
+tooltip { border-radius: var(--qs-radius-small) !important; padding: 5px 9px !important; }

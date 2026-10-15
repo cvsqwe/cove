@@ -1,0 +1,68 @@
+/* Сгенерировано Cove (assets/firefox-theme.sh) — не редактировать, правьте шаблоны в assets/firefox/.
+   База для всех видов: шрифт и скругления шелла, вкладки-капсулы, адресная строка.
+   Цвета — переменные темы Firefox, их на лету задаёт Pywalfox из палитры обоев. */
+
+:root {
+    --qs-radius: @RADIUS@px;
+    --qs-radius-small: @RADIUS_SMALL@px;
+    --qs-gap: 8px;
+    --qs-accent: var(--toolbarbutton-icon-fill, AccentColor);
+    --qs-frame: var(--toolbox-bgcolor, var(--lwt-accent-color, Canvas));
+    --qs-surface: var(--toolbar-bgcolor, Canvas);
+    --qs-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+
+    --tab-border-radius: var(--qs-radius-small) !important;
+    --toolbarbutton-border-radius: var(--qs-radius-small) !important;
+    --arrowpanel-border-radius: var(--qs-radius) !important;
+    --panel-border-radius: var(--qs-radius) !important;
+    --tab-min-height: 32px !important;
+}
+
+/* шрифт интерфейса шелла */
+#navigator-toolbox, #urlbar, menupopup, panel, .tab-label, #sidebar-box, #sidebar-main, findbar {
+    font-family: "@FONT@", sans-serif !important;
+}
+
+/* без линий между панелями */
+#navigator-toolbox { border-bottom: none !important; }
+#nav-bar { border-top: none !important; box-shadow: none !important; }
+#PersonalToolbar { border: none !important; }
+
+/* в тайловом Hyprland кнопки окна не нужны */
+.titlebar-buttonbox-container, .titlebar-spacer { display: none !important; }
+
+/* ---- вкладки-капсулы ---- */
+#TabsToolbar { padding-inline: 6px !important; }
+.tabbrowser-tab { padding-inline: 2px !important; }
+.tab-background {
+    border-radius: var(--qs-radius-small) !important;
+    margin-block: 5px !important;
+    box-shadow: none !important;
+    outline: none !important;
+    transition: background-color 0.18s ease !important;
+}
+.tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected]) {
+    background-color: color-mix(in srgb, var(--qs-surface) 70%, transparent) !important;
+}
+.tab-background:is([selected], [multiselected]) {
+    background: color-mix(in srgb, var(--qs-accent) 22%, var(--qs-surface)) !important;
+}
+.tabbrowser-tab[selected] .tab-label { font-weight: 600 !important; }
+.tab-context-line { display: none !important; }
+.tab-close-button { border-radius: 50% !important; }
+
+/* ---- адресная строка-капсула ---- */
+#urlbar-background {
+    border-radius: var(--qs-radius) !important;
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
+}
+#urlbar:is([focused], [open]) > #urlbar-background {
+    outline: 2px solid var(--qs-accent) !important;
+    outline-offset: -2px !important;
+}
+#urlbar[open] > #urlbar-background { box-shadow: var(--qs-shadow) !important; }
+.urlbarView-row[selected] .urlbarView-row-inner,
+.urlbarView-row:hover .urlbarView-row-inner { border-radius: var(--qs-radius-small) !important; }
+#identity-box, #tracking-protection-icon-container, #page-action-buttons > * { border-radius: var(--qs-radius-small) !important; }
+toolbarbutton { transition: background-color 0.15s ease, opacity 0.2s ease !important; }

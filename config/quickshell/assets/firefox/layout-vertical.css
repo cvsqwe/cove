@@ -1,0 +1,11 @@
+/* ---- вид «Вертикальные вкладки»: колонка значков слева, раскрывается при наведении ---- */
+#sidebar-main { background-color: var(--qs-frame) !important; border: none !important; }
+#vertical-tabs .tabbrowser-tab { padding-block: 1px !important; }
+#vertical-tabs .tab-background { margin-block: 1px !important; }
+#nav-bar {
+    margin: 2px var(--qs-gap) 8px 0 !important;
+    border-radius: calc(var(--qs-radius) + 4px) !important;
+    background-color: var(--qs-surface) !important;
+    box-shadow: var(--qs-shadow) !important;
+}
+#tabbrowser-tabbox { margin-left: 0 !important; }

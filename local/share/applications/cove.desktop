@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Cove Code
+GenericName=Редактор кода
+Comment=Терминальная IDE системы Cove: мышь, вкладки, дерево файлов, LSP
+Keywords=редактор;код;ide;editor;code;cove;nvim;
+Exec=cove-gui %F
+Icon=cove
+Terminal=false
+StartupWMClass=cove
+Categories=Development;TextEditor;IDE;Utility;
+MimeType=text/plain;text/markdown;text/x-python;text/x-csrc;text/x-c++src;text/x-shellscript;application/x-shellscript;application/json;application/toml;text/x-lua;text/css;text/html;application/javascript;text/x-qml;

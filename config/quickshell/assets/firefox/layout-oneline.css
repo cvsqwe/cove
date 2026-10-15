@@ -1,0 +1,23 @@
+/* ---- вид «Одна строка»: адресная строка и вкладки в одном ряду, навигация — при наведении ---- */
+:root:not([customizing]) #navigator-toolbox {
+    display: grid !important;
+    grid-template-columns: minmax(360px, 36vw) 1fr !important;
+    align-items: center !important;
+    padding-block: 3px 6px !important;
+}
+:root:not([customizing]) #nav-bar { grid-row: 1 !important; grid-column: 1 !important; background: transparent !important; }
+:root:not([customizing]) :is(#titlebar, #TabsToolbar) { grid-row: 1 !important; grid-column: 2 !important; }
+/* в Firefox 133+ вкладки лежат прямо в #navigator-toolbox, без обёртки #titlebar */
+:root:not([customizing]) #PersonalToolbar { grid-row: 2 !important; grid-column: 1 / -1 !important; }
+:root:not([customizing]) #nav-bar :is(#back-button, #forward-button, #reload-button, #stop-button) {
+    max-width: 0 !important;
+    padding-inline: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    transition: max-width 0.2s ease, opacity 0.2s ease !important;
+}
+:root:not([customizing]) #nav-bar:hover :is(#back-button, #forward-button, #reload-button) {
+    max-width: 40px !important;
+    opacity: 1 !important;
+    padding-inline: var(--toolbarbutton-outer-padding) !important;
+}

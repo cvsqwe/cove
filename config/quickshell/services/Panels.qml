@@ -1,0 +1,66 @@
+pragma Singleton
+
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import qs.config
+
+// Какие панели/ящики открыты. Одновременно открыт максимум один.
+// Снаружи: `qs ipc call <имя> toggle`.
+Singleton {
+    id: root
+
+    property real islandWidth: 200   // ширина свёрнутого острова — заголовок окна в баре не залезает под него
+    property bool launcher: false
+    property bool control: false
+    property bool overview: false
+    property bool wallpaper: false
+    property bool session: false
+    property bool dashboard: false
+    property bool notes: false
+    property bool cheatsheet: false
+    property string launcherQuery: "" // текст, с которым откроется лаунчер (например ":" — буфер)
+
+    property string controlPage: "" // подстраница центра управления: bluetooth | wifi | audio
+    function openControl(page: string): void { const was = control && controlPage === page; closeAll(); controlPage = page; control = !was; }
+
+    signal settingsRequested(string page)
+    function openSettings(page: string): void { closeAll(); settingsRequested(page); }
+
+    readonly property var names: ["launcher", "control", "overview", "wallpaper", "session", "dashboard", "notes", "cheatsheet"]
+
+    function closeAll(): void {
+        for (const n of names) root[n] = false;
+    }
+
+    function toggle(name: string): void {
+        const v = !root[name];
+        closeAll();
+        root[name] = v;
+    }
+
+    IpcHandler {
+        target: "launcher"
+        function toggle(): void { root.toggle("launcher"); }
+        function clipboard(): void { root.launcherQuery = ":"; root.toggle("launcher"); }
+        function palette(): void { root.launcherQuery = "#"; root.toggle("launcher"); }
+        function search(q: string): void { root.launcherQuery = q; root.launcher = false; root.toggle("launcher"); }   // qs ipc call launcher search "!yt "
+    }
+    IpcHandler {
+        target: "control"
+        function toggle(): void { root.toggle("control"); }
+        function open(page: string): void { root.openControl(page); }
+    }
+    IpcHandler { target: "overview";  function toggle(): void { root.toggle("overview"); } }
+    IpcHandler {
+        target: "wallpaper"
+        function toggle(): void { root.toggle("wallpaper"); }
+        function set(path: string): void { Wallpapers.set(path); }   // qs ipc call wallpaper set ~/Wallpapers/…
+        function next(): void { Wallpapers.next(); }
+        function current(): string { return Store.wallpaper; }
+    }
+    IpcHandler { target: "session";   function toggle(): void { root.toggle("session"); } }
+    IpcHandler { target: "dashboard"; function toggle(): void { root.toggle("dashboard"); } }
+    IpcHandler { target: "notes"; function toggle(): void { root.toggle("notes"); } }
+    IpcHandler { target: "cheatsheet"; function toggle(): void { root.toggle("cheatsheet"); } }
+}

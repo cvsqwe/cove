@@ -1,0 +1,11 @@
+/* ---- чистая новая вкладка: только поиск и сайты, без логотипа, виджетов и рекомендаций ---- */
+@-moz-document url("about:newtab"), url("about:home") {
+    .logo-and-wordmark-wrapper, .logo-and-wordmark, .personalize-button, .weather, .weatherInfoLink,
+    .widgets-wrapper, .widgets-container, .ds-section-wrapper, .ds-outer-wrapper-search-alignment ~ div > .discovery-stream,
+    .wallpaper-feature-highlight, .download-firefox-feature-highlight, .sponsored-tag, .top-site-outer .sponsored-label {
+        display: none !important;
+    }
+    .outer-wrapper { padding-top: 22vh !important; }
+    .search-wrapper { padding-bottom: 28px !important; }
+    .search-wrapper .search-inner-wrapper { width: min(640px, 80vw) !important; }
+}

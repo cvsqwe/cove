@@ -1,0 +1,6 @@
+#!/bin/sh
+# Cove Code отдельным окном: свой класс окна, без шорткатов kitty (Ctrl+Tab и т.п. — редактору)
+exec kitty --class cove --title "Cove Code" \
+    -o clear_all_shortcuts=yes -o window_padding_width=2 -o confirm_os_window_close=0 \
+    -o "map ctrl+shift+equal change_font_size current +1" -o "map ctrl+shift+minus change_font_size current -1" \
+    cove "$@"

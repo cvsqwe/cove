@@ -1,0 +1,7 @@
+# личное: настройки, заметки разработки, бэкапы
+config/quickshell/settings.json
+config/quickshell/settings.json.*
+config/quickshell/TODO.md
+*.bak
+*.orig
+*~

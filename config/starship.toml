@@ -1,0 +1,125 @@
+# Промпт: ANSI-цвета, перекрашивается вместе с обоями (палитра kitty из Quickshell).
+# purple = акцент шелла, blue = розовый второй акцент.
+"$schema" = 'https://starship.rs/config-schema.json'
+add_newline = true
+command_timeout = 800
+
+format = """
+[╭─](bright-black)$os$username$hostname$directory$git_branch$git_state$git_status\
+$fill\
+$cmd_duration$status$jobs$python$nodejs$rust$golang$c$lua$docker_context$time
+[╰─](bright-black)$character"""
+
+[fill]
+symbol = ' '
+
+[os]
+disabled = false
+style = 'bold purple'
+format = '[$symbol]($style) '
+[os.symbols]
+Arch = '󰣇'
+
+[username]
+style_user = 'bold blue'
+style_root = 'bold red'
+format = '[$user]($style)[@](bright-black)'
+show_always = false
+
+[hostname]
+ssh_only = true
+style = 'bold blue'
+format = '[$hostname]($style) '
+
+[directory]
+style = 'bold purple'
+read_only = ' 󰌾'
+read_only_style = 'red'
+truncation_length = 4
+truncation_symbol = '…/'
+truncate_to_repo = false
+home_symbol = '~'
+format = '[$path]($style)[$read_only]($read_only_style) '
+[directory.substitutions]
+'~/.config' = '󱁿 cfg'
+'~/Pictures' = ' pics'
+'~/Downloads' = '󰉍 dl'
+'~/Projects' = '󰲋 dev'
+
+[git_branch]
+symbol = ' '
+style = 'bold blue'
+format = '[on](bright-black) [$symbol$branch(:$remote_branch)]($style) '
+
+[git_status]
+style = 'yellow'
+format = '([\[$all_status$ahead_behind\]]($style) )'
+conflicted = '='
+ahead = '⇡${count}'
+behind = '⇣${count}'
+diverged = '⇕⇡${ahead_count}⇣${behind_count}'
+untracked = '?${count}'
+stashed = '\$'
+modified = '!${count}'
+staged = '+${count}'
+renamed = '»${count}'
+deleted = '✘${count}'
+
+[git_state]
+style = 'bold yellow'
+
+[cmd_duration]
+min_time = 1500
+style = 'yellow'
+format = '[󱦟 $duration]($style) '
+show_notifications = false
+
+[status]
+disabled = false
+symbol = '✘'
+style = 'bold red'
+format = '[$symbol $status]($style) '
+
+[jobs]
+symbol = '󰒲 '
+style = 'cyan'
+
+[time]
+disabled = false
+style = 'bright-black'
+format = '[$time]($style)'
+time_format = '%H:%M'
+
+[character]
+success_symbol = '[❯](bold purple)'
+error_symbol = '[❯](bold red)'
+vimcmd_symbol = '[❮](bold green)'
+
+[python]
+symbol = ' '
+style = 'yellow'
+format = '[$symbol$version( \($virtualenv\))]($style) '
+[nodejs]
+symbol = ' '
+style = 'green'
+format = '[$symbol$version]($style) '
+[rust]
+symbol = ' '
+style = 'red'
+format = '[$symbol$version]($style) '
+[golang]
+symbol = ' '
+style = 'cyan'
+format = '[$symbol$version]($style) '
+[c]
+symbol = ' '
+style = 'blue'
+format = '[$symbol$version]($style) '
+[lua]
+symbol = ' '
+style = 'blue'
+format = '[$symbol$version]($style) '
+[docker_context]
+symbol = ' '
+style = 'blue'
+format = '[$symbol$context]($style) '

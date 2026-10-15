@@ -1,0 +1,9 @@
+/* ---- страница — карточка со скруглением и тенью на фоне рамки (как окна под баром шелла) ---- */
+#main-window, #browser, #navigator-toolbox, #TabsToolbar { background-color: var(--qs-frame) !important; }
+#tabbrowser-tabbox {
+    margin: 0 var(--qs-gap) var(--qs-gap) !important;
+    border-radius: var(--qs-radius) !important;
+    overflow: hidden !important;
+    box-shadow: var(--qs-shadow) !important;
+}
+#PersonalToolbar { margin-inline: var(--qs-gap) !important; background: transparent !important; }

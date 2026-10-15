@@ -1,0 +1,9 @@
+/* ---- вид «Плавающий»: адресная строка — плавающая капсула с тенью ---- */
+#nav-bar {
+    margin: 2px calc(var(--qs-gap) * 3) 10px !important;
+    border: 1px solid color-mix(in srgb, var(--qs-accent) 18%, transparent) !important;
+    padding-inline: 4px !important;
+    border-radius: calc(var(--qs-radius) + 4px) !important;
+    background-color: var(--qs-surface) !important;
+    box-shadow: var(--qs-shadow) !important;
+}

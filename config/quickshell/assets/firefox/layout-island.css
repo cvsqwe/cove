@@ -1,0 +1,15 @@
+/* ---- вид «Остров»: адресная строка по центру, как остров шелла; в фокусе раскрывается шире ---- */
+#nav-bar toolbarspring { display: none !important; }
+#urlbar-container {
+    min-width: 340px !important;
+    max-width: 560px !important;
+    width: 560px !important;
+    margin-inline: auto !important;
+    flex: 0 1 560px !important;   /* в новых Firefox контейнер растягивается flex-grow, width игнорируется */
+    transition: max-width 0.25s ease, width 0.25s ease !important;
+}
+#urlbar-container:focus-within { max-width: 780px !important; width: 780px !important; flex-basis: 780px !important; }
+#urlbar:not([focused]) > #urlbar-background { background-color: var(--qs-frame) !important; }
+#urlbar { text-align: center !important; }
+#urlbar[focused] { text-align: start !important; }
+#nav-bar { background: transparent !important; }

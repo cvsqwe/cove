@@ -1,0 +1,3 @@
+#!/bin/sh
+# Cove Code в текущем терминале. Отдельный профиль Neovim: ~/.config/cove
+exec env NVIM_APPNAME=cove nvim "$@"

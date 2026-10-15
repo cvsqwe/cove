@@ -1,0 +1,8 @@
+/* Сгенерировано Cove (assets/firefox-theme.sh): новая вкладка в стиле шелла.
+   Цвета новой вкладки задаёт Pywalfox из палитры обоев. */
+@-moz-document url("about:newtab"), url("about:home"), url("about:privatebrowsing") {
+    body, input, button { font-family: "@FONT@", sans-serif !important; }
+    .search-handoff-button, .search-wrapper input, .search-inner-wrapper,
+    .fake-textbox, .search-wrapper .search-handoff-button { border-radius: @RADIUS@px !important; }
+    .top-site-outer .tile, .top-site-outer .top-site-icon, .ds-card, .card-outer { border-radius: @RADIUS@px !important; }
+}
