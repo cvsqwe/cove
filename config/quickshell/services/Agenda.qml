@@ -36,10 +36,13 @@ Singleton {
         return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
     }
 
+    property bool pending: false
     function refresh(): void {
         if (!sources.length) { events = []; error = ""; return; }
         loading = true;
-        fetch.running = true;
+        // уже качаем — повторим после; иначе ждём, пока команда процесса подхватит новый список
+        if (fetch.running) { pending = true; return; }
+        Qt.callLater(() => fetch.running = true);
     }
     onSourcesChanged: refresh()
     Component.onCompleted: refresh()
@@ -79,8 +82,11 @@ Singleton {
                         curl -sfL -m 20 "$url" -o "$f.tmp" && mv "$f.tmp" "$f" ;;
                     *) src=$(printf %s "$src" | sed "s|^~|$HOME|"); cp "$src" "$f" 2>/dev/null ;;
                 esac
-                echo "@@CAL $i"; cat "$f" 2>/dev/null
+                echo "@@CAL $i"; [ -s "$f" ] && python3 "$TZFIX" "$f"
             done', "_", root.cache, ...root.sources]
+        // время с TZID переводим в UTC заранее: в JS-движке QML нет базы часовых поясов
+        environment: ({ TZFIX: Quickshell.shellPath("assets/ics-utc.py") })
+        onExited: if (root.pending) { root.pending = false; root.refresh(); }
         stdout: StdioCollector {
             onStreamFinished: {
                 root.loading = false;
@@ -101,6 +107,12 @@ Singleton {
     }
 
     // ---- разбор ICS ----
+    // [[ключ, значение]] → объект (Object.fromEntries в движке QML нет)
+    function pairs(list): var {
+        const o = {};
+        for (const [k, v] of list) o[k] = v;
+        return o;
+    }
     function unfold(text: string): var {
         return text.replace(/\r/g, "").replace(/\n[ \t]/g, "").split("\n");
     }
@@ -114,24 +126,9 @@ Singleton {
         const [, y, mo, d, h, mi, s, z] = m;
         if (h === undefined) return { date: new Date(+y, +mo - 1, +d), allDay: true };
         if (z) return { date: new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +(s ?? 0))), allDay: false };
-        const tz = (params.match(/TZID=([^;:]+)/) ?? [])[1];
-        const local = new Date(+y, +mo - 1, +d, +h, +mi, +(s ?? 0));
-        return { date: tz ? fromZone(local, tz) : local, allDay: false };
+        // «плавающее» время (без Z) — местное; TZID уже переведён в UTC скриптом assets/ics-utc.py
+        return { date: new Date(+y, +mo - 1, +d, +h, +mi, +(s ?? 0)), allDay: false };
     }
-    // время «по часам зоны tz» → настоящий момент (через Intl, который знает зоны)
-    function fromZone(local, tz: string): var {
-        try {
-            const fmt = new Intl.DateTimeFormat("en-US", { timeZone: tz.replace(/^"|"$/g, ""), hour12: false,
-                year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
-            const asUtc = Date.UTC(local.getFullYear(), local.getMonth(), local.getDate(), local.getHours(), local.getMinutes(), local.getSeconds());
-            const p = Object.fromEntries(fmt.formatToParts(new Date(asUtc)).map(x => [x.type, x.value]));
-            const shown = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second);
-            return new Date(asUtc - (shown - asUtc));
-        } catch (e) {
-            return local;
-        }
-    }
-
     function parse(text: string, cal: int): var {
         const lines = unfold(text);
         const from = new Date(); from.setHours(0, 0, 0, 0);
@@ -178,7 +175,7 @@ Singleton {
         };
         if (!ev.rrule) { push(start); return; }
 
-        const r = Object.fromEntries(ev.rrule.split(";").map(kv => kv.split("=")));
+        const r = pairs(ev.rrule.split(";").map(kv => kv.split("=")));
         const freq = r.FREQ, interval = Math.max(1, +(r.INTERVAL ?? 1));
         const count = r.COUNT ? +r.COUNT : Infinity;
         const until = r.UNTIL ? parseDate(r.UNTIL, "")?.date : null;
@@ -216,6 +213,7 @@ Singleton {
     IpcHandler {
         target: "calendar"
         function refresh(): void { root.refresh(); }
+        function debug(): string { return JSON.stringify({ sources: root.sources, events: root.events.length, error: root.error, loading: root.loading }); }
         function next(): string { return root.next ? `${root.next.title} ${root.next.start}` : ""; }
     }
 }

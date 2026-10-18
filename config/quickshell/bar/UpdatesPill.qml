@@ -9,5 +9,6 @@ Pill {
     icon: "system_update_alt"
     iconColor: Theme.barTint(Theme.green)
     label: String(Updates.count)
+    pinLabel: true   // число видно всегда, даже при «подписях по наведению»
     onClicked: m => m.button === Qt.RightButton ? Updates.check() : Updates.upgrade()
 }

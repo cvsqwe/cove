@@ -184,5 +184,7 @@ Singleton {
         function cancel(): void { root.cancelAll(); }
         function list(): string { return root.timers.map(t => `${t.label || "таймер"} ${root.format(root.remaining(t))}`).join("\n"); }
         function alarm(time: string, label: string): void { root.addAlarm(time, label, []); }
+        function alarms(): string { return (Store.alarms ?? []).map(a => `${a.id} ${a.time} ${a.on ? "вкл" : "выкл"} ${a.label}`).join("\n"); }
+        function unalarm(label: string): void { Store.alarms = (Store.alarms ?? []).filter(a => a.label !== label && String(a.id) !== label); }
     }
 }

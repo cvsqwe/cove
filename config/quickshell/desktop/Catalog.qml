@@ -91,7 +91,7 @@ Singleton {
         net: { label: I18n.tr("Сеть"), icon: "lan", desc: I18n.tr("График приёма и отдачи"), file: "NetGraph", style: "glass",
             opts: { height: 90 },
             schema: [{ key: "height", label: I18n.tr("Высота графика"), kind: "num", from: 40, to: 240, step: 10 }] },
-        quote: { label: I18n.tr("Цитата дня"), icon: "format_quote", desc: I18n.tr("Каждый день новая, клик — следующая"), file: "Quote", style: "none", interactive: true,
+        quote: { label: I18n.tr("Цитата дня"), icon: "format_quote", desc: I18n.tr("Каждый день новая, клик — следующая"), file: "Quote", style: "glass", interactive: true,
             opts: { size: 22, width: 380 },
             schema: [
                 { key: "size", label: I18n.tr("Размер шрифта"), kind: "num", from: 14, to: 48, step: 2 },

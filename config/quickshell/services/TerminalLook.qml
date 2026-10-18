@@ -28,7 +28,10 @@ Singleton {
         const text = L.join("\n");
         if (text === conf.text()) return;
         conf.setText(text);
-        Quickshell.execDetached(["pkill", "-USR1", "-x", "kitty"]);
+        // перечитать конфиг (отступы, прозрачность, курсор, вкладки); размер шрифта при этом не меняется —
+        // его задаём каждому kitty через сокет (listen_on в kitty.conf)
+        Quickshell.execDetached(["sh", "-c", 'pkill -USR1 -x kitty
+            for pid in $(pgrep -x kitty); do kitten @ --to "unix:@kitty-$pid" set-font-size --all "$1" >/dev/null 2>&1; done', "_", String(t.fontSize)]);
     }
 
     // приветствие fish — универсальная переменная, видна всем окнам сразу

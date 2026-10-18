@@ -144,6 +144,14 @@ PY', "_", I18n.tr("Открыть профиль")]
         }
     }
 
+    IpcHandler {
+        target: "profiles"
+        function list(): string { return [...Object.keys(root.presets), ...Object.keys(Settings.profiles ?? {})].join("\n"); }
+        function apply(name: string): void { root.applyNamed(name); }
+        function exportFile(name: string): void { root.exportProfile(name); }
+        function importFile(): void { root.importProfile(); }
+    }
+
     function applyNamed(name: string): void {
         apply(presets[name] ?? (Settings.profiles ?? {})[name]);
     }

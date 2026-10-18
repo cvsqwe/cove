@@ -267,9 +267,9 @@ Item {
             anchors.bottom: parent.bottom
             anchors.margins: 30
             spacing: 10
-            IconButton { icon: "󰤄"; onClicked: Quickshell.execDetached(["systemctl", "suspend"]) }
-            IconButton { icon: "󰜉"; iconColor: Theme.peach; onClicked: Quickshell.execDetached(["systemctl", "reboot"]) }
-            IconButton { icon: "󰐥"; iconColor: Theme.red; onClicked: Quickshell.execDetached(["systemctl", "poweroff"]) }
+            IconButton { icon: "󰤄"; onClicked: if (!(root.lock.preview ?? false)) Quickshell.execDetached(["systemctl", "suspend"]) }
+            IconButton { icon: "󰜉"; iconColor: Theme.peach; onClicked: if (!(root.lock.preview ?? false)) Quickshell.execDetached(["systemctl", "reboot"]) }
+            IconButton { icon: "󰐥"; iconColor: Theme.red; onClicked: if (!(root.lock.preview ?? false)) Quickshell.execDetached(["systemctl", "poweroff"]) }
         }
     }
 }

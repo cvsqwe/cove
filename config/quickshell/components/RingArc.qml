@@ -14,7 +14,12 @@ Item {
     readonly property real r: Math.min(width, height) / 2 - thickness / 2 - 1
     readonly property real shown: Math.max(0, Math.min(1, value))
     property real animated: shown
-    Behavior on animated { NumberAnimation { duration: 600; easing.type: Easing.OutCubic } }
+    // анимируем только заметные скачки: системные кольца обновляются раз в 2 с, асинхронно, и плавный
+    // доезд на каждый 1% держал перерисовку слоя виджетов почти непрерывно (~40 кадров/с, ~10% CPU)
+    Behavior on animated {
+        enabled: Math.abs(root.shown - root.animated) > 0.03
+        NumberAnimation { duration: 500; easing.type: Easing.OutCubic }
+    }
 
     Shape {
         anchors.fill: parent

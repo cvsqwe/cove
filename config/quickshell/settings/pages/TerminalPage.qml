@@ -70,7 +70,7 @@ SPage {
         SRow {
             icon: "text_fields"
             title: I18n.tr("Семейство")
-            desc: I18n.tr("Только моноширинные; для значков в промпте нужен Nerd Font")
+            desc: I18n.tr("Только моноширинные, нужен Nerd Font для значков. Семейство — в новых окнах, размер — сразу")
             SDropdown {
                 options: TerminalLook.fonts.map(f => ({ value: f, label: f }))
                 current: page.t.font

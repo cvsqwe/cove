@@ -14,7 +14,7 @@ Singleton {
     property var status: null
     readonly property var win: Hyprland.activeToplevel
     // отдельное окно (cove-gui, класс cove) или терминал, где заголовок «… — Cove Code»
-    readonly property bool focused: !!win && (String(win.lastIpcObject?.class ?? "") === "cove" || /— Cove Code$/.test(win.title ?? ""))
+    readonly property bool focused: Boolean(win && (String(win.lastIpcObject?.class ?? "") === "cove" || /— Cove Code$/.test(win.title ?? "")))
     readonly property bool active: focused && status !== null
 
     FileView {

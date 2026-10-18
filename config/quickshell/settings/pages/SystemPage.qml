@@ -133,6 +133,12 @@ SPage {
         title: I18n.tr("Сон и блокировка")
         icon: "󰌾"
         SRow {
+            icon: "preview"
+            title: I18n.tr("Экран блокировки")
+            desc: I18n.tr("Посмотреть, как он выглядит, без блокировки")
+            SButton { text: I18n.tr("Предпросмотр"); onClicked: Quickshell.execDetached(["qs", "ipc", "call", "lock", "preview"]) }
+        }
+        SRow {
             icon: "󰌾"
             title: I18n.tr("Блокировать через")
             SSlider { from: 0; to: 60; step: 1; value: Settings.idle.lockMinutes; format: v => v === 0 ? I18n.tr("никогда") : v + I18n.tr(" мин"); onMoved: v => Settings.idle.lockMinutes = v }

@@ -201,6 +201,8 @@ PanelWindow {
                     id: loader
                     x: w.pad
                     y: w.pad
+                    // выключенные виджеты не держим в памяти: невидимые, они всё равно считали бы графики и спектр
+                    active: w.e.enabled !== false || win.editing
                     source: w.cat ? Qt.resolvedUrl("widgets/" + w.cat.file + ".qml") : ""
                 }
                 Binding { target: loader.item; property: "opts"; value: Object.assign({}, w.cat?.opts ?? {}, w.e.opts ?? {}); when: loader.status === Loader.Ready }
@@ -230,13 +232,18 @@ PanelWindow {
                 width: tag.implicitWidth + 18
                 radius: 12
                 color: w.sel ? Theme.accent : Theme.alpha(Theme.crust, 0.85)
-                StyledText {
+                Row {
                     id: tag
                     anchors.centerIn: parent
-                    text: (w.cat?.icon ?? "?") + "  " + (w.cat?.label ?? w.e.type) + (w.shownW ? "" : I18n.tr(" · сейчас скрыт"))
-                    font.pixelSize: Theme.fontSizeSmall
-                    font.bold: w.sel
-                    color: w.sel ? Theme.onAccent : Theme.text
+                    spacing: 6
+                    MIcon { anchors.verticalCenter: parent.verticalCenter; icon: w.cat?.icon ?? "widgets"; size: Theme.fontSizeSmall; color: w.sel ? Theme.onAccent : Theme.text }
+                    StyledText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: (w.cat?.label ?? w.e.type) + (w.shownW ? "" : I18n.tr(" · сейчас скрыт"))
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.bold: w.sel
+                        color: w.sel ? Theme.onAccent : Theme.text
+                    }
                 }
             }
             MouseArea {
