@@ -22,7 +22,7 @@ SPage {
         implicitHeight: 130
         radius: Theme.radiusSmall
         color: Theme.crust
-        Image { anchors.fill: parent; source: Store.wallpaper ? "file://" + Store.wallpaper : ""; sourceSize: Qt.size(320, 180); fillMode: Image.PreserveAspectCrop; asynchronous: true }
+        Image { anchors.fill: parent; source: Store.still ? "file://" + Store.still : ""; sourceSize: Qt.size(320, 180); fillMode: Image.PreserveAspectCrop; asynchronous: true }
         Rectangle { x: 4; y: 4; width: parent.width - 8; height: 8; radius: 4; color: Theme.alpha(Theme.base, 0.95) }
         Rectangle {
             id: card

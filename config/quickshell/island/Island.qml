@@ -116,15 +116,41 @@ PanelWindow {
         }
     }
 
+    // ---- таймеры, загрузки, календарь, приватность ----
+    Connections {
+        target: Timers
+        function onFinished(label: string): void { win.showToast("alarm", label, Theme.peach, 5000); }
+    }
+    Connections {
+        target: Downloads
+        function onCompleted(name: string): void { win.showToast("download_done", name, Theme.teal, 2600); }
+    }
+    Connections {
+        target: Agenda
+        function onRemind(e): void { win.showToast("event", e.title, Theme.lavender, 4000); }
+    }
+    // кто включил микрофон/камеру/экран — один раз при включении
+    Connections {
+        target: Privacy
+        enabled: Settings.island.privacyToast
+        function onMicChanged(): void { if (Privacy.mic) win.showToast("mic", Privacy.micApps.join(", ") || I18n.tr("Микрофон"), Theme.peach, 2200); }
+        function onCameraChanged(): void { if (Privacy.camera) win.showToast("videocam", Privacy.cameraApps.join(", ") || I18n.tr("Камера"), Theme.green, 2200); }
+        function onScreenChanged(): void { if (Privacy.screen) win.showToast("screen_share", I18n.tr("Экран транслируется"), Theme.blue, 2200); }
+    }
+
     // ---- громкость ----
     Timer { id: osdTimer; interval: 1600; onTriggered: win.osdVisible = false }
+    property string osdKind: "volume"
     Connections {
         target: Audio
-        function onVolumeChanged(): void { win.pingOsd(); }
-        function onMutedChanged(): void { win.pingOsd(); }
+        function onVolumeChanged(): void { win.pingOsd("volume"); }
+        function onMutedChanged(): void { win.pingOsd("volume"); }
+        // уровень микрофона не показываем: в звонках его постоянно крутит автоусиление (WebRTC)
+        function onMicMutedChanged(): void { win.pingOsd("mic"); }
     }
-    function pingOsd(): void {
+    function pingOsd(kind: string): void {
         if (!armed || !Settings.island.osd) return;
+        osdKind = kind;
         osdVisible = true;
         osdTimer.restart();
         Sounds.tick();
@@ -282,6 +308,7 @@ PanelWindow {
             OsdBody {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: 320
+                kind: win.osdKind
                 shown: win.mode === "osd"
             }
             NotifBody {

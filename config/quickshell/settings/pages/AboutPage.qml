@@ -117,6 +117,13 @@ SPage {
             SButton { text: I18n.tr("Перезапуск"); onClicked: Quickshell.execDetached(["sh", "-c", "pkill -x qs; setsid qs >/dev/null 2>&1 &"]) }
         }
         SRow {
+            icon: "fact_check"
+            title: I18n.tr("Самопроверка")
+            desc: I18n.tr("Открывает все окна и страницы (секунд 30 будут мелькать) и присылает итог уведомлением")
+            // отдельным процессом: скрипт листает страницы настроек, и эта страница выгружается
+            SButton { text: I18n.tr("Проверить"); onClicked: Quickshell.execDetached(["bash", Quickshell.shellPath("assets/selftest.sh")]) }
+        }
+        SRow {
             icon: "󰈮"
             title: I18n.tr("Открыть settings.json")
             desc: I18n.tr("Все настройки в одном файле — можно править руками")

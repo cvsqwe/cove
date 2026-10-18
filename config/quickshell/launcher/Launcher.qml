@@ -39,7 +39,7 @@ Drawer {
     }
 
     readonly property string query: search.text
-    readonly property string prefix: "=/>?:#!@".includes(query.charAt(0)) ? query.charAt(0) : ""
+    readonly property string prefix: "=/>?:#!@;+<".includes(query.charAt(0)) ? query.charAt(0) : ""
     readonly property string term: (prefix ? query.slice(1) : query).trim()
     // сетка — только для приложений; калькулятор, файлы и прочее всегда списком
     readonly property bool gridMode: look.layout === "grid" && prefix === ""
@@ -156,7 +156,10 @@ Drawer {
     }
 
     function calc(q: string): var {
-        if (q === "") return [{ glyph: "󰃬", title: I18n.tr("Калькулятор"), subtitle: I18n.tr("Например: =2^10, =sqrt(2)*pi, =15%*3400") }];
+        if (q === "") return [{ glyph: "calculate", title: I18n.tr("Калькулятор и конвертер"), subtitle: I18n.tr("Например: =2^10, =15%*3400, =100 usd в руб, =5 km в mi, =30 c в f") }];
+        const conv = Convert.convert(q);
+        if (conv) return [{ glyph: "currency_exchange", title: conv.text, subtitle: (conv.note ? conv.note + " · " : "") + I18n.tr("Enter — скопировать"),
+            run: () => { if (isFinite(conv.value)) Quickshell.execDetached(["wl-copy", String(Math.round(conv.value * 1e6) / 1e6)]); } }];
         const allowed = /^[0-9+\-*/().,%^\s]*(?:(?:sqrt|sin|cos|tan|log|ln|abs|round|floor|ceil|pi|e)[0-9+\-*/().,%^\s]*)*$/i;
         if (!allowed.test(q)) return [{ glyph: "󰃬", title: I18n.tr("Не понимаю выражение"), subtitle: q }];
         try {
@@ -238,6 +241,65 @@ Drawer {
         return [...pinned, ...items];
     }
 
+    // ; — эмодзи (assets/emoji.json: символ, английское имя, русские слова)
+    property var emoji: []
+    function emojiResults(q: string): var {
+        if (!emoji.length) emojiFile.reload();
+        const f = q.toLowerCase();
+        const list = f === "" ? emoji.slice(0, 60)
+            : emoji.filter(e => e[1].includes(f) || e[2].includes(f)).slice(0, 60);
+        return list.map(e => ({ glyph: e[0], title: e[2] ? e[2].split(" ")[0] : e[1], subtitle: e[1] + I18n.tr(" · Enter — скопировать"),
+            run: () => Quickshell.execDetached(["wl-copy", e[0]]) }));
+    }
+    FileView {
+        id: emojiFile
+        path: Quickshell.shellPath("assets/emoji.json")
+        onLoaded: { try { root.emoji = JSON.parse(text()); } catch (e) {} }
+    }
+
+    // + — таймер: «+5m чай», «+1:30», «+25»
+    function timerResults(q: string): var {
+        const c = Timers.parseCommand(q);
+        const out = [];
+        if (c.seconds > 0)
+            out.push({ glyph: "timer", title: I18n.tr("Таймер на {0}", Timers.human(c.seconds)) + (c.label ? " · " + c.label : ""),
+                subtitle: I18n.tr("Enter — запустить"), run: () => Timers.start(c.seconds, c.label) });
+        else
+            out.push({ glyph: "timer", title: I18n.tr("Таймер"), subtitle: I18n.tr("Например: +5m чай, +1h30m, +25:00, +10") });
+        for (const t of Timers.timers)
+            out.push({ glyph: t.left !== undefined ? "pause_circle" : "hourglass_top", title: (t.label || I18n.tr("Таймер")) + " · " + Timers.format(Timers.remaining(t)),
+                subtitle: I18n.tr("Enter — пауза · ПКМ — отменить"), keep: true, run: () => Timers.togglePause(t.id), alt: () => Timers.cancel(t.id) });
+        return out;
+    }
+
+    // < — история и закладки Firefox
+    property var history: []
+    function historyResults(): var {
+        if (term === "") return [{ glyph: "history", title: I18n.tr("История Firefox"), subtitle: I18n.tr("Например: <github") }];
+        return history.map(h => ({ glyph: h.bookmark ? "bookmark" : "history", title: h.title || h.url, subtitle: h.url.replace(/^https?:\/\//, ""),
+            run: () => Qt.openUrlExternally(h.url) }));
+    }
+    Timer {
+        id: historyDebounce
+        interval: 150
+        onTriggered: if (root.prefix === "<" && root.term !== "") historyProc.running = true
+    }
+    // places.sqlite открыт Firefox'ом — читаем в режиме immutable, без блокировок
+    Process {
+        id: historyProc
+        command: ["sh", "-c", 'db=$(ls -t "$HOME"/.config/mozilla/firefox/*/places.sqlite "$HOME"/.mozilla/firefox/*/places.sqlite 2>/dev/null | head -1)
+            [ -n "$db" ] || exit 0
+            q=$(printf %s "$1" | sed "s/\x27/\x27\x27/g")
+            sqlite3 -separator "\t" "file:$db?immutable=1" "SELECT p.url, replace(coalesce(p.title, \x27\x27), char(9), \x27 \x27), (SELECT count(*) FROM moz_bookmarks b WHERE b.fk = p.id) FROM moz_places p WHERE p.hidden = 0 AND (p.title LIKE \x27%$q%\x27 OR p.url LIKE \x27%$q%\x27) ORDER BY p.frecency DESC LIMIT 40"',
+            "_", root.term]
+        stdout: StdioCollector {
+            onStreamFinished: root.history = text.split("\n").filter(s => s).map(l => {
+                const [url, title, bm] = l.split("\t");
+                return { url, title, bookmark: Number(bm) > 0 };
+            }).filter(h => /^https?:/.test(h.url))
+        }
+    }
+
     readonly property var results: {
         switch (prefix) {
         case "=": return calc(term);
@@ -248,6 +310,9 @@ Drawer {
         case "#": return palette(term);
         case "!": return bangResults(query.slice(1));
         case "@": return windowResults(term);
+        case ";": return emojiResults(term);
+        case "+": return timerResults(term);
+        case "<": return historyResults();
         default: return apps(term.toLowerCase());
         }
     }
@@ -265,7 +330,10 @@ Drawer {
         interval: 180
         onTriggered: if (root.prefix === "/" && root.term !== "") fileProc.running = true
     }
-    onTermChanged: if (prefix === "/") fileDebounce.restart()
+    onTermChanged: {
+        if (prefix === "/") fileDebounce.restart();
+        if (prefix === "<") historyDebounce.restart();
+    }
 
     Process {
         id: fileProc
@@ -319,7 +387,7 @@ Drawer {
             Item { Layout.fillWidth: true }
             StyledText {
                 visible: root.look.hints
-                text: "= / > ? : # ! @"
+                text: "= / > ? : # ! @ ; + <"
                 color: Theme.overlay0
                 font.pixelSize: Theme.fontSizeSmall
             }
@@ -362,7 +430,7 @@ Drawer {
 
                 MIcon {
                     icon: ({ "=": "calculate", "/": "folder_open", ">": "terminal", "?": "language", ":": "content_paste",
-                             "#": "bolt", "!": "travel_explore", "@": "select_window" })[root.prefix] ?? "search"
+                             "#": "bolt", "!": "travel_explore", "@": "select_window", ";": "mood", "+": "timer", "<": "history" })[root.prefix] ?? "search"
                     color: Theme.accent
                     size: 18
                 }
@@ -370,7 +438,7 @@ Drawer {
                 TextField {
                     id: search
                     Layout.fillWidth: true
-                    placeholderText: root.look.placeholder || I18n.tr("Приложения, =расчёт, /файлы, >команда, !поиск, @окна, :буфер")
+                    placeholderText: root.look.placeholder || I18n.tr("Приложения, =расчёт, /файлы, >команда, !поиск, @окна, :буфер, ;эмодзи, +таймер, <история")
                     placeholderTextColor: Theme.overlay0
                     color: Theme.text
                     font.family: Theme.font

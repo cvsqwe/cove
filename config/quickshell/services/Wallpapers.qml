@@ -23,19 +23,53 @@ Singleton {
         return ["--transition-type", t, "--transition-pos", "0.5,0.5", "--transition-duration", "1.2", "--transition-fps", "60"];
     }
 
+    // Картинку под окнами awww показывает размытой (Settings.wallpaper.blurWindows), видео рисует
+    // wallpaper/LiveWallpaper.qml поверх постера. Постер и размытая копия готовятся один раз в кэш.
+    function blurredOf(still: string): string { return `${Store.cacheDir}/blur-${Store.hash(still)}.jpg`; }
+    readonly property bool busy: (Hyprland.focusedWorkspace?.toplevels?.values?.length ?? 0) > 0
+    readonly property bool blurNow: w.blurWindows && busy
+    onBlurNowChanged: blurDebounce.restart()
+    Timer { id: blurDebounce; interval: 120; onTriggered: root.show(["--transition-type", "fade", "--transition-duration", "0.5", "--transition-fps", "60"]) }
+
+    // показать текущие обои в awww (обычные или размытые)
+    function show(trans: var): void {
+        const still = Store.still;
+        if (!still) return;
+        Quickshell.execDetached(["sh", "-c",
+            'f="$1" blur="$2" b="$3"; shift 3
+            if [ "$blur" = 1 ]; then [ -s "$b" ] || magick "$f" -resize 1920x1080^ -blur 0x28 -quality 88 "$b"; f="$b"; fi
+            exec awww img "$@" "$f"',
+            "_", still, root.blurNow ? "1" : "0", blurredOf(still), ...trans]);
+    }
+
     function apply(path: string): void {
         if (!path) return;
-        Store.wallpaper = path;
-        Quickshell.execDetached(["awww", "img", ...transition(), path]);
+        if (!Store.isVideo(path)) {
+            Store.wallpaper = path;
+            show(transition());
+            return;
+        }
+        // видео: сначала кадр-постер (по нему палитра и всё, что показывает обои картинкой)
+        poster.target = path;
+        poster.running = true;
+    }
+    Process {
+        id: poster
+        property string target: ""
+        command: ["sh", "-c", 'mkdir -p "$(dirname "$2")"; [ -s "$2" ] || ffmpeg -loglevel error -y -ss 1 -i "$1" -frames:v 1 -q:v 3 "$2" || ffmpeg -loglevel error -y -i "$1" -frames:v 1 -q:v 3 "$2"',
+            "_", target, Store.posterOf(target)]
+        onExited: code => {
+            if (code !== 0) { console.warn("wallpaper: не удалось взять кадр из", target); return; }
+            Store.wallpaper = target;
+            root.show(root.transition());
+        }
     }
 
     function set(path: string): void { apply(path); }
 
     function restore(): void {
-        Quickshell.execDetached(["sh", "-c",
-            'for i in $(seq 40); do awww query >/dev/null 2>&1 && break; sleep 0.25; done; awww img --transition-type fade --transition-duration 0.6 "$1"',
-            "_", Store.wallpaper]);
-        Qt.callLater(evaluate);
+        Quickshell.execDetached(["sh", "-c", 'for i in $(seq 40); do awww query >/dev/null 2>&1 && break; sleep 0.25; done']);
+        restoreDelay.start();
     }
 
     function minutes(s: string): int {
@@ -65,6 +99,17 @@ Singleton {
         apply(p);
     }
 
+    // ждём, пока поднимется awww-daemon (при входе он стартует вместе с шеллом)
+    Timer {
+        id: restoreDelay
+        interval: 600
+        onTriggered: {
+            if (Store.isVideo(Store.wallpaper)) root.apply(Store.wallpaper);
+            else root.show(["--transition-type", "fade", "--transition-duration", "0.6"]);
+            root.evaluate();
+        }
+    }
+
     Timer {
         interval: 60 * 1000
         running: root.w.mode === "time"
@@ -89,10 +134,26 @@ Singleton {
 
     Process {
         id: scan
-        command: ["fd", "-t", "f", "-e", "jpg", "-e", "jpeg", "-e", "png", "-e", "webp", ".", Settings.expand(Settings.wallpaper.dir)]
+        command: ["fd", "-t", "f", "-e", "jpg", "-e", "jpeg", "-e", "png", "-e", "webp", "-e", "gif", "-e", "mp4", "-e", "webm", "-e", "mkv", "-e", "mov", ".", Settings.expand(Settings.wallpaper.dir)]
         stdout: StdioCollector {
-            onStreamFinished: root.files = text.split("\n").filter(s => s !== "").sort()
+            onStreamFinished: {
+                root.files = text.split("\n").filter(s => s !== "").sort();
+                const vids = root.files.filter(f => Store.isVideo(f));
+                if (vids.length) { posters.files = vids; posters.running = true; }
+            }
         }
+    }
+
+    // миниатюры видео для выбора обоев: кадр-постер, тот же, что и для палитры
+    property int posterSerial: 0
+    function thumbOf(p: string): string { return Store.isVideo(p) ? Store.posterOf(p) + "?" + posterSerial : p; }
+    Process {
+        id: posters
+        property var files: []
+        command: ["sh", "-c", 'mkdir -p "$1"; shift
+            while [ $# -gt 0 ]; do [ -s "$2" ] || ffmpeg -loglevel error -y -ss 1 -i "$1" -frames:v 1 -q:v 3 "$2" </dev/null; shift 2; done',
+            "_", Store.cacheDir, ...Array.from(files).reduce((a, f) => a.concat([f, Store.posterOf(f)]), [])]
+        onExited: root.posterSerial++
     }
 
     Component.onCompleted: refresh()

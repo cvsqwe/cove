@@ -33,7 +33,7 @@ ClippingRectangle {
 
     Image {
         anchors.fill: parent
-        source: Store.wallpaper ? "file://" + Store.wallpaper : ""
+        source: Store.still ? "file://" + Store.still : ""
         sourceSize: Qt.size(320, 90)
         fillMode: Image.PreserveAspectCrop
         asynchronous: true

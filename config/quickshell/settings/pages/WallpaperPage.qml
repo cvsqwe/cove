@@ -36,7 +36,7 @@ SPage {
             Image {
                 anchors.fill: parent
                 anchors.margins: 3
-                source: "file://" + parent.modelData
+                source: "file://" + Wallpapers.thumbOf(parent.modelData)
                 sourceSize: Qt.size(160, 90)
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
@@ -52,9 +52,20 @@ SPage {
         SRow {
             icon: "󰉋"
             title: I18n.tr("Папка с обоями")
-            desc: Wallpapers.files.length + I18n.tr(" изображений")
+            desc: I18n.tr("{0} файлов · видео (mp4, webm) становятся живыми обоями", Wallpapers.files.length)
             SField { implicitWidth: 260; text: page.w.dir; onEdited: t => { page.w.dir = t; Wallpapers.refresh(); } }
             SButton { icon: "󰑓"; onClicked: Wallpapers.refresh() }
+        }
+        SRow {
+            icon: "blur_on"
+            title: I18n.tr("Размывать под окнами")
+            desc: I18n.tr("Когда на воркспейсе есть окна, обои мягко размываются")
+            SSwitch { checked: page.w.blurWindows; onToggled: v => page.w.blurWindows = v }
+        }
+        SRow {
+            icon: "volume_up"
+            title: I18n.tr("Звук у живых обоев")
+            SSwitch { checked: page.w.liveSound; onToggled: v => page.w.liveSound = v }
         }
         SRow {
             icon: "󰔟"

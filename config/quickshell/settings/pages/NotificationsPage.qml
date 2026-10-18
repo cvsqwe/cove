@@ -27,6 +27,17 @@ SPage {
             SSwitch { checked: page.n.dndSchedule; onToggled: v => page.n.dndSchedule = v }
         }
         SRow {
+            icon: "person_check"
+            title: I18n.tr("Пропускать в «Не беспокоить»")
+            desc: I18n.tr("Имена через запятую: совпадение с заголовком или приложением (в Telegram заголовок — имя собеседника)")
+            SField {
+                implicitWidth: 260
+                text: (page.n.dndAllow ?? []).join(", ")
+                placeholderText: I18n.tr("Мама, жена")
+                onEdited: t => page.n.dndAllow = t.split(",").map(s => s.trim()).filter(s => s !== "")
+            }
+        }
+        SRow {
             visible: page.n.dndSchedule
             icon: "󱑆"
             title: I18n.tr("С и до")
@@ -40,6 +51,16 @@ SPage {
             desc: I18n.tr("Уведомления, громкость, разблокировка")
             SButton { text: I18n.tr("Проверить"); icon: "󰐊"; onClicked: Sounds.play("notify") }
             SSwitch { checked: Settings.general.sounds; onToggled: v => Settings.general.sounds = v }
+        }
+        SRow {
+            icon: "library_music"
+            title: I18n.tr("Набор звуков")
+            desc: I18n.tr("Клик — прослушать")
+            SSegment {
+                options: Sounds.sets
+                current: Settings.general.soundSet
+                onPicked: v => { Settings.general.soundSet = v; Sounds.preview(v); }
+            }
         }
         SRow {
             icon: "󰝝"

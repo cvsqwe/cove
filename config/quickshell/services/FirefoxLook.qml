@@ -28,7 +28,7 @@ Singleton {
             CRUST: hex(Theme.crust), MANTLE: hex(Theme.mantle), BASE: hex(Theme.base), SURFACE0: hex(Theme.surface0),
             SURFACE1: hex(Theme.surface1), TEXT: hex(Theme.text), SUBTEXT: hex(Theme.subtext1), OVERLAY: hex(Theme.overlay1),
             LANG: I18n.lang, ACCENT_URL: "%23" + hex(Theme.accent).slice(1), ACCENT: hex(Theme.accent), ACCENT2: hex(Theme.accent2), RADIUS: String(Theme.radius + 4), FONT: Theme.font,
-            WALLPAPER: Store.wallpaper ? "file://" + encodeURI(Store.wallpaper) : "",
+            WALLPAPER: Store.still ? "file://" + encodeURI(Store.still) : "",
             NAME_JSON: JSON.stringify(Settings.displayName),
             LINKS_JSON: JSON.stringify(f.links ?? []),
             BANGS_JSON: JSON.stringify(Settings.launcher.bangs ?? []),
@@ -45,7 +45,7 @@ Singleton {
     Timer { id: shapeTimer; interval: 700; onTriggered: root.shape() }
 
     // стартовая страница — при смене палитры, обоев, ссылок, имени
-    readonly property var pageWatch: [Theme.accent, Theme.base, Theme.text, Store.wallpaper, JSON.stringify(f.links), f.engine,
+    readonly property var pageWatch: [Theme.accent, Theme.base, Theme.text, Store.still, JSON.stringify(f.links), f.engine,
         Settings.displayName, JSON.stringify(Settings.launcher.bangs), I18n.lang]
     onPageWatchChanged: pageTimer.restart()
     Timer { id: pageTimer; interval: 900; onTriggered: root.startpage() }

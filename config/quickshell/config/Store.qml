@@ -20,6 +20,19 @@ Singleton {
     property alias pinnedClips: data.pinnedClips // закреплённое в буфере обмена
     property alias launches: data.launches
     property alias launchedAt: data.launchedAt // счётчик запусков приложений для сортировки
+    property alias alarms: data.alarms         // будильники [{ time: "07:30", label, days: [1..7], on }]
+
+    // Живые обои: видео показывает слой wallpaper/LiveWallpaper.qml, а всё, что берёт обои как картинку
+    // (палитра, экран блокировки, превью), — кадр-постер из кэша (его готовит services/Wallpapers.qml).
+    readonly property string cacheDir: Quickshell.env("HOME") + "/.cache/quickshell/wallpapers"
+    function isVideo(p: string): bool { return /\.(mp4|webm|mkv|mov|m4v)$/i.test(p ?? ""); }
+    function hash(s: string): string {
+        let h = 5381;
+        for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+        return (h >>> 0).toString(16);
+    }
+    function posterOf(p: string): string { return `${cacheDir}/poster-${hash(p)}.jpg`; }
+    readonly property string still: isVideo(wallpaper) ? posterOf(wallpaper) : wallpaper
 
     FileView {
         path: Quickshell.env("HOME") + "/.local/state/quickshell/state.json"
@@ -41,6 +54,7 @@ Singleton {
             property var pinnedClips: []
             property var launches: ({})
             property var launchedAt: ({})   // id приложения → время последнего запуска (сортировка «недавние»)
+            property var alarms: []
         }
     }
 }

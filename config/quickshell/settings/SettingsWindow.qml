@@ -29,6 +29,8 @@ Scope {
         { id: "wallpaper", icon: "󰸉", label: I18n.tr("Обои"), file: "WallpaperPage", keys: I18n.tr("обои фон слайдшоу время воркспейс переход") },
         { id: "desktop", icon: "󰖲", label: I18n.tr("Рабочий стол"), file: "DesktopPage", keys: I18n.tr("виджеты рабочий стол часы заметки") },
         { id: "system", icon: "󰒓", label: I18n.tr("Система"), file: "SystemPage", keys: I18n.tr("имя город погода приложения терминал блокировка ночной свет фокус язык") + " language english" },
+        { id: "terminal", icon: "terminal", label: I18n.tr("Терминал"), file: "TerminalPage", keys: I18n.tr("терминал kitty шрифт курсор вкладки прозрачность fish fastfetch") },
+        { id: "time", icon: "schedule", label: I18n.tr("Время"), file: "TimePage", keys: I18n.tr("будильник таймер календарь события напоминание ics google") },
         { id: "autostart", icon: "󰐊", label: I18n.tr("Автозапуск"), file: "AutostartPage", keys: I18n.tr("автозапуск старт приложения") },
         { id: "dotfiles", icon: "󰊢", label: I18n.tr("Дотфайлы"), file: "DotfilesPage", keys: I18n.tr("git дотфайлы бэкап синхронизация") },
         { id: "about", icon: "cove", label: I18n.tr("О системе"), file: "AboutPage", keys: I18n.tr("система версия железо сброс cove заставка логотип бренд") }

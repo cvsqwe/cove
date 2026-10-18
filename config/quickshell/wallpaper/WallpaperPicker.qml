@@ -164,7 +164,7 @@ PanelWindow {
                 Image {
                     anchors.fill: parent
                     anchors.margins: 3
-                    source: "file://" + thumb.modelData
+                    source: "file://" + Wallpapers.thumbOf(thumb.modelData)
                     sourceSize: Qt.size(320, 180)
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
@@ -178,6 +178,25 @@ PanelWindow {
                     color: "transparent"
                     border.width: thumb.selected ? 3 : thumb.current ? 2 : 0
                     border.color: thumb.selected ? Theme.accent : Theme.surface2
+                }
+
+                // видеообои — значок «живые»
+                Rectangle {
+                    visible: Store.isVideo(thumb.modelData)
+                    anchors.left: parent.left
+                    anchors.bottom: parent.bottom
+                    anchors.margins: 10
+                    width: liveRow.implicitWidth + 14
+                    height: 24
+                    radius: 12
+                    color: Theme.alpha(Theme.crust, 0.75)
+                    Row {
+                        id: liveRow
+                        anchors.centerIn: parent
+                        spacing: 4
+                        MIcon { anchors.verticalCenter: parent.verticalCenter; icon: "play_circle"; fill: true; size: 13; color: Theme.accent }
+                        StyledText { anchors.verticalCenter: parent.verticalCenter; text: I18n.tr("живые"); font.pixelSize: Theme.fontSizeSmall }
+                    }
                 }
 
                 Rectangle {

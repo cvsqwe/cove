@@ -47,7 +47,7 @@ SPage {
 
         Image {
             anchors.fill: parent
-            source: "file://" + Store.wallpaper
+            source: "file://" + Store.still
             fillMode: Image.PreserveAspectCrop
             sourceSize: Qt.size(800, 300)
             opacity: 0.55

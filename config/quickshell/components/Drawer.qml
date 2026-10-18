@@ -101,7 +101,7 @@ PanelWindow {
             Image {
                 anchors.fill: parent
                 anchors.margins: -24
-                source: parent.visible && Store.wallpaper ? "file://" + Store.wallpaper : ""
+                source: parent.visible && Store.still ? "file://" + Store.still : ""
                 sourceSize: Qt.size(480, 270)
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true

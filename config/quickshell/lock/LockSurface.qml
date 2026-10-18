@@ -20,7 +20,7 @@ Item {
     Image {
         id: wall
         anchors.fill: parent
-        source: "file://" + Store.wallpaper
+        source: "file://" + Store.still
         fillMode: Image.PreserveAspectCrop
         sourceSize: Qt.size(1280, 720)
         visible: false
@@ -68,6 +68,50 @@ Item {
                 }
                 font.pixelSize: 20
                 color: Theme.subtext1
+            }
+
+            // уведомления: только сколько и от каких приложений — текст на экране блокировки не показываем
+            Rectangle {
+                readonly property var apps: {
+                    const seen = [], out = [];
+                    for (const n of Notifs.list) {
+                        const k = n.appName || n.appIcon;
+                        if (seen.includes(k)) continue;
+                        seen.push(k);
+                        out.push(Notifs.iconFor(n));
+                    }
+                    return out.slice(0, 5);
+                }
+                visible: Notifs.count > 0
+                Layout.alignment: Qt.AlignHCenter
+                Layout.topMargin: 12
+                implicitWidth: notifRow.implicitWidth + 24
+                implicitHeight: 34
+                radius: 17
+                color: Theme.alpha(Theme.base, 0.6)
+                Row {
+                    id: notifRow
+                    anchors.centerIn: parent
+                    spacing: 6
+                    Repeater {
+                        model: parent.parent.apps
+                        Image {
+                            required property string modelData
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 18; height: 18
+                            source: modelData
+                            sourceSize: Qt.size(36, 36)
+                            visible: status === Image.Ready
+                        }
+                    }
+                    StyledText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        leftPadding: 4
+                        text: Notifs.count + " " + I18n.plural(Notifs.count, "уведомление", "уведомления", "уведомлений")
+                        color: Theme.subtext1
+                        font.pixelSize: Theme.fontSizeSmall + 1
+                    }
+                }
             }
 
             Item { implicitHeight: 24 }

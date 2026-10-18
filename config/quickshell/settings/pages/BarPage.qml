@@ -26,7 +26,8 @@ SPage {
         notifs: { icon: "󰂚", label: I18n.tr("Уведомления") },
         clock: { icon: "󰥔", label: I18n.tr("Часы (дублирует остров)") },
         focus: { icon: "󰔟", label: I18n.tr("Фокус-таймер") },
-        power: { icon: "󰐥", label: I18n.tr("Кнопка питания") }
+        power: { icon: "󰐥", label: I18n.tr("Кнопка питания") },
+        updates: { icon: "system_update_alt", label: I18n.tr("Обновления (видно, когда есть)") }
     })
     readonly property var unused: Object.keys(catalog).filter(k => !b.left.includes(k) && !b.right.includes(k))
 

@@ -58,11 +58,17 @@ Singleton {
             const app = n.appName || "";
             if (app && !(Store.seenApps ?? []).includes(app)) Store.seenApps = [...(Store.seenApps ?? []), app].slice(-60);
             if ((Settings.notifications.muted ?? []).includes(app)) return; // только в историю
-            if (!root.quiet || n.urgency === NotificationUrgency.Critical) {
+            if (!root.quiet || n.urgency === NotificationUrgency.Critical || root.allowed(n)) {
                 root.queue = [...root.queue, n];
                 Sounds.play("notify");
             }
         }
+    }
+
+    // «Не беспокоить» пропускает выбранных людей/приложения: совпадение без учёта регистра
+    function allowed(n): bool {
+        const hay = `${n.summary ?? ""}\n${n.appName ?? ""}`.toLowerCase();
+        return (Settings.notifications.dndAllow ?? []).some(s => s && hay.includes(String(s).toLowerCase()));
     }
 
     function iconFor(n): string {

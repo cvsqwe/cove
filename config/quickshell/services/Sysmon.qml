@@ -19,6 +19,14 @@ Singleton {
     property var cpuHistory: new Array(60).fill(0)
     property var ramHistory: new Array(60).fill(0)
     property var gpuHistory: new Array(60).fill(0)
+    // сеть: байт/с по всем интерфейсам, кроме lo и виртуальных
+    property real netRx: 0
+    property real netTx: 0
+    property var rxHistory: new Array(60).fill(0)
+    property var txHistory: new Array(60).fill(0)
+    property real prevRx: -1
+    property real prevTx: -1
+    property real prevNetTime: 0
 
     property var prevIdle: 0
     property var prevTotal: 0
@@ -55,6 +63,7 @@ Singleton {
         onTriggered: {
             stat.reload();
             mem.reload();
+            net.reload();
             if (root.gpuBusyPath) gpuBusy.reload();
             if (root.gpuTempPath) gpuT.reload();
             if (root.cpuTempPath) cpuT.reload();
@@ -95,6 +104,28 @@ Singleton {
         onLoaded: {
             root.gpu = Number(text().trim()) / 100;
             root.gpuHistory = root.push(root.gpuHistory, root.gpu);
+        }
+    }
+    FileView {
+        id: net
+        path: "/proc/net/dev"
+        onLoaded: {
+            let rx = 0, tx = 0;
+            for (const l of text().split("\n").slice(2)) {
+                const m = l.trim().match(/^([^:]+):\s*(.*)$/);
+                if (!m || /^(lo|docker|veth|br-|virbr|tun|wg)/.test(m[1])) continue;
+                const f = m[2].split(/\s+/).map(Number);
+                rx += f[0]; tx += f[8];
+            }
+            const now = Date.now();
+            if (root.prevRx >= 0 && now > root.prevNetTime) {
+                const dt = (now - root.prevNetTime) / 1000;
+                root.netRx = Math.max(0, (rx - root.prevRx) / dt);
+                root.netTx = Math.max(0, (tx - root.prevTx) / dt);
+                root.rxHistory = root.push(root.rxHistory, root.netRx);
+                root.txHistory = root.push(root.txHistory, root.netTx);
+            }
+            root.prevRx = rx; root.prevTx = tx; root.prevNetTime = now;
         }
     }
     FileView { id: gpuT; path: root.gpuTempPath; onLoaded: root.gpuTemp = Number(text().trim()) / 1000 }

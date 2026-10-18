@@ -151,16 +151,32 @@ SPage {
     }
 
     SCard {
-        title: I18n.tr("Права администратора")
+        title: I18n.tr("Безопасность")
         icon: "admin_panel_settings"
+        SRow {
+            icon: "password"
+            title: I18n.tr("Очищать скопированный пароль")
+            desc: I18n.tr("Пароли из менеджера паролей не попадают в историю буфера и стираются через это время")
+            SSlider { from: 0; to: 120; step: 5; value: page.g.clipClearSeconds; format: v => v === 0 ? I18n.tr("никогда") : v + I18n.tr(" с"); onMoved: v => page.g.clipClearSeconds = v }
+        }
         SRow {
             icon: "shield"
             title: I18n.tr("Окно запроса прав в стиле шелла")
             desc: PolkitAuth.registered ? I18n.tr("Работает: запросы polkit показывает Cove")
                 : PolkitAuth.fallback ? I18n.tr("Сейчас запросы показывает hyprpolkitagent")
                 : I18n.tr("Запуск…")
-            separator: false
             SSwitch { checked: page.g.polkit; onToggled: v => page.g.polkit = v }
+        }
+        SRow {
+            visible: page.g.polkit
+            icon: "pip"
+            title: I18n.tr("Где появляется запрос")
+            separator: false
+            SSegment {
+                options: [{ value: "center", label: I18n.tr("По центру") }, { value: "island", label: I18n.tr("Из острова") }]
+                current: page.g.polkitStyle
+                onPicked: v => page.g.polkitStyle = v
+            }
         }
     }
 

@@ -80,9 +80,26 @@ Singleton {
                 { key: "size", label: I18n.tr("Размер"), kind: "num", from: 100, to: 600, step: 10 },
                 { key: "shape", label: I18n.tr("Форма"), kind: "seg", options: [{ value: "rounded", label: I18n.tr("Скруглённая") }, { value: "circle", label: I18n.tr("Круг") }, { value: "square", label: I18n.tr("Квадрат") }] }
             ] }
+,
+        agenda: { label: I18n.tr("События"), icon: "calendar_month", desc: I18n.tr("Ближайшее из ваших календарей"), file: "AgendaW", style: "glass",
+            opts: { title: "", days: 3, count: 6 },
+            schema: [
+                { key: "title", label: I18n.tr("Заголовок"), kind: "text" },
+                { key: "days", label: I18n.tr("Дней вперёд"), kind: "num", from: 1, to: 14, step: 1 },
+                { key: "count", label: I18n.tr("Сколько событий"), kind: "num", from: 1, to: 12, step: 1 }
+            ] },
+        net: { label: I18n.tr("Сеть"), icon: "lan", desc: I18n.tr("График приёма и отдачи"), file: "NetGraph", style: "glass",
+            opts: { height: 90 },
+            schema: [{ key: "height", label: I18n.tr("Высота графика"), kind: "num", from: 40, to: 240, step: 10 }] },
+        quote: { label: I18n.tr("Цитата дня"), icon: "format_quote", desc: I18n.tr("Каждый день новая, клик — следующая"), file: "Quote", style: "none", interactive: true,
+            opts: { size: 22, width: 380 },
+            schema: [
+                { key: "size", label: I18n.tr("Размер шрифта"), kind: "num", from: 14, to: 48, step: 2 },
+                { key: "width", label: I18n.tr("Ширина"), kind: "num", from: 240, to: 800, step: 20 }
+            ] }
     })
 
     // порядок в галерее «Добавить»
     readonly property var order: ["clock", "analog", "greeting", "weather", "media", "visualizer", "rings", "sysmon", "info",
-        "calendar", "todo", "notes", "text", "countdown", "focus", "photo"]
+        "calendar", "agenda", "todo", "notes", "text", "quote", "countdown", "focus", "photo", "net"]
 }

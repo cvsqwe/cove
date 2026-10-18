@@ -17,6 +17,7 @@ Singleton {
     property alias island: data.island
     property alias launcher: data.launcher
     property alias firefox: data.firefox
+    property alias terminal: data.terminal
     property alias windows: data.windows
     property alias input: data.input
     property alias notifications: data.notifications
@@ -65,7 +66,12 @@ Singleton {
                 property string editor: "code"
                 property bool sounds: true
                 property real soundVolume: 0.6
+                property string soundSet: "cove"     // cove | soft | glass | retro (assets/sounds)
                 property bool weather: true
+                property var calendars: []           // ICS-подписки: ссылки или пути к .ics
+                property int calendarRemind: 10      // напоминание за N минут (0 — не напоминать)
+                property int clipClearSeconds: 30    // очищать скопированный пароль через N секунд (0 — нет)
+                property string polkitStyle: "center" // center | island — где появляется запрос прав
                 property bool polkit: true           // свой агент polkit (запрос прав root); выкл — hyprpolkitagent
             }
 
@@ -94,7 +100,7 @@ Singleton {
 
             property JsonObject bar: JsonObject {
                 property var left: ["launcher", "workspaces", "window"]
-                property var right: ["tray", "sysmon", "weather", "layout", "network", "bluetooth", "volume", "notifs"]
+                property var right: ["tray", "updates", "sysmon", "weather", "layout", "network", "bluetooth", "volume", "notifs"]
                 property int workspaces: 5
                 property string workspaceStyle: "pills" // pills | dots | lines | squares | numbers | kanji | roman | icons
                 property bool workspaceOccupiedOnly: false
@@ -171,6 +177,17 @@ Singleton {
                 ]
             }
 
+            property JsonObject terminal: JsonObject {
+                property string font: "JetBrainsMono Nerd Font"
+                property real fontSize: 11.5
+                property int padding: 10
+                property real opacity: 0.94
+                property string cursor: "beam"       // beam | block | underline
+                property bool cursorBlink: true
+                property string tabs: "powerline"    // powerline | slant | separator | fade | hidden
+                property bool greeting: true         // fastfetch в первом окне за сессию
+            }
+
             property JsonObject island: JsonObject {
                 property string idle: "clock"        // clock | weather | greeting
                 property string clockFormat: "HH:mm"
@@ -186,6 +203,8 @@ Singleton {
                 property bool screenshotEditor: true   // сразу открывать satty после снимка
                 property bool peek: true               // раскрываться при наведении: плеер и быстрые действия
                 property bool greeting: true
+                property bool agenda: true             // ближайшее событие календаря в капсуле
+                property bool privacyToast: true       // тост, когда приложение включает микрофон/камеру/экран
             }
 
             property JsonObject windows: JsonObject {
@@ -221,6 +240,7 @@ Singleton {
             }
 
             property JsonObject notifications: JsonObject {
+                property var dndAllow: []            // кого пропускать в «Не беспокоить» (заголовок или приложение)
                 property var muted: []                // приложения без всплывашек
                 property bool dndSchedule: false
                 property string dndFrom: "23:00"
@@ -237,6 +257,8 @@ Singleton {
                 property var perWorkspace: ({})
                 property int slideshowMinutes: 30
                 property string transition: "grow"    // grow | fade | wipe | outer | wave | random
+                property bool blurWindows: false      // размывать обои, когда на воркспейсе есть окна
+                property bool liveSound: false        // звук у видеообоев
             }
 
             property JsonObject idle: JsonObject {

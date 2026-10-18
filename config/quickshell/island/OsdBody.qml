@@ -5,7 +5,10 @@ import qs.components
 import qs.services
 
 RowLayout {
+    id: root
     property bool shown: false
+    property string kind: "volume"   // volume | mic
+    readonly property bool mic: kind === "mic"
 
     opacity: shown ? 1 : 0
     visible: opacity > 0
@@ -13,20 +16,21 @@ RowLayout {
     spacing: 12
 
     MIcon {
-        icon: Audio.icon(Audio.volume, Audio.muted)
-        color: Audio.muted ? Theme.overlay1 : Theme.accent
+        icon: root.mic ? (Audio.micMuted ? "mic_off" : "mic") : Audio.icon(Audio.volume, Audio.muted)
+        color: (root.mic ? Audio.micMuted : Audio.muted) ? Theme.overlay1 : root.mic ? Theme.accent2 : Theme.accent
         size: 18
-        MouseArea { anchors.fill: parent; onClicked: Audio.toggleMute() }
+        MouseArea { anchors.fill: parent; onClicked: root.mic ? Audio.toggleMic() : Audio.toggleMute() }
     }
     Slider {
         Layout.fillWidth: true
-        value: Audio.volume
-        dim: Audio.muted
-        onMoved: v => Audio.setVolume(v)
+        value: root.mic ? Audio.micVolume : Audio.volume
+        dim: root.mic ? Audio.micMuted : Audio.muted
+        color: root.mic ? Theme.accent2 : Theme.accent
+        onMoved: v => root.mic ? Audio.setMic(v) : Audio.setVolume(v)
     }
     StyledText {
         Layout.preferredWidth: 34
         horizontalAlignment: Text.AlignRight
-        text: Math.round(Audio.volume * 100)
+        text: (root.mic ? Audio.micMuted : Audio.muted) ? "—" : Math.round((root.mic ? Audio.micVolume : Audio.volume) * 100)
     }
 }

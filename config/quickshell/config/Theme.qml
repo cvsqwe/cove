@@ -15,7 +15,7 @@ Singleton {
 
     ColorQuantizer {
         id: quant
-        source: Store.wallpaper !== "" ? "file://" + Store.wallpaper : ""
+        source: Store.still !== "" ? "file://" + Store.still : ""
         depth: 3
         rescaleSize: 96
     }

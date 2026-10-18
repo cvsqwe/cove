@@ -102,6 +102,106 @@ Item {
             }
         }
         }
+
+        // таймер: кольцо + остаток; клик — пауза, ПКМ — отменить
+        Item {
+            visible: Timers.nearest !== null
+            width: timerRow.implicitWidth
+            height: 22
+            Row {
+                id: timerRow
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 6
+                RingArc {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 18; height: 18
+                    thickness: 3
+                    value: Timers.nearest ? Timers.progress(Timers.nearest) : 0
+                    color: Theme.peach
+                }
+                StyledText {
+                    text: Timers.nearest ? (Timers.nearest.left !== undefined ? "⏸ " : "") + Timers.format(Timers.remaining(Timers.nearest)) : ""
+                    color: Theme.peach
+                    font.pixelSize: Theme.fontSizeSmall
+                    font.bold: true
+                }
+                StyledText {
+                    visible: Timers.timers.length > 1
+                    text: "+" + (Timers.timers.length - 1)
+                    color: Theme.overlay1
+                    font.pixelSize: Theme.fontSizeSmall
+                }
+            }
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: m => m.button === Qt.RightButton ? Timers.cancel(Timers.nearest.id) : Timers.togglePause(Timers.nearest.id)
+            }
+        }
+
+        // загрузки браузера: стрелка + скорость
+        Row {
+            visible: Downloads.active
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
+            MIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                icon: "download"
+                size: Theme.fontSize
+                color: Theme.teal
+                SequentialAnimation on anchors.verticalCenterOffset {
+                    running: Downloads.active && Settings.appearance.animations
+                    loops: Animation.Infinite
+                    NumberAnimation { from: -2; to: 2; duration: 700; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: 2; to: -2; duration: 700; easing.type: Easing.InOutSine }
+                }
+            }
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: (Downloads.count > 1 ? Downloads.count + " · " : "") + Downloads.human(Downloads.speed) + I18n.tr("/с")
+                color: Theme.teal
+                font.pixelSize: Theme.fontSizeSmall
+                font.bold: true
+            }
+        }
+
+        // ближайшее событие календаря, если оно в пределах часа
+        Row {
+            readonly property var ev: Agenda.next
+            readonly property int mins: ev ? Agenda.minutesTo(ev) : 9999
+            visible: ev !== null && mins <= 60 && Settings.island.agenda
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
+            MIcon { anchors.verticalCenter: parent.verticalCenter; icon: "event"; size: Theme.fontSize; color: Theme.lavender }
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: parent.mins <= 0 ? I18n.tr("сейчас") : I18n.tr("через {0} мин", parent.mins)
+                color: Theme.lavender
+                font.pixelSize: Theme.fontSizeSmall
+                font.bold: true
+            }
+        }
+
+        // приватность: кто-то пишет микрофон / снимает камеру / транслирует экран
+        Row {
+            visible: Privacy.any
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 3
+            Repeater {
+                model: [
+                    { on: Privacy.camera, color: Theme.green },
+                    { on: Privacy.mic, color: Theme.peach },
+                    { on: Privacy.screen, color: Theme.blue }
+                ]
+                Rectangle {
+                    required property var modelData
+                    visible: modelData.on
+                    width: 7; height: 7; radius: 3.5
+                    color: modelData.color
+                }
+            }
+        }
     }
 
     Item {
@@ -134,9 +234,15 @@ Item {
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: Theme.anim } }
 
+            MIcon {
+                visible: root.isl.idle === "weather" && Weather.ready
+                icon: Weather.icon
+                color: Theme.yellow
+                size: Theme.fontSize
+            }
             StyledText {
                 visible: root.isl.idle === "weather" && Weather.ready
-                text: `${Weather.icon} ${Math.round(Weather.temp)}°`
+                text: `${Math.round(Weather.temp)}°`
                 color: Theme.yellow
             }
             StyledText {

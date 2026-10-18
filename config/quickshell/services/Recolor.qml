@@ -71,7 +71,7 @@ Singleton {
         const colors = {};
         for (const k in c) colors[k] = "#" + hex(c[k]);
         wal.setText(JSON.stringify({
-            wallpaper: Store.wallpaper, alpha: "100",
+            wallpaper: Store.still, alpha: "100",
             special: { background: "#" + hex(Theme.mantle), foreground: "#" + hex(Theme.text), cursor: "#" + hex(Theme.accent) },
             colors
         }, null, 2));

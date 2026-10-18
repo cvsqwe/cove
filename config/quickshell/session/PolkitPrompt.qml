@@ -76,7 +76,7 @@ Scope {
         Rectangle {
             id: dim
             anchors.fill: parent
-            color: Theme.alpha(Theme.crust, 0.72)
+            color: Theme.alpha(Theme.crust, card.fromIsland ? 0.45 : 0.72)
             opacity: root.open ? 1 : 0
             Behavior on opacity { NumberAnimation { id: fade; duration: Theme.anim; easing.type: Easing.OutCubic } }
         }
@@ -86,7 +86,11 @@ Scope {
 
         Rectangle {
             id: card
-            anchors.centerIn: parent
+            // «из острова»: карточка выезжает сверху из-под острова; иначе — по центру экрана
+            readonly property bool fromIsland: Settings.general.polkitStyle === "island"
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: fromIsland ? (root.open ? Theme.barBottom + 10 : Theme.barBottom - height * 0.3) : (parent.height - height) / 2
+            Behavior on y { enabled: card.fromIsland; SpringAnimation { spring: Theme.springSpring; damping: Theme.springDamping; epsilon: 0.5 } }
             width: 420
             height: col.implicitHeight + 56
             radius: Theme.radius + 8
@@ -94,7 +98,7 @@ Scope {
             border.width: 1
             border.color: Theme.surface0
             opacity: root.open ? 1 : 0
-            scale: root.open ? 1 : 0.92
+            scale: root.open || fromIsland ? 1 : 0.92
             Behavior on opacity { NumberAnimation { duration: Theme.anim; easing.type: Easing.OutCubic } }
             Behavior on scale { NumberAnimation { duration: Theme.anim; easing.type: Easing.OutBack } }
 

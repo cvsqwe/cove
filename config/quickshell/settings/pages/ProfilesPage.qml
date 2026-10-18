@@ -102,6 +102,14 @@ SPage {
                 onClicked: { Profiles.save(name.text.trim()); name.text = ""; }
             }
         }
+        SRow {
+            icon: "ios_share"
+            title: I18n.tr("Файл профиля")
+            desc: I18n.tr("Один файл .cove.json с оформлением, панелью, островом, окнами, терминалом и обоями — для другого компьютера или друга")
+            separator: false
+            SButton { icon: "upload"; text: I18n.tr("Экспорт текущего"); onClicked: Profiles.exportProfile(name.text.trim()) }
+            SButton { icon: "download"; text: I18n.tr("Импорт"); onClicked: Profiles.importProfile() }
+        }
     }
 
     StyledText { text: I18n.tr("Мои профили"); font.bold: true; color: Theme.subtext1; visible: Object.keys(Settings.profiles ?? {}).length > 0 }

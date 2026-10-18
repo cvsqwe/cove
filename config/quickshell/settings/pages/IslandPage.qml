@@ -105,6 +105,18 @@ SPage {
             SSwitch { checked: page.i.screenshotEditor; onToggled: v => page.i.screenshotEditor = v }
         }
         SRow {
+            icon: "event"
+            title: I18n.tr("Ближайшее событие календаря")
+            desc: I18n.tr("За час до начала — «через 25 мин» в капсуле (календари — в разделе «Время»)")
+            SSwitch { checked: page.i.agenda; onToggled: v => page.i.agenda = v }
+        }
+        SRow {
+            icon: "privacy_tip"
+            title: I18n.tr("Кто включил микрофон или камеру")
+            desc: I18n.tr("Имя приложения на пару секунд; точки-индикаторы видны всегда")
+            SSwitch { checked: page.i.privacyToast; onToggled: v => page.i.privacyToast = v }
+        }
+        SRow {
             icon: "󰣐"
             title: I18n.tr("Приветствие при входе")
             desc: I18n.tr("«Доброе утро, …» на пару секунд после запуска")

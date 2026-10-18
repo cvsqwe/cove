@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.config
 
 // Профили оформления: готовые пресеты и свои снимки текущего вида.
@@ -9,7 +10,7 @@ import qs.config
 Singleton {
     id: root
 
-    readonly property var sections: ["appearance", "bar", "island", "windows"]
+    readonly property var sections: ["appearance", "bar", "island", "windows", "terminal"]
 
     readonly property var presets: ({
         "Уют": {
@@ -79,6 +80,68 @@ Singleton {
         }
         if (p.wallpaper) Wallpapers.set(p.wallpaper);
         Sounds.play("unlock");
+    }
+
+    // ---- профиль одним файлом (.cove.json): настройки + обои внутри, чтобы перенести на другой компьютер ----
+    function exportProfile(name: string): void {
+        // имя сохранённого профиля — он; иначе текущий вид под этим именем
+        const p = (name && (presets[name] ?? (Settings.profiles ?? {})[name])) || snapshot();
+        exporter.payload = JSON.stringify(Object.assign({ cove: 1, name: name || I18n.tr("Мой стиль") }, p));
+        exporter.running = true;
+    }
+    Process {
+        id: exporter
+        property string payload: ""
+        command: ["sh", "-c", 'exec </dev/null
+            out=$(zenity --file-selection --save --confirm-overwrite --title="$2" --filename="$HOME/$3.cove.json" 2>/dev/null) || exit 0
+            python3 - "$1" "$out" <<"PY"
+import base64, json, os, sys
+p = json.loads(sys.argv[1])
+w = p.get("wallpaper") or ""
+if w and os.path.isfile(w) and os.path.getsize(w) < 60_000_000:
+    p["wallpaperFile"] = os.path.basename(w)
+    p["wallpaperData"] = base64.b64encode(open(w, "rb").read()).decode()
+json.dump(p, open(sys.argv[2], "w"), ensure_ascii=False)
+PY
+            notify-send -a Cove -i cove "$4" "$out"', "_", payload, I18n.tr("Сохранить профиль"), I18n.tr("Профиль Cove"), I18n.tr("Профиль сохранён")]
+    }
+
+    function importProfile(): void { importer.running = true; }
+    Process {
+        id: importer
+        command: ["sh", "-c", 'exec </dev/null
+            f=$(zenity --file-selection --title="$1" --file-filter="Cove (*.cove.json) | *.cove.json *.json" 2>/dev/null) || exit 0
+            python3 - "$f" <<"PY"
+import base64, json, os, sys
+p = json.load(open(sys.argv[1]))
+data = p.pop("wallpaperData", None)
+if data:
+    d = os.path.expanduser("~/Wallpapers/Imported")
+    os.makedirs(d, exist_ok=True)
+    path = os.path.join(d, p.pop("wallpaperFile", "wallpaper.png"))
+    open(path, "wb").write(base64.b64decode(data))
+    p["wallpaper"] = path
+print(json.dumps(p, ensure_ascii=False))
+PY', "_", I18n.tr("Открыть профиль")]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (!text.trim()) return;
+                try {
+                    const p = JSON.parse(text);
+                    if (!p.cove) throw "not a cove profile";
+                    const all = Settings.copy(Settings.profiles ?? {});
+                    let name = p.name || I18n.tr("Импорт");
+                    while (all[name] || root.presets[name]) name += " ²";
+                    delete p.cove; delete p.name;
+                    all[name] = p;
+                    Settings.profiles = all;
+                    Wallpapers.refresh();
+                    Quickshell.execDetached(["notify-send", "-a", "Cove", "-i", "cove", I18n.tr("Профиль добавлен"), name]);
+                } catch (e) {
+                    Quickshell.execDetached(["notify-send", "-a", "Cove", "-i", "dialog-error", I18n.tr("Не получилось открыть профиль"), String(e)]);
+                }
+            }
+        }
     }
 
     function applyNamed(name: string): void {
