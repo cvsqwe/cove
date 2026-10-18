@@ -43,10 +43,10 @@ SPage {
         }
         // адресная строка
         Rectangle {
-            readonly property real left: pv.kind === "vertical" ? 26 : 8
-            x: pv.kind === "island" ? (pv.width - width) / 2 : left
+            readonly property real leftEdge: pv.kind === "vertical" ? 26 : 8
+            x: pv.kind === "island" ? (pv.width - width) / 2 : leftEdge
             y: pv.kind === "oneline" ? 7 : pv.kind === "vertical" ? 8 : 22
-            width: pv.kind === "island" ? 100 : pv.kind === "oneline" ? 90 : pv.width - left - 8
+            width: pv.kind === "island" ? 100 : pv.kind === "oneline" ? 90 : pv.width - leftEdge - 8
             height: pv.kind === "floating" || pv.kind === "vertical" ? 14 : 11
             radius: height / 2
             color: pv.kind === "island" ? Theme.mantle : Theme.surface0
@@ -60,11 +60,11 @@ SPage {
         }
         // страница
         Rectangle {
-            readonly property real top: pv.kind === "oneline" ? 24 : pv.kind === "vertical" ? 28 : pv.kind === "classic" ? 36 : 42
+            readonly property real topEdge: pv.kind === "oneline" ? 24 : pv.kind === "vertical" ? 28 : pv.kind === "classic" ? 36 : 42
             x: pv.card ? (pv.kind === "vertical" ? 26 : 8) : 0
-            y: top
+            y: topEdge
             width: pv.width - x - (pv.card ? 8 : 0)
-            height: pv.height - top - (pv.card ? 8 : 0)
+            height: pv.height - topEdge - (pv.card ? 8 : 0)
             radius: pv.card ? 6 : 0
             color: Theme.base
             Column {

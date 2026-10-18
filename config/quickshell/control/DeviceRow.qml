@@ -10,6 +10,8 @@ Rectangle {
     property string icon: ""
     property string title: ""
     property string sub: ""
+    property string subIcon: ""        // значок перед подписью (замок у защищённой сети)
+    property real battery: -1          // заряд 0..1 после подписи, -1 — не показывать
     property bool active: false
     property bool busy: false
     default property alias buttons: btns.data
@@ -39,7 +41,21 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 0
             StyledText { Layout.fillWidth: true; text: root.title; elide: Text.ElideRight; font.bold: root.active }
-            StyledText { Layout.fillWidth: true; visible: text !== ""; text: root.sub; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall; elide: Text.ElideRight }
+            RowLayout {
+                Layout.fillWidth: true
+                visible: root.sub !== ""
+                spacing: 4
+                MIcon { visible: root.subIcon !== ""; icon: root.subIcon; color: Theme.overlay1; size: Theme.fontSizeSmall }
+                StyledText { Layout.fillWidth: root.battery < 0; text: root.sub; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall; elide: Text.ElideRight }
+                StyledText { visible: root.battery >= 0; text: "·"; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall }
+                MIcon {
+                    visible: root.battery >= 0
+                    icon: root.battery >= 0.95 ? "battery_full" : "battery_" + Math.round(root.battery * 6) + "_bar"
+                    color: root.battery < 0.15 ? Theme.red : Theme.overlay1
+                    size: Theme.fontSizeSmall
+                }
+                StyledText { Layout.fillWidth: true; visible: root.battery >= 0; text: Math.round(root.battery * 100) + "%"; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall }
+            }
         }
         Row { id: btns; spacing: 6 }
     }

@@ -44,6 +44,8 @@ Singleton {
         L.push(`        glow = { enabled = ${w.glow} },`);
         L.push("    },");
         L.push(`    animations = { enabled = ${a.animations} },`);
+        // только xcursor: hyprcursor-тема + setcursor на xcursor роняют Hyprland 0.56 (см. ниже про курсор)
+        L.push("    cursor = { enable_hyprcursor = false },");
         L.push("    input = {");
         L.push(`        kb_layout = ${q((i.layouts ?? ["us"]).join(","))}, kb_options = ${q(i.switchKey)},`);
         L.push(`        repeat_delay = ${i.repeatDelay}, repeat_rate = ${i.repeatRate},`);
@@ -161,6 +163,7 @@ Singleton {
     function init(): void {
         Binds.ensureDefaults();
         root.lastGood = genFile.text();
+        root.appliedCursor = JSON.stringify(root.cursor);
         debounce.restart();
         idleDebounce.restart();
     }
@@ -169,8 +172,18 @@ Singleton {
 
     // курсор: env в generated.lua видят только новые процессы — применяем сразу
     // самому Hyprland (setcursor) и GTK-приложениям (gsettings)
+    // при старте не трогаем: тему уже задал env.
+    // hyprcursor выключен в generated.lua (cursor.enable_hyprcursor = false): иначе при пустом
+    // HYPRCURSOR_THEME Hyprland 0.56 сам берёт первую найденную hyprcursor-тему, и setcursor
+    // на xcursor-тему во время её анимации роняет его (tickAnimatedCursor, bad_variant_access).
+    // Сами hyprcursor-темы на всякий случай вынесены в ~/.local/share/hyprcursor-disabled.
     readonly property var cursor: [Settings.appearance.cursorTheme, Settings.appearance.cursorSize]
-    onCursorChanged: cursorDebounce.restart()
+    property string appliedCursor: ""
+    onCursorChanged: {
+        if (root.appliedCursor === "" || root.appliedCursor === JSON.stringify(root.cursor)) return;
+        root.appliedCursor = JSON.stringify(root.cursor);
+        cursorDebounce.restart();
+    }
     Timer {
         id: cursorDebounce
         interval: 250

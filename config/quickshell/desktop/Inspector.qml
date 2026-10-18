@@ -120,7 +120,8 @@ Rectangle {
                                 required property var modelData
                                 required property int index
                                 Layout.fillWidth: true
-                                StyledText { Layout.fillWidth: true; text: (modelData.d ? "󰄬 " : "󰄱 ") + modelData.t; color: modelData.d ? Theme.overlay0 : Theme.text; elide: Text.ElideRight }
+                                MIcon { icon: modelData.d ? "check_box" : "check_box_outline_blank"; color: modelData.d ? Theme.overlay0 : Theme.subtext0; size: Theme.fontSize }
+                                StyledText { Layout.fillWidth: true; text: modelData.t; color: modelData.d ? Theme.overlay0 : Theme.text; elide: Text.ElideRight }
                                 IconButton {
                                     size: 26; iconSize: 12; icon: "󰅖"; iconColor: Theme.red
                                     onClicked: { const l = JSON.parse(JSON.stringify(root.o[f.modelData.key] ?? [])); l.splice(index, 1); root.opt(f.modelData.key, l); }

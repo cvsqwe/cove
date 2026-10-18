@@ -26,7 +26,8 @@ ColumnLayout {
         ColumnLayout {
             anchors.centerIn: parent
             spacing: 0
-            StyledText { Layout.alignment: Qt.AlignHCenter; text: Focus.active ? Focus.timeText : "󰐊"; font.pixelSize: Focus.active ? 34 : 40; font.bold: true; color: Focus.active ? Theme.text : Theme.accent }
+            StyledText { Layout.alignment: Qt.AlignHCenter; visible: Focus.active; text: Focus.timeText; font.pixelSize: 34; font.bold: true; color: Theme.text }
+            MIcon { Layout.alignment: Qt.AlignHCenter; visible: !Focus.active; icon: "play_arrow"; fill: true; size: 40; color: Theme.accent }
             StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: Focus.phase === "work" ? I18n.tr("фокус") : Focus.phase === "break" ? I18n.tr("перерыв") : I18n.tr("старт")

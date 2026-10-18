@@ -849,5 +849,13 @@
  " с": " s",
  "Интерфейс шелла, стартовая страница Firefox и терминал": "Shell interface, Firefox start page and terminal",
  "Как в системе": "System",
- "имя город погода приложения терминал блокировка ночной свет фокус язык": "name city weather apps terminal lock night light focus language"
+ "имя город погода приложения терминал блокировка ночной свет фокус язык": "name city weather apps terminal lock night light focus language",
+ "Программа": "An app",
+ "{0} запрашивает права администратора": "{0} needs administrator rights",
+ "Разрешить": "Allow",
+ "Права администратора": "Administrator rights",
+ "Окно запроса прав в стиле шелла": "Shell-styled authentication dialog",
+ "Работает: запросы polkit показывает Cove": "Active: polkit requests are shown by Cove",
+ "Сейчас запросы показывает hyprpolkitagent": "Requests are currently shown by hyprpolkitagent",
+ "Запуск…": "Starting…"
 }

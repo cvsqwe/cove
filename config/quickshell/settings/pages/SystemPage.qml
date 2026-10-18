@@ -151,6 +151,20 @@ SPage {
     }
 
     SCard {
+        title: I18n.tr("Права администратора")
+        icon: "admin_panel_settings"
+        SRow {
+            icon: "shield"
+            title: I18n.tr("Окно запроса прав в стиле шелла")
+            desc: PolkitAuth.registered ? I18n.tr("Работает: запросы polkit показывает Cove")
+                : PolkitAuth.fallback ? I18n.tr("Сейчас запросы показывает hyprpolkitagent")
+                : I18n.tr("Запуск…")
+            separator: false
+            SSwitch { checked: page.g.polkit; onToggled: v => page.g.polkit = v }
+        }
+    }
+
+    SCard {
         title: I18n.tr("Ночной свет")
         icon: "󰖔"
         SRow {

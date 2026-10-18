@@ -64,9 +64,10 @@ SubPage {
                 title: netItem.modelData.name
                 active: netItem.modelData.connected
                 busy: netItem.modelData.stateChanging
+                subIcon: !netItem.modelData.connected && !netItem.modelData.stateChanging && netItem.modelData.security !== WifiSecurityType.None ? "lock" : ""
                 sub: netItem.modelData.connected ? I18n.tr("Подключено")
                     : netItem.modelData.stateChanging ? I18n.tr("Подключение…")
-                    : (netItem.modelData.security !== WifiSecurityType.None ? "󰌾 " : "") + (netItem.modelData.known ? I18n.tr("Сохранена") : Math.round(netItem.modelData.signalStrength * 100) + "%")
+                    : (netItem.modelData.known ? I18n.tr("Сохранена") : Math.round(netItem.modelData.signalStrength * 100) + "%")
                 onClicked: {
                     const n = netItem.modelData;
                     if (n.connected) n.disconnect();

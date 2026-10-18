@@ -66,6 +66,7 @@ Singleton {
                 property bool sounds: true
                 property real soundVolume: 0.6
                 property bool weather: true
+                property bool polkit: true           // свой агент polkit (запрос прав root); выкл — hyprpolkitagent
             }
 
             property JsonObject appearance: JsonObject {

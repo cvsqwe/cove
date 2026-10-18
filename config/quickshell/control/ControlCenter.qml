@@ -208,11 +208,11 @@ Drawer {
                     }
                     RowLayout {
                         spacing: 10
-                        StyledText {
+                        MIcon {
                             Layout.preferredWidth: 22
-                            text: Audio.micMuted ? "󰍭" : "󰍬"
+                            icon: Audio.micMuted ? "mic_off" : "mic"
                             color: Audio.micMuted ? Theme.overlay1 : Theme.accent2
-                            font.pixelSize: 18
+                            size: 18
                             MouseArea { anchors.fill: parent; onClicked: Audio.toggleMic() }
                         }
                         Slider { Layout.fillWidth: true; value: Audio.micVolume; dim: Audio.micMuted; color: Theme.accent2; onMoved: v => Audio.setMic(v) }

@@ -72,9 +72,9 @@ SubPage {
             title: modelData.name
             active: modelData.connected
             busy: modelData.state === BluetoothDeviceState.Connecting || modelData.state === BluetoothDeviceState.Disconnecting
-            sub: modelData.connected
-                ? I18n.tr("Подключено") + (modelData.batteryAvailable ? ` · 󰁹 ${Math.round(modelData.battery * 100)}%` : "")
+            sub: modelData.connected ? I18n.tr("Подключено")
                 : busy ? I18n.tr("Подключение…") : I18n.tr("Не подключено")
+            battery: modelData.connected && modelData.batteryAvailable ? modelData.battery : -1
             onClicked: BtAgent.toggle(modelData)
             IconButton { size: 30; iconSize: 14; icon: "󰆴"; iconColor: Theme.red; onClicked: BtAgent.forget(dr.modelData) }
         }

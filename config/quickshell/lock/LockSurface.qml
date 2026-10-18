@@ -168,12 +168,12 @@ Item {
                 }
             }
 
-            StyledText {
+            Row {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.topMargin: 6
-                text: `󰌌 ${Hypr.layout}`
-                color: Theme.overlay1
-                font.pixelSize: Theme.fontSizeSmall
+                spacing: 6
+                MIcon { anchors.verticalCenter: parent.verticalCenter; icon: "keyboard"; color: Theme.overlay1; size: Theme.fontSizeSmall }
+                StyledText { anchors.verticalCenter: parent.verticalCenter; text: Hypr.layout; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall }
             }
         }
 

@@ -308,16 +308,25 @@ SPage {
                         asynchronous: true
                         smooth: true
                     }
-                    StyledText {
+                    Row {
                         anchors.horizontalCenter: parent.horizontalCenter
                         y: 62
-                        width: parent.width - 16
-                        horizontalAlignment: Text.AlignHCenter
-                        text: (ct.active ? "󰄬 " : "") + page.prettyCursor(ct.modelData)
-                        color: ct.active ? Theme.accent : Theme.text
-                        font.pixelSize: Theme.fontSizeSmall
-                        font.bold: ct.active
-                        elide: Text.ElideRight
+                        spacing: 4
+                        MIcon {
+                            visible: ct.active
+                            anchors.verticalCenter: parent.verticalCenter
+                            icon: "check"
+                            color: Theme.accent
+                            size: Theme.fontSizeSmall
+                        }
+                        StyledText {
+                            width: Math.min(implicitWidth, ct.width - 16 - (ct.active ? Theme.fontSizeSmall + 4 : 0))
+                            text: page.prettyCursor(ct.modelData)
+                            color: ct.active ? Theme.accent : Theme.text
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.bold: ct.active
+                            elide: Text.ElideRight
+                        }
                     }
                     MouseArea { id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: page.a.cursorTheme = ct.modelData }
                 }

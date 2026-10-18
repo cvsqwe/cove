@@ -49,7 +49,7 @@ RowLayout {
             RowLayout {
                 required property var modelData
                 spacing: 10
-                StyledText { text: modelData.k; color: Theme.accent; Layout.preferredWidth: 18 }
+                MIcon { icon: modelData.k; color: Theme.accent; Layout.preferredWidth: 18 }
                 StyledText { text: modelData.v; color: Theme.subtext1 }
             }
         }

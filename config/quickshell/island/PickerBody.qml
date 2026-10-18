@@ -41,11 +41,11 @@ RowLayout {
                     text: parent.modelData
                     font.bold: parent.modelData === Picker.hex
                 }
-                StyledText {
+                MIcon {
                     anchors.right: parent.right
                     anchors.rightMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.copied === parent.modelData ? "󰄬" : "󰆏"
+                    icon: root.copied === parent.modelData ? "check" : "content_copy"
                     color: root.copied === parent.modelData ? Theme.green : Theme.overlay1
                 }
                 MouseArea { id: m; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Picker.copy(parent.modelData); root.copied = parent.modelData; } }

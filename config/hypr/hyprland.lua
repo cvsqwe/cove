@@ -53,7 +53,7 @@ local menu = "qs ipc call launcher toggle"
 -- Or execute your favorite apps at launch like this:
 --
 hl.on("hyprland.start", function ()
-    hl.exec_cmd("/usr/lib/hyprpolkitagent/hyprpolkitagent")
+    -- polkit: свой агент в шелле (services/PolkitAuth.qml), он же поднимает hyprpolkitagent как запасной
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("qs")
 end)
