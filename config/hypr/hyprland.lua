@@ -31,6 +31,8 @@ hl.monitor({
 
 -- Свои мониторы (частота, расположение) — в monitors.lua рядом: он локальный, в репозиторий Cove не входит.
 pcall(require, "monitors")
+-- Видеокарта (NVIDIA: переменные окружения) — gpu.lua, его пишет install.sh nvidia. Тоже локальный.
+pcall(require, "gpu")
 
 
 ---------------------

@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# covectl — управление Cove из терминала.
+#   covectl update       git pull, новые симлинки и пакеты, перезапуск шелла
+#   covectl doctor       проверить систему и шелл (ничего не меняет)
+#   covectl restart      перезапустить шелл (окна Cove Files не трогает)
+#   covectl reload       перечитать конфиг Hyprland (раскладка не сбрасывается)
+#   covectl log          последние строки лога шелла
+#   covectl version      версия Cove (коммит)
+#   covectl uninstall    откат (./uninstall.sh)
+set -euo pipefail
+REPO="$(cd "$(dirname "$(readlink -f "$0")")/../.." && pwd)"
+QS="$HOME/.config/quickshell"
+
+restart() {
+    pkill -f '^qs$' 2>/dev/null || true
+    sleep 0.5
+    if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+        hyprctl dispatch 'hl.dsp.exec_cmd("qs")' >/dev/null
+    else
+        setsid qs >/dev/null 2>&1 &
+    fi
+    echo "шелл перезапущен"
+}
+
+case "${1:-help}" in
+update)
+    git -C "$REPO" pull --ff-only
+    COVE_NO_RESTART=1 "$REPO/install.sh" -y packages link
+    restart
+    ;;
+doctor)
+    "$REPO/install.sh" check || true
+    if pgrep -f '^qs$' >/dev/null; then
+        echo; echo "==> Шелл"
+        bash "$QS/assets/selftest.sh" 2>&1 | tail -5
+        [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && { e=$(hyprctl configerrors); [ -n "$e" ] && echo "  ошибки конфига Hyprland: $e" || echo "  ✓ конфиг Hyprland без ошибок"; }
+    else
+        echo "  ! шелл не запущен: covectl restart"
+    fi
+    ;;
+restart) restart ;;
+reload) sh "$QS/assets/hypr-reload.sh" ;;
+log)
+    f=$(ls -t /run/user/"$(id -u)"/quickshell/by-id/*/log.qslog 2>/dev/null | head -1 || true)
+    if [ -n "$f" ]; then qs log "$f" 2>/dev/null | tail -n "${2:-40}"; else echo "лог не найден"; fi
+    ;;
+version) echo "Cove $(git -C "$REPO" describe --always --dirty 2>/dev/null) ($(git -C "$REPO" log -1 --format=%cd --date=short 2>/dev/null))" ;;
+uninstall) exec "$REPO/uninstall.sh" ;;
+*) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' ;;
+esac

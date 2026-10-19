@@ -3,6 +3,8 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" 
 
 hl.env("XCURSOR_THEME", "Adwaita")
 hl.env("XCURSOR_SIZE", "24")
+-- NVIDIA: то же окружение, что у сеанса (пишет install.sh nvidia)
+pcall(dofile, "/etc/greetd/gpu.lua")
 
 hl.config({
     input = {

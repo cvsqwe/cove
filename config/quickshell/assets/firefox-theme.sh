@@ -3,6 +3,7 @@
 # Вызывается из services/FirefoxLook.qml:
 #   firefox-theme.sh "<шрифт>" <радиус> <малый радиус> <вид> <меню 1|0> <чистая вкладка 1|0> [<домашняя страница>]
 # вид: floating | oneline | island | vertical | classic. Цвета сюда не входят — их на лету ставит Pywalfox.
+#   firefox-theme.sh off — убрать: наши userChrome/userContent и блок в user.js (для uninstall.sh)
 FONT=${1:-Adwaita Sans}; R=${2:-14}; RS=${3:-8}; LAYOUT=${4:-floating}; MENUS=${5:-1}; CLEAN=${6:-1}; HOMEPAGE=${7:-}
 TPL="$(dirname "$0")/firefox"
 [ -f "$TPL/layout-$LAYOUT.css" ] || LAYOUT=floating
@@ -27,6 +28,13 @@ for base in "${XDG_CONFIG_HOME:-$HOME/.config}/mozilla/firefox" "$HOME/.mozilla/
                   awk -F= '/^\[Profile/{p=""} /^Path=/{p=$2} /^Default=1/{print p}' "$base/profiles.ini"; } | sort -u)
     for p in $profiles; do
         dir="$base/$p"; [ -d "$dir" ] || continue
+        if [ "$1" = off ]; then
+            for f in userChrome.css userContent.css; do
+                grep -q 'Сгенерировано Cove' "$dir/chrome/$f" 2>/dev/null && rm -f "$dir/chrome/$f"
+            done
+            [ -f "$dir/user.js" ] && sed -i '/^\/\/ >>> quickshell/,/^\/\/ <<< quickshell/d' "$dir/user.js"
+            continue
+        fi
         mkdir -p "$dir/chrome"
         chrome | fill > "$dir/chrome/userChrome.css.tmp" && mv "$dir/chrome/userChrome.css.tmp" "$dir/chrome/userChrome.css"
         content | fill > "$dir/chrome/userContent.css.tmp" && mv "$dir/chrome/userContent.css.tmp" "$dir/chrome/userContent.css"

@@ -3,8 +3,9 @@
 #
 #   ./install.sh              всё по шагам, необязательное спрашивает
 #   ./install.sh -y           всё, ответы по умолчанию
+#   ./install.sh check        только проверить систему, ничего не менять
 #   ./install.sh <шаг>…       только эти шаги: packages fonts link editor shell
-#                             wallpapers cursors firefox greeter boot
+#                             nvidia wallpapers cursors firefox greeter boot
 #
 # Конфиги ставятся симлинками на этот репозиторий: `git pull` — и система обновлена.
 # Всё, что лежало на их месте, переносится в ~/.local/state/cove/backup-<дата>/ (откат — ./uninstall.sh).
@@ -16,7 +17,7 @@ STEPS=()
 for a in "$@"; do
     case "$a" in
         -y|--yes) YES=1 ;;
-        -h|--help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) STEPS+=("$a") ;;
     esac
 done
@@ -56,50 +57,219 @@ ${M}▜█▖${N}
 EOF
 
 # ---------------------------------------------------------------- пакеты
-PACKAGES=(
+# Ядро ставится всегда, группы — по выбору (с -y — все).
+CORE=(
     # Hyprland и окружение
     hyprland quickshell awww hypridle hyprlock hyprsunset hyprpicker hyprpolkitagent
     xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt6-svg qt6-imageformats qt6-multimedia qt6-wayland qt6ct
     # звук, сеть, железо
     pipewire pipewire-pulse wireplumber networkmanager bluez bluez-utils
     brightnessctl playerctl power-profiles-daemon upower lm_sensors udisks2
-    # скриншоты, запись, буфер
-    grim slurp satty gpu-screen-recorder cliphist wl-clipboard libnotify
-    # текст и QR с экрана (Super+Shift+T / Super+Shift+Q)
-    tesseract tesseract-data-rus tesseract-data-eng zbar
-    # терминал и Cove Code
-    kitty fish starship fastfetch zoxide eza bat git-delta fzf fd ripgrep yazi neovim
-    # миниатюры и просмотр (Cove Files)
-    python-pillow ffmpegthumbnailer poppler
+    # скриншоты, буфер, уведомления
+    grim slurp satty cliphist wl-clipboard libnotify
+    # терминал
+    kitty fish starship fastfetch zoxide eza bat git-delta fzf fd ripgrep
     # прочее
-    cava git curl unzip python librsvg
+    git curl unzip python librsvg
     # шрифты и темы
     adwaita-fonts ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji noto-fonts-cjk adw-gtk-theme breeze-icons
 )
-OPTIONAL=(easyeffects)
+# группа|что даёт|пакеты
+PKG_GROUPS=(
+    "record|запись экрана (Super+Alt+R)|gpu-screen-recorder"
+    "ocr|текст и QR с экрана (Super+Shift+T / Super+Shift+Q)|tesseract tesseract-data-rus tesseract-data-eng zbar"
+    "files|миниатюры и просмотр в Cove Files|python-pillow ffmpegthumbnailer poppler"
+    "tools|файловый менеджер yazi, спектр музыки в острове|yazi cava"
+    "nvim|старый Cove Code на Neovim (cove-nvim)|neovim"
+    "eq|эквалайзер EasyEffects (кнопка в центре управления)|easyeffects"
+)
+PKG_DEFAULT=(y y y y n n)
+
+missing_of() { local p; for p in "$@"; do pacman -Qq "$p" >/dev/null 2>&1 || printf '%s ' "$p"; done; }
+
+# ---------------------------------------------------------------- проверка системы
+# Ничего не меняет: что за система, что помешает шеллу, каких пакетов не хватает.
+preflight() {
+    step "Проверка системы"
+    local bad=0
+    if command -v pacman >/dev/null; then ok "Arch Linux (pacman)"
+    else warn "pacman не найден: Cove рассчитан на Arch Linux, пакеты придётся ставить вручную"; bad=1; fi
+
+    if command -v Hyprland >/dev/null; then
+        local v; v=$(Hyprland --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        if [ -n "$v" ] && [ "$(printf '%s\n0.56.0\n' "$v" | sort -V | head -1)" != 0.56.0 ]; then
+            warn "Hyprland $v: нужен 0.56 или новее (конфиг на Lua) — обновите систему: sudo pacman -Syu"; bad=1
+        else ok "Hyprland ${v:-есть}"; fi
+    else echo "  ${D}Hyprland поставится вместе с пакетами${N}"; fi
+
+    # видеокарта: NVIDIA требует своего драйвера и переменных окружения
+    local gpu; gpu=$(lspci 2>/dev/null | grep -iE 'vga|3d|display' | sed 's/.*: //' | head -2 | paste -sd ';' -)
+    if grep -qi nvidia <<<"$gpu"; then
+        warn "видеокарта NVIDIA ($gpu): установщик поставит драйвер и настроит её (шаг nvidia)"
+    elif [ -n "$gpu" ]; then ok "видеокарта: $gpu"; fi
+    # NVIDIA уже настроена? драйвер загружен и KMS включён
+    if grep -qi nvidia <<<"$gpu"; then
+        if lsmod 2>/dev/null | grep -q '^nvidia_drm'; then
+            [ "$(cat /sys/module/nvidia_drm/parameters/modeset 2>/dev/null)" = Y ] && ok "драйвер NVIDIA загружен, KMS включён" \
+                || warn "драйвер NVIDIA загружен, но KMS выключен: ./install.sh nvidia и перезагрузка"
+        else
+            warn "драйвер NVIDIA не загружен (nouveau или не поставлен): ./install.sh nvidia"
+        fi
+    fi
+
+    local free; free=$(df -Pm "$HOME" | awk 'NR==2{print $4}')
+    if [ "${free:-0}" -lt 3000 ]; then warn "мало места в домашней папке: $((free / 1024)) ГБ (обоям нужно ~1 ГБ)"; else ok "место: $((free / 1024)) ГБ свободно"; fi
+
+    if curl -fsI --max-time 6 https://github.com >/dev/null 2>&1; then ok "интернет есть"
+    else warn "нет доступа к github.com: шрифт значков, обои и курсоры не скачаются"; bad=1; fi
+
+    # что подерётся с шеллом: свой бар, уведомления, обои, polkit
+    local p rivals=()
+    for p in waybar ags eww hyprpanel mako dunst swaync fnott hyprpaper swaybg swww-daemon; do
+        pgrep -x "$p" >/dev/null 2>&1 && rivals+=("$p")
+    done
+    if [ ${#rivals[@]} -gt 0 ]; then
+        warn "сейчас запущены: ${rivals[*]} — Cove заменяет их (бар, уведомления, обои); уберите их из автозапуска Hyprland"
+    else ok "конфликтующих бара, уведомлений и обоев не запущено"; fi
+
+    local dm; dm=$(systemctl --no-legend list-unit-files 2>/dev/null | awk '$1 ~ /^(sddm|gdm|lightdm|ly|greetd)\.service$/ && $2=="enabled"{print $1}' | head -1)
+    [ -n "$dm" ] && echo "  ${D}экран входа сейчас: ${dm%.service} (свой экран входа Cove — шаг greeter, по желанию)${N}"
+
+    if command -v pacman >/dev/null; then
+        local m; m=$(missing_of "${CORE[@]}")
+        [ -n "$m" ] && echo "  Не хватает обязательных пакетов: ${D}$m${N}" || ok "обязательные пакеты на месте"
+        local g name desc pk
+        for g in "${PKG_GROUPS[@]}"; do
+            IFS='|' read -r name desc pk <<<"$g"
+            m=$(missing_of $pk)
+            [ -n "$m" ] && echo "  ${D}по желанию — $desc: $m${N}"
+        done
+    fi
+    return $bad
+}
+
+if want check || [ ${#STEPS[@]} = 0 ]; then
+    if ! preflight && [ ${#STEPS[@]} = 0 ]; then
+        ask "Есть предупреждения. Продолжить установку?" y || exit 1
+    fi
+    [ "${STEPS[*]}" = check ] && exit 0
+fi
 
 if want packages; then
     step "Пакеты"
     if ! command -v pacman >/dev/null; then
-        warn "pacman не найден — Cove рассчитан на Arch Linux. Поставьте вручную: ${PACKAGES[*]}"
+        warn "pacman не найден — поставьте вручную: ${CORE[*]}"
     else
-        missing=()
-        for p in "${PACKAGES[@]}"; do pacman -Qq "$p" >/dev/null 2>&1 || missing+=("$p"); done
-        if [ ${#missing[@]} = 0 ]; then ok "всё уже установлено"
+        todo=($(missing_of "${CORE[@]}"))
+        for i in "${!PKG_GROUPS[@]}"; do
+            IFS='|' read -r name desc pk <<<"${PKG_GROUPS[$i]}"
+            m=($(missing_of $pk))
+            [ ${#m[@]} = 0 ] && continue
+            ask "Поставить: $desc?" "${PKG_DEFAULT[$i]}" && todo+=("${m[@]}")
+        done
+        if [ ${#todo[@]} = 0 ]; then ok "всё уже установлено"
         else
-            echo "  Нужно поставить ${#missing[@]}: ${D}${missing[*]}${N}"
-            sudo pacman -S --needed "${missing[@]}"
+            echo "  Нужно поставить ${#todo[@]}: ${D}${todo[*]}${N}"
+            sudo pacman -S --needed "${todo[@]}"
             ok "установлено"
         fi
-        for p in "${OPTIONAL[@]}"; do
-            pacman -Qq "$p" >/dev/null 2>&1 && continue
-            ask "Поставить $p (эквалайзер — кнопка в центре управления)?" n && sudo pacman -S --needed --noconfirm "$p"
-        done
         if command -v systemctl >/dev/null; then
             for svc in NetworkManager bluetooth; do
                 systemctl is-enabled "$svc" >/dev/null 2>&1 && continue
                 ask "Включить службу $svc?" y && sudo systemctl enable --now "$svc" && ok "$svc включён"
             done
+        fi
+    fi
+fi
+
+# ---------------------------------------------------------------- NVIDIA
+# Драйвер по поколению карты, ранний KMS, сон, переменные окружения для Hyprland.
+# Всё системное — отдельными файлами Cove (откат: ./uninstall.sh), загрузчик не трогаем.
+ETC="${COVE_ETC:-/etc}"   # для проверки в песочнице
+nvidia_gen() { # turing | legacy | old | "" (нет NVIDIA)
+    local l; l=$(lspci -nn 2>/dev/null | grep -iE 'vga|3d|display' | grep -i nvidia | head -1)
+    [ -z "$l" ] && return
+    if grep -qE '\b(TU|GA|GH|AD|GB)[0-9]{3}' <<<"$l"; then echo turing
+    elif grep -qE '\b(GM|GP|GV)[0-9]{3}' <<<"$l"; then echo legacy
+    else echo old; fi
+}
+# вторая видеокарта (не NVIDIA): в «NVIDIA Corporation» тоже есть «ati», поэтому строки NVIDIA отбрасываем
+hybrid_gpu() { lspci 2>/dev/null | grep -iE 'vga|3d|display' | grep -vi nvidia | grep -qiE 'intel|amd|\bati\b'; }
+
+if want nvidia; then
+    gen=$(nvidia_gen)
+    if [ -z "$gen" ]; then
+        explicit && { step "NVIDIA"; ok "видеокарты NVIDIA нет, делать нечего"; }
+    elif explicit || ask "Найдена видеокарта NVIDIA. Поставить драйвер и настроить её для Hyprland?" y; then
+        step "NVIDIA"
+        echo "  ${D}$(lspci 2>/dev/null | grep -iE 'vga|3d|display' | grep -i nvidia | head -1 | sed 's/.*: //')${N}"
+        hybrid=0; hybrid_gpu && hybrid=1
+        multilib=0; grep -q '^\[multilib\]' /etc/pacman.conf 2>/dev/null && multilib=1
+        # заголовки ядер для dkms
+        heads=(); for k in linux linux-lts linux-zen linux-hardened; do pacman -Qq "$k" >/dev/null 2>&1 && heads+=("$k-headers"); done
+        drv_ok=0
+        case "$gen" in
+        turing)
+            pk=(nvidia-open-dkms nvidia-utils egl-wayland libva-nvidia-driver "${heads[@]}")
+            [ $multilib = 1 ] && pk+=(lib32-nvidia-utils)
+            [ $hybrid = 1 ] && pk+=(nvidia-prime)
+            # драйвер уже стоит (nvidia-open без dkms тоже годится) — не меняем
+            pacman -Qq nvidia-open >/dev/null 2>&1 && pk=("${pk[@]/nvidia-open-dkms}")
+            m=($(missing_of ${pk[@]}))
+            if [ ${#m[@]} -gt 0 ]; then sudo pacman -S --needed "${m[@]}" && drv_ok=1; else drv_ok=1; fi
+            [ $drv_ok = 1 ] && ok "драйвер nvidia-open"
+            ;;
+        legacy)
+            warn "GTX 9xx/10xx: основной драйвер их больше не поддерживает, нужен nvidia-580xx из AUR (последняя ветка для этих карт)"
+            aur=$(command -v yay || command -v paru || true)
+            pk=(nvidia-580xx-dkms nvidia-580xx-utils)
+            [ $multilib = 1 ] && pk+=(lib32-nvidia-580xx-utils)
+            m=($(missing_of ${pk[@]}))
+            if [ ${#m[@]} = 0 ]; then drv_ok=1; ok "драйвер nvidia-580xx уже стоит"
+            elif [ -n "$aur" ]; then
+                [ ${#heads[@]} -gt 0 ] && sudo pacman -S --needed "${heads[@]}"
+                "$aur" -S --needed egl-wayland libva-nvidia-driver "${m[@]}" && drv_ok=1 && ok "драйвер nvidia-580xx"
+            else
+                warn "нет помощника AUR (yay или paru): поставьте один из них и повторите ./install.sh nvidia"
+            fi
+            ;;
+        old)
+            warn "карта старше GTX 900: драйверов NVIDIA для неё больше нет, остаётся nouveau — Hyprland и шелл будут тормозить. Cove такие карты не поддерживает"
+            ;;
+        esac
+
+        if [ $drv_ok = 1 ]; then
+            # параметры модуля: KMS, консоль, память видеокарты сохраняется во сне
+            sudo mkdir -p "$ETC/modprobe.d" "$ETC/mkinitcpio.conf.d"
+            printf '%s\n' "# Cove (install.sh nvidia): KMS для Wayland и сон без потери картинки" \
+                "options nvidia_drm modeset=1 fbdev=1" \
+                "options nvidia NVreg_PreserveVideoMemoryAllocations=1" | sudo tee "$ETC/modprobe.d/cove-nvidia.conf" >/dev/null
+            # ранний KMS: модули в initramfs (нужно для заставки и чтобы не было чёрного экрана при входе)
+            printf '%s\n' "# Cove (install.sh nvidia): ранний KMS" \
+                "MODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)" | sudo tee "$ETC/mkinitcpio.conf.d/cove-nvidia.conf" >/dev/null
+            ok "KMS и модули: $ETC/modprobe.d/cove-nvidia.conf, $ETC/mkinitcpio.conf.d/cove-nvidia.conf"
+            if command -v limine-mkinitcpio >/dev/null; then sudo limine-mkinitcpio; else sudo mkinitcpio -P; fi && ok "initramfs пересобран"
+            for svc in nvidia-suspend nvidia-hibernate nvidia-resume; do
+                sudo systemctl enable "$svc.service" >/dev/null 2>&1 || true
+            done
+            ok "сон и гибернация (nvidia-suspend/hibernate/resume)"
+
+            # окружение Hyprland: свой локальный файл, его подхватывают hyprland.lua и экран входа
+            gpu="$HOME/.config/hypr/gpu.lua"; mkdir -p "$(dirname "$gpu")"
+            if [ $hybrid = 1 ]; then
+                # ноутбук с двумя видеокартами: рисует встроенная, NVIDIA — по запросу (prime-run)
+                printf '%s\n' "-- Cove (install.sh nvidia): ноутбук с двумя видеокартами." \
+                    "-- Рисует встроенная, игры на NVIDIA: prime-run <команда> (в Steam: prime-run %command%)." > "$gpu"
+                ok "две видеокарты: рабочий стол на встроенной, игры — prime-run"
+            else
+                printf '%s\n' "-- Cove (install.sh nvidia): окружение для NVIDIA" \
+                    'hl.env("LIBVA_DRIVER_NAME", "nvidia")' \
+                    'hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")' \
+                    'hl.env("NVD_BACKEND", "direct")' > "$gpu"
+                ok "переменные окружения: ~/.config/hypr/gpu.lua"
+            fi
+            [ -d "$ETC/greetd" ] && sudo install -m644 "$gpu" "$ETC/greetd/gpu.lua" && ok "то же для экрана входа"
+            warn "перезагрузитесь, чтобы заработал новый драйвер"
         fi
     fi
 fi
@@ -145,7 +315,7 @@ if want link; then
 -- Пример: 144 Гц на DP-1. Имена выходов: hyprctl monitors
 -- hl.monitor({ output = "DP-1", mode = "1920x1080@144", position = "0x0", scale = 1 })
 LUA
-        ok "создан ~/.config/hypr/monitors.lua — частоту и расположение экранов задайте там"
+        ok "создан ~/.config/hypr/monitors.lua; удобнее — Настройки → Мониторы"
     fi
     chmod +x "$REPO"/local/bin/* 2>/dev/null || true
     # значок Cove до первого запуска шелла (дальше его перекрашивает сам шелл)
@@ -288,9 +458,9 @@ fi
 
 # ---------------------------------------------------------------- готово
 step "Готово"
-if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -z "${COVE_NO_RESTART:-}" ]; then
     hyprctl reload >/dev/null 2>&1 || true
-    pkill -x qs 2>/dev/null || true
+    pkill -f '^qs$' 2>/dev/null || true   # только шелл: окна Cove Files — тоже qs, их не трогаем
     hyprctl dispatch 'hl.dsp.exec_cmd("qs")' >/dev/null 2>&1 || (setsid qs >/dev/null 2>&1 &)
     ok "Hyprland перечитан, шелл перезапущен"
 else
