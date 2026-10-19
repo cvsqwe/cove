@@ -229,6 +229,7 @@ Singleton {
                 property bool peek: true               // раскрываться при наведении: плеер и быстрые действия
                 property bool greeting: true
                 property bool agenda: true             // ближайшее событие календаря в капсуле
+                property bool media: true              // плеер (трек, обложка) в капсуле — выключить, например, для записи экрана
                 property bool privacyToast: true       // тост, когда приложение включает микрофон/камеру/экран
             }
 

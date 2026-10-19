@@ -35,6 +35,9 @@ Singleton {
     function openControl(page: string): void { const was = control && controlPage === page; closeAll(); controlPage = page; control = !was; }
 
     signal settingsRequested(string page)
+    // ввод в уже открытый лаунчер из скриптов: qs ipc call launcher type "=2+2"; launcher run — как Enter
+    signal launcherTyped(string text)
+    signal launcherRun()
     function openSettings(page: string): void { closeAll(); settingsRequested(page); }
 
     readonly property var names: ["launcher", "control", "overview", "wallpaper", "session", "dashboard", "notes", "cheatsheet"]
@@ -55,6 +58,8 @@ Singleton {
         function clipboard(): void { root.launcherQuery = ":"; root.toggle("launcher"); }
         function palette(): void { root.launcherQuery = "#"; root.toggle("launcher"); }
         function assistant(): void { root.launcherQuery = "*"; root.toggle("launcher"); }
+        function type(text: string): void { if (root.launcher) root.launcherTyped(text); }
+        function run(): void { if (root.launcher) root.launcherRun(); }
         function search(q: string): void { root.launcherQuery = q; root.launcher = false; root.toggle("launcher"); }   // qs ipc call launcher search "!yt "
     }
     IpcHandler {

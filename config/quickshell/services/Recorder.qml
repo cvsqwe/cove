@@ -7,6 +7,8 @@ import Quickshell.Hyprland
 import qs.config
 
 // Запись экрана через gpu-screen-recorder: весь монитор или выделенная область, со звуком системы.
+// Кодирует процессором (x264): аппаратный VCE на RX 580 зависает под gsr (ring vce0 timeout)
+// и роняет GPU со сбросом VRAM — артефакты и падение сессии.
 // Файлы — ~/Videos/Recordings. Остров показывает красную точку и таймер.
 Singleton {
     id: root
@@ -23,8 +25,8 @@ Singleton {
         const mon = Hyprland.focusedMonitor?.name ?? "screen";
         const base = `mkdir -p "${dir}"; `;
         proc.command = region
-            ? ["sh", "-c", base + `g=$(slurp -f "%wx%h+%x+%y") || exit 1; exec gpu-screen-recorder -w region -region "$g" -f 60 -a default_output -o "$1"`, "_", file]
-            : ["sh", "-c", base + `exec gpu-screen-recorder -w "$2" -f 60 -a default_output -o "$1"`, "_", file, mon];
+            ? ["sh", "-c", base + `g=$(slurp -f "%wx%h+%x+%y") || exit 1; exec gpu-screen-recorder -w region -region "$g" -f 60 -encoder cpu -k h264 -a default_output -o "$1"`, "_", file]
+            : ["sh", "-c", base + `exec gpu-screen-recorder -w "$2" -f 60 -encoder cpu -k h264 -a default_output -o "$1"`, "_", file, mon];
         seconds = 0;
         proc.running = true;
     }

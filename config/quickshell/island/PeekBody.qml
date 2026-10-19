@@ -33,7 +33,7 @@ ColumnLayout {
 
     // плеер
     RowLayout {
-        visible: Media.active
+        visible: Media.active && Settings.island.media
         Layout.alignment: Qt.AlignHCenter
         spacing: 8
         IconButton { size: 34; iconSize: 18; icon: "skip_previous"; onClicked: Media.player?.previous() }

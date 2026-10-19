@@ -111,6 +111,12 @@ SPage {
             SSwitch { checked: page.i.agenda; onToggled: v => page.i.agenda = v }
         }
         SRow {
+            icon: "music_note"
+            title: I18n.tr("Плеер в острове")
+            desc: I18n.tr("Трек и обложка в капсуле; выключите, например, на время записи экрана")
+            SSwitch { checked: page.i.media; onToggled: v => page.i.media = v }
+        }
+        SRow {
             icon: "privacy_tip"
             title: I18n.tr("Кто включил микрофон или камеру")
             desc: I18n.tr("Имя приложения на пару секунд; точки-индикаторы видны всегда")

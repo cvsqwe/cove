@@ -12,7 +12,7 @@ Item {
     id: root
 
     property var toast: null // { icon, text, color }
-    readonly property bool media: Media.active && !GameMode.active
+    readonly property bool media: Media.active && !GameMode.active && Settings.island.media
     readonly property string content: toast ? "toast" : media ? "media" : "idle"
     readonly property var isl: Settings.island
 

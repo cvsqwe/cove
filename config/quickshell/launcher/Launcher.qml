@@ -39,6 +39,12 @@ Drawer {
         clipProc.running = true;
     }
 
+    Connections {
+        target: Panels
+        function onLauncherTyped(text: string): void { search.text = text; search.cursorPosition = text.length; }
+        function onLauncherRun(): void { root.activate(root.current); }
+    }
+
     readonly property string query: search.text
     readonly property string prefix: "=/>?:#!@;+<*".includes(query.charAt(0)) ? query.charAt(0) : ""
     readonly property string term: (prefix ? query.slice(1) : query).trim()
