@@ -64,7 +64,7 @@ ShellRoot {
         Toggles.dnd; Screenshot.dir; Focus.active; Recorder.recording; Picker.hasColor;
         GameMode.active; Sysmon.cpu; BtAgent.passkey; Notes.dir; Dotfiles.repo;
         PolkitAuth.enabled; // свой агент polkit (или запасной hyprpolkitagent)
-        Timers.active; Privacy.any; Downloads.active; Agenda.next; ClipGuard.sensitive; TerminalLook.apply(); Profiles.presets; Lens.busy; Assistant.busy; // остров: таймеры, индикаторы, календарь; пароли в буфере
+        Timers.active; Privacy.any; Downloads.active; Agenda.next; ClipGuard.sensitive; TerminalLook.apply(); Profiles.presets; Lens.busy; Assistant.busy; Sun.isDay; // остров: таймеры, индикаторы, календарь; пароли в буфере
         Wallpapers.restore();
         Notifs.count; // поднимаем сервер уведомлений сразу
         System.uptime; Keyboard.caps; // ночной свет, Caps Lock

@@ -41,14 +41,23 @@ Singleton {
     // для массивов/объектов: присваиваем копию, чтобы сработали уведомления об изменении
     function copy(v): var { return JSON.parse(JSON.stringify(v)); }
 
+    Timer {
+        id: saveDelay
+        interval: 100
+        onTriggered: file.writeAdapter()
+    }
+
     FileView {
         id: file
         path: Quickshell.shellPath("settings.json")
         blockLoading: true
         watchChanges: true
-        onFileChanged: reload()
-        // до первой загрузки не пишем: иначе при старте умолчания затирают файл
-        onAdapterUpdated: if (loaded) writeAdapter()
+        // пока своя запись в очереди, файл не перечитываем: иначе он откатит ещё не записанные поля
+        onFileChanged: if (!saveDelay.running) reload()
+        // до первой загрузки не пишем: иначе при старте умолчания затирают файл.
+        // Пачка изменений подряд (город + широта + долгота) пишется одним разом: раньше каждое поле
+        // писало файл, слежение перечитывало промежуточную версию и откатывало соседние поля.
+        onAdapterUpdated: if (loaded) saveDelay.restart()
         onLoaded: root.ready = true
         onLoadFailed: err => { if (err === FileViewError.FileNotFound) writeAdapter(); root.ready = true; }
 
@@ -82,6 +91,9 @@ Singleton {
                 property string customAccent: "#cba6f7"
                 property bool coverAccent: false     // перекрашивать систему в цвет обложки трека
                 property bool light: false
+                property string themeMode: "manual"   // manual | sun (светлая от восхода до заката) | schedule
+                property string lightFrom: "07:00"    // для schedule: светлая с … до …
+                property string lightTo: "20:00"
                 property real saturation: 1.0
                 property real tint: 1.0              // насколько поверхности окрашены в акцент
                 property real panelOpacity: 1.0
@@ -283,6 +295,7 @@ Singleton {
             property JsonObject nightLight: JsonObject {
                 property int temperature: 4300
                 property bool schedule: false
+                property bool bySun: false            // расписание — от заката до восхода (services/Sun.qml)
                 property string from: "21:00"
                 property string to: "07:00"
             }

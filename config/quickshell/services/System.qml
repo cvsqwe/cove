@@ -33,7 +33,8 @@ Singleton {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            const now = Notifs.inWindow(Settings.nightLight.from, Settings.nightLight.to);
+            const n = Settings.nightLight;
+            const now = n.bySun ? !Sun.isDay : Notifs.inWindow(n.from, n.to);
             if (now !== root.lastScheduled) Store.nightLight = now; // не мешаем ручному переключению внутри окна
             root.lastScheduled = now;
         }

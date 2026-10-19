@@ -141,6 +141,26 @@ SPage {
             }
         }
         SRow {
+            icon: "brightness_auto"
+            title: I18n.tr("Менять сама")
+            desc: page.a.themeMode === "sun" ? I18n.tr("Светлая от восхода ({0}) до заката ({1}); ручное переключение держится до следующей смены", Sun.sunriseText, Sun.sunsetText)
+                : page.a.themeMode === "schedule" ? I18n.tr("Светлая в заданные часы, остальное время — тёмная")
+                : I18n.tr("Тема меняется только вручную")
+            SSegment {
+                options: [{ value: "manual", label: I18n.tr("Нет") }, { value: "sun", label: I18n.tr("По солнцу") }, { value: "schedule", label: I18n.tr("По часам") }]
+                current: page.a.themeMode
+                onPicked: v => page.a.themeMode = v
+            }
+        }
+        SRow {
+            visible: page.a.themeMode === "schedule"
+            icon: "schedule"
+            title: I18n.tr("Светлая с и до")
+            SField { implicitWidth: 80; text: page.a.lightFrom; inputMask: "99:99"; onEdited: t => page.a.lightFrom = t }
+            StyledText { text: "—"; anchors.verticalCenter: parent.verticalCenter }
+            SField { implicitWidth: 80; text: page.a.lightTo; inputMask: "99:99"; onEdited: t => page.a.lightTo = t }
+        }
+        SRow {
             icon: "󰸉"
             title: I18n.tr("Источник цветов")
             desc: page.a.palette === "wallpaper" ? I18n.tr("Акцент и оттенки поверхностей берутся из обоев") : page.a.palette === "custom" ? I18n.tr("Свой акцентный цвет") : I18n.tr("Классический Catppuccin")

@@ -206,6 +206,17 @@ SPage {
         }
         SRow {
             visible: Settings.nightLight.schedule
+            icon: "wb_twilight"
+            title: I18n.tr("Когда")
+            desc: Settings.nightLight.bySun ? I18n.tr("Сегодня с {0} до {1} — по координатам из «Погоды»", Sun.sunsetText, Sun.sunriseText) : ""
+            SSegment {
+                options: [{ value: false, label: I18n.tr("По времени") }, { value: true, label: I18n.tr("От заката до восхода") }]
+                current: Settings.nightLight.bySun
+                onPicked: v => Settings.nightLight.bySun = v
+            }
+        }
+        SRow {
+            visible: Settings.nightLight.schedule && !Settings.nightLight.bySun
             icon: "󱑆"
             title: I18n.tr("С и до")
             separator: false
