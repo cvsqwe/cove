@@ -1,139 +1,142 @@
-/* Cove Code: цвета — из палитры шелла ($primary = акцент, $cove-* — поверхности), см. palette.py */
+/* Cove Code в стиле шелла: тёмный фон ($cove-crust), на нём карточки со скруглёнными рамками,
+   сверху капсулы и остров, снизу капсулы. Цвета — из палитры шелла (palette.py). */
 
 Screen {
-    background: $background;
-    layers: base popup;
+    background: $cove-crust;
 }
 
-/* ---- строка меню ---- */
-#menubar {
+/* ---- верхняя панель: ◐ Cove · остров · действия ---- */
+#topbar {
     height: 1;
-    background: $cove-mantle;
+    margin: 0 1;
+    background: $cove-crust;
 }
-#brand {
-    color: $primary;
-    text-style: bold;
-    padding: 0 1 0 0;
-}
-#brand:hover { background: $cove-surface0; }
-.menu-item {
-    color: $foreground;
-    padding: 0 0;
-}
-.menu-item:hover {
-    background: $cove-surface0;
-    color: $primary;
-}
-#menu-spacer { width: 1fr; }
-#project {
-    color: $cove-overlay1;
-    padding: 0 1;
-}
+#top-spacer-l, #top-spacer-r { width: 1fr; }
+#topbar Pill { margin: 0 0 0 1; }
+#cove-pill { margin: 0; }
 
 /* ---- тело ---- */
-#body { height: 1fr; }
-
-#sidebar {
-    width: 30;
-    background: $cove-mantle;
-    border-right: tall $cove-surface0;
-    padding: 0 0 0 1;
-    scrollbar-size-vertical: 1;
+#body {
+    height: 1fr;
+    margin: 1 1 0 1;
 }
-#sidebar:focus { border-right: tall $primary 60%; }
+
+/* карточка дерева */
+#sidebar {
+    width: 32;
+    margin: 0 1 0 0;
+    padding: 0 1;
+    background: $cove-mantle;
+    border: round $cove-surface0;
+    border-title-color: $cove-subtext0;
+    border-title-style: bold;
+    scrollbar-size-vertical: 1;
+    scrollbar-background: $cove-mantle;
+}
+#sidebar:focus { border: round $primary 70%; border-title-color: $primary; }
+#sidebar > .tree--guides,
+#sidebar > .tree--guides-hover,
+#sidebar > .tree--guides-selected { color: $cove-mantle; }
 #sidebar > .tree--cursor { background: $cove-surface0; color: $foreground; text-style: none; }
-#sidebar:focus > .tree--cursor { background: $primary 25%; }
-#sidebar > .directory-tree--folder { color: $primary; text-style: bold; }
-#sidebar > .directory-tree--extension { color: $cove-subtext0; }
+#sidebar:focus > .tree--cursor { background: $primary 22%; color: $foreground; text-style: bold; }
+#sidebar > .tree--highlight-line { background: $cove-surface0 60%; }
+#sidebar > .directory-tree--folder { color: $foreground; text-style: bold; }
+#sidebar > .directory-tree--extension { color: $cove-overlay1; }
 #sidebar > .directory-tree--hidden { color: $cove-overlay0; }
 
-#main { width: 1fr; }
-#switcher { height: 1fr; }
+#switcher { width: 1fr; height: 1fr; }
 
-/* ---- вкладки ---- */
-Tabs { height: 1fr; }
-Tabs > ContentTabs {
-    background: $cove-mantle;
-    height: 2;
+/* карточка редактора: вкладки-капсулы, поиск, поле */
+#editor-card {
+    background: $background;
+    border: round $cove-surface0;
+    border-title-color: $cove-overlay1;
+    padding: 0;
 }
-Tabs ContentTab {
-    padding: 0 2;
-    color: $cove-overlay1;
+#editor-card:focus-within { border: round $primary 60%; border-title-color: $cove-subtext0; }
+#tabstrip {
+    height: 1;
+    margin: 0 1 1 1;
+    overflow-x: auto;
+    scrollbar-size-horizontal: 0;
 }
-Tabs ContentTab:hover { color: $foreground; background: $cove-surface0; }
-Tabs ContentTab.-active { color: $foreground; text-style: bold; background: $background; }
-Tabs ContentTab.dirty { color: $warning; }
-Tabs ContentTab.dirty.-active { color: $warning; }
-Tabs Underline > .underline--bar { color: $primary; background: $cove-mantle; }
-Tabs TabPane { padding: 0; }
+#tabstrip TabPill { margin: 0 1 0 0; }
+#editors { height: 1fr; }
 
 CoveTextArea {
     border: none;
-    padding: 0;
+    padding: 0 1 0 0;
     height: 1fr;
+    background: $background;
     scrollbar-size-vertical: 1;
     scrollbar-size-horizontal: 1;
+    scrollbar-background: $background;
 }
 CoveTextArea:focus { border: none; }
 
-/* ---- поиск ---- */
+/* ---- поиск: две компактные строки над текстом ---- */
 #findbar {
     height: auto;
-    background: $cove-mantle;
-    border-top: tall $cove-surface0;
+    margin: 0 1 1 1;
     padding: 0 1;
+    background: $cove-mantle;
 }
-.find-row { height: 3; }
-.find-row Input { width: 1fr; border: tall $cove-surface0; background: $background; }
-.find-row Input:focus { border: tall $primary; }
-#find-count { width: 12; content-align: center middle; height: 3; color: $cove-overlay1; }
+.find-row { height: 1; }
+.find-icon { width: 3; color: $primary; }
+.find-row Input { width: 1fr; background: $cove-mantle; color: $foreground; }
+.find-row Input:focus { background: $cove-surface0; }
+#find-count { width: 12; content-align: center middle; color: $cove-overlay1; }
 Button.small {
-    min-width: 5;
+    min-width: 3;
     width: auto;
-    height: 3;
-    border: none;
-    background: $cove-surface0;
+    height: 1;
     margin: 0 0 0 1;
+    padding: 0 1;
+    background: $cove-surface0;
+    color: $foreground;
 }
 Button.small:hover { background: $cove-surface1; }
 
-/* ---- строка состояния ---- */
+/* ---- строка состояния: путь слева, капсулы справа ---- */
 #statusbar {
     height: 1;
-    background: $cove-mantle;
-    color: $cove-subtext0;
+    margin: 1 1 0 1;
+    background: $cove-crust;
 }
-#st-path { padding: 0 1; color: $foreground; }
+#st-path { padding: 0 1; }
 #st-spacer { width: 1fr; }
-.st-item { padding: 0 1; }
-.st-item:hover { background: $cove-surface0; color: $primary; }
-#st-branch { color: $secondary; }
+#statusbar Pill { margin: 0 0 0 1; }
 
-/* ---- стартовый экран ---- */
+/* ---- стартовый экран как лаунчер ---- */
 #dashboard {
+    background: $background;
+    border: round $cove-surface0;
     align: center middle;
-    padding: 2 0;
+    padding: 1 0;
 }
-#logo { color: $primary; width: auto; margin: 1 0 0 0; }
-#dash-project { color: $cove-subtext0; margin: 1 0 2 0; width: auto; }
-#dash-buttons { width: auto; height: 3; }
-#dash-buttons Button { margin: 0 1; border: none; height: 3; background: $cove-surface0; }
-#dash-buttons Button:hover { background: $cove-surface1; }
-#dash-buttons Button.-primary { background: $primary; color: $cove-crust; text-style: bold; }
-#dash-recent-title { color: $cove-overlay1; margin: 2 0 1 0; width: auto; }
-#dash-recent { width: 70; height: auto; }
-Button.recent {
-    width: 100%;
-    height: 1;
-    min-height: 1;
+#logo { color: $primary; width: auto; margin: 0 0 1 0; }
+#dash-hello { width: auto; color: $foreground; }
+#dash-project { width: auto; color: $cove-overlay1; margin: 0 0 1 0; }
+#dash-box {
+    width: 72;
+    height: auto;
+    background: $cove-mantle;
+    border: round $cove-surface1;
+    padding: 0 1;
+}
+#dash-box:focus-within { border: round $primary; }
+#dash-search { background: $cove-mantle; margin: 0 0 1 0; }
+#dash-list {
+    height: auto;
+    max-height: 10;
     border: none;
-    background: transparent;
-    content-align: left middle;
-    text-align: left;
-    color: $foreground;
-    text-style: none;
+    background: $cove-mantle;
+    padding: 0;
 }
-Button.recent:hover, Button.recent:focus { background: $cove-surface0; color: $primary; }
+#dash-list > .option-list--option-highlighted { background: $primary 22%; color: $foreground; }
+#dash-list > .option-list--option-hover { background: $cove-surface0; }
+#dash-buttons { width: auto; height: 1; margin: 1 0 0 0; }
+#dash-buttons Pill { margin: 0 1; }
 
 /* ---- диалоги ---- */
 .dialog-screen {

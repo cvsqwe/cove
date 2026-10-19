@@ -12,16 +12,19 @@ from textual import on, work
 from textual.app import App, ComposeResult, SystemCommand
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
-from textual.widgets import ContentSwitcher, TabbedContent, TabPane, TextArea
-from textual.widgets._tabbed_content import ContentTab
+from rich.style import Style
+from rich.text import Text
+from textual.widgets import ContentSwitcher, TextArea
 
 from . import palette
 from .dialogs import SEPARATOR, Ask, MenuItem, PopupMenu, Prompt, QuickOpen
 from .editor import LANGUAGE_LABEL, Buffer, CoveTextArea, make_editor, read_file
-from .widgets import Dashboard, FindBar, MenuBar, Sidebar, StatusBar
+from . import icons
+from .widgets import Dashboard, FindBar, Pill, Sidebar, StatusBar, TabStrip, TopBar, short_path
 
-STATE = Path.home() / ".local/state/cove/code.json"
-STATUS = Path.home() / ".cache/cove/status.json"
+# COVE_CODE_STATE / COVE_CODE_STATUS — для тестов, чтобы не трогать настоящие недавние файлы и панель
+STATE = Path(os.environ.get("COVE_CODE_STATE") or Path.home() / ".local/state/cove/code.json")
+STATUS = Path(os.environ.get("COVE_CODE_STATUS") or Path.home() / ".cache/cove/status.json")
 
 
 def home_short(p: Path | str) -> str:
@@ -49,16 +52,6 @@ def git_branch(root: Path) -> str:
     return s[16:] if s.startswith("ref: refs/heads/") else s[:7]
 
 
-class Tabs(TabbedContent):
-    """Вкладки файлов: средняя кнопка мыши закрывает."""
-
-    def on_click(self, e) -> None:
-        w = e.widget
-        if e.button == 2 and isinstance(w, ContentTab):
-            e.stop()
-            self.app.close_buffer(ContentTab.sans_prefix(w.id).removeprefix("pane-"))
-
-
 class CoveCode(App):
     CSS_PATH = "app.tcss"
     TITLE = "Cove Code"
@@ -81,6 +74,7 @@ class CoveCode(App):
         Binding("ctrl+pagedown,ctrl+tab", "next_tab(1)", show=False, priority=True),
         Binding("ctrl+pageup,ctrl+shift+tab", "next_tab(-1)", show=False, priority=True),
         Binding("ctrl+shift+p", "command_palette", show=False, priority=True),
+        Binding("f10", "menu", show=False, priority=True),
     ] + [Binding(f"alt+{i}", f"tab_index({i})", show=False, priority=True) for i in range(1, 10)]
 
     def __init__(self, target: Path | None = None):
@@ -92,6 +86,9 @@ class CoveCode(App):
             self.root = git_root(target.parent) or target.parent
             self.open_first = target
         self.buffers: dict[str, Buffer] = {}
+        self.order: list[str] = []          # порядок вкладок (id буферов)
+        self.active: str | None = None
+        self.pal = palette.load()
         self.state = self.load_state()
         self.theme_serial = 0
         self.palette_mtime = 0.0
@@ -117,14 +114,15 @@ class CoveCode(App):
 
     # ---------------------------------------------------------------- окно
     def compose(self) -> ComposeResult:
-        yield MenuBar(id="menubar")
+        yield TopBar(id="topbar")
         with Horizontal(id="body"):
             yield Sidebar(self.root, id="sidebar")
-            with Vertical(id="main"):
-                with ContentSwitcher(initial="dashboard", id="switcher"):
-                    yield Dashboard(self.root, self.state.get("recent", []), id="dashboard")
-                    yield Tabs(id="tabs")
-                yield FindBar(id="findbar")
+            with ContentSwitcher(initial="dashboard", id="switcher"):
+                yield Dashboard(self.root, self.state.get("recent", []), id="dashboard")
+                with Vertical(id="editor-card"):
+                    yield TabStrip(id="tabstrip")
+                    yield FindBar(id="findbar")
+                    yield ContentSwitcher(id="editors")
         yield StatusBar(id="statusbar")
 
     def on_mount(self) -> None:
@@ -135,7 +133,8 @@ class CoveCode(App):
         self.query_one(FindBar).display = False
         self.query_one(Sidebar).display = self.state.get("sidebar", True)
         self.update_branch()
-        self.query_one("#project").update(f" {self.root.name} ")
+        self.query_one(Sidebar).show_root = False
+        self.update_titles()
         if self.open_first:
             self.open_path(self.open_first)
         else:
@@ -158,28 +157,38 @@ class CoveCode(App):
         name = f"cove-{self.theme_serial}"
         self.register_theme(palette.app_theme(p, name))
         self.theme = name
+        self.pal = p
         self.editor_theme = palette.editor_theme(p, name)
         for ta in self.query(CoveTextArea):
             ta.register_theme(self.editor_theme)
             ta.theme = name
+        # капсулы и значки рисуются цветами палитры напрямую — перерисовать
+        for w in self.query(Pill):
+            w.refresh()
+        self.query_one(Sidebar).refresh()
+        if not force:
+            self.query_one(Dashboard).show_items(self.query_one("#dash-search").value.strip())
 
     # ---------------------------------------------------------------- буферы и вкладки
-    @property
-    def tabs(self) -> Tabs:
-        return self.query_one(Tabs)
-
     def current(self) -> tuple[Buffer, CoveTextArea] | None:
-        active = self.tabs.active
-        if not active:
-            return None
-        bid = active.removeprefix("pane-")
-        buf = self.buffers.get(bid)
+        bid = self.active
+        buf = self.buffers.get(bid or "")
         if not buf:
             return None
         try:
             return buf, self.query_one(f"#{bid}", CoveTextArea)
         except Exception:
             return None
+
+    def activate(self, bid: str) -> None:
+        if bid not in self.buffers:
+            return
+        self.active = bid
+        self.query_one("#switcher", ContentSwitcher).current = "editor-card"
+        self.query_one("#editors", ContentSwitcher).current = bid
+        self.sync_tabs()
+        self.refresh_status()
+        self.call_after_refresh(self.focus_editor)
 
     def find_buffer(self, path: Path) -> Buffer | None:
         return next((b for b in self.buffers.values() if b.path == path), None)
@@ -188,8 +197,7 @@ class CoveCode(App):
         path = path.expanduser().resolve()
         existing = self.find_buffer(path)
         if existing:
-            self.tabs.active = f"pane-{existing.id}"
-            self.query_one(f"#{existing.id}", CoveTextArea).focus()
+            self.activate(existing.id)
             return
         if path.is_dir():
             self.set_root(path)
@@ -212,32 +220,39 @@ class CoveCode(App):
 
     def add_buffer(self, buf: Buffer, text: str) -> None:
         self.buffers[buf.id] = buf
+        # новая вкладка — справа от текущей
+        i = self.order.index(self.active) + 1 if self.active in self.order else len(self.order)
+        self.order.insert(i, buf.id)
         ta = make_editor(buf, text, self.editor_theme.name)
         ta.register_theme(self.editor_theme)
         ta.theme = self.editor_theme.name
-        pane = TabPane(buf.title, ta, id=f"pane-{buf.id}")
-        self.query_one(ContentSwitcher).current = "tabs"
+        self.query_one("#editors", ContentSwitcher).mount(ta)
+        self.call_after_refresh(lambda: self.activate(buf.id))
 
-        def ready() -> None:
-            self.tabs.active = pane.id
-            ta.focus()
-            self.update_tab(buf)
-            self.refresh_status()
-        self.tabs.add_pane(pane)
-        self.call_after_refresh(ready)
+    def sync_tabs(self) -> None:
+        self.query_one(TabStrip).sync([
+            {"id": bid, "title": self.buffers[bid].title, "path": self.buffers[bid].path,
+             "dirty": self.is_dirty(self.buffers[bid]), "active": bid == self.active}
+            for bid in self.order if bid in self.buffers
+        ])
+        self.update_titles()
 
     def update_tab(self, buf: Buffer) -> None:
-        try:
-            ta = self.query_one(f"#{buf.id}", CoveTextArea)
-            tab = self.tabs.get_tab(f"pane-{buf.id}")
-        except Exception:
-            return
-        dirty = ta.text != buf.saved_text
-        tab.label = ("● " if dirty else "") + buf.title
-        if dirty:
-            tab.add_class("dirty")
+        self.sync_tabs()
+
+    def update_titles(self) -> None:
+        """Заголовки карточек: проект над деревом, путь-«хлебные крошки» над редактором."""
+        self.query_one(Sidebar).border_title = f"{icons.FOLDER} {self.root.name}"
+        cur = self.current()
+        card = self.query_one("#editor-card")
+        if cur and cur[0].path:
+            try:
+                parts = cur[0].path.relative_to(self.root).parts
+            except ValueError:
+                parts = (home_short(cur[0].path),)
+            card.border_title = " › ".join(parts)
         else:
-            tab.remove_class("dirty")
+            card.border_title = "Новый файл" if cur else ""
 
     def is_dirty(self, buf: Buffer) -> bool:
         try:
@@ -259,17 +274,26 @@ class CoveCode(App):
             self.push_screen(Ask("Сохранить изменения?", f"В «{buf.title}» есть несохранённые правки.",
                                  [("cancel", "Отмена", "default"), ("discard", "Не сохранять", "error"), ("save", "Сохранить", "primary")]), answer)
             return
+        i = self.order.index(bid)
+        self.order.remove(bid)
         del self.buffers[bid]
-        self.tabs.remove_pane(f"pane-{bid}")
-        if not self.buffers:
+        self.query_one(f"#{bid}", CoveTextArea).remove()
+        if not self.order:
+            self.active = None
+            self.sync_tabs()
             self.show_dashboard()
+        elif self.active == bid:
+            self.activate(self.order[min(i, len(self.order) - 1)])
+        else:
+            self.sync_tabs()
         self.call_after_refresh(self.refresh_status)
 
     def show_dashboard(self) -> None:
         dash = self.query_one(Dashboard)
         dash.project, dash.recent = self.root, self.state.get("recent", [])
+        dash.files = None
         dash.refresh(recompose=True)   # свежие «недавние» и папка проекта
-        self.query_one(ContentSwitcher).current = "dashboard"
+        self.query_one("#switcher", ContentSwitcher).current = "dashboard"
         self.query_one(Sidebar).focus()
 
     # ---------------------------------------------------------------- сохранение
@@ -358,7 +382,7 @@ class CoveCode(App):
     def set_root(self, path: Path) -> None:
         self.root = path
         self.query_one(Sidebar).path = path
-        self.query_one("#project").update(f" {path.name} ")
+        self.update_titles()
         self.update_branch()
         if not self.buffers:
             self.show_dashboard()
@@ -370,18 +394,14 @@ class CoveCode(App):
             self.close_buffer(cur[0].id)
 
     def action_next_tab(self, d: int) -> None:
-        panes = [p.id for p in self.tabs.query(TabPane)]
-        if len(panes) < 2:
+        if len(self.order) < 2:
             return
-        i = panes.index(self.tabs.active) if self.tabs.active in panes else 0
-        self.tabs.active = panes[(i + d) % len(panes)]
-        self.focus_editor()
+        i = self.order.index(self.active) if self.active in self.order else 0
+        self.activate(self.order[(i + d) % len(self.order)])
 
     def action_tab_index(self, n: int) -> None:
-        panes = [p.id for p in self.tabs.query(TabPane)]
-        if n - 1 < len(panes):
-            self.tabs.active = panes[n - 1]
-            self.focus_editor()
+        if n - 1 < len(self.order):
+            self.activate(self.order[n - 1])
 
     def focus_editor(self) -> None:
         cur = self.current()
@@ -577,19 +597,42 @@ class CoveCode(App):
             return [MenuItem("К строке…", "goto_line", "Ctrl+G", has), MenuItem("Быстро открыть файл…", "quick_open", "Ctrl+P"), SEPARATOR,
                     MenuItem("Следующая вкладка", "next_tab(1)", "Ctrl+PgDn", has), MenuItem("Предыдущая вкладка", "next_tab(-1)", "Ctrl+PgUp", has)]
         if menu == "cove":
-            return [MenuItem("Папка проекта в Cove Files", "reveal:" + str(self.root), "", bool(shutil.which("cove-files"))),
+            return [MenuItem("Все команды", "command_palette", "F1"),
+                    MenuItem("Папка проекта в Cove Files", "reveal:" + str(self.root), "", bool(shutil.which("cove-files"))),
                     MenuItem("Терминал в папке проекта", "terminal:" + str(self.root)), SEPARATOR,
                     MenuItem("Выход", "quit_app", "Ctrl+Q")]
         return []
 
-    @on(MenuBar.Opened)
-    def open_menu(self, e: MenuBar.Opened) -> None:
-        self.push_screen(PopupMenu(self.menu_items(e.menu), e.x, e.y), self.run_menu_action)
+    def action_menu(self, x: int = 1, y: int = 1) -> None:
+        items = [MenuItem("Файл", "submenu:file", "›"), MenuItem("Правка", "submenu:edit", "›"),
+                 MenuItem("Вид", "submenu:view", "›"), MenuItem("Перейти", "submenu:go", "›"), SEPARATOR,
+                 *self.menu_items("cove")]
+        self.menu_pos = (x, y)
+        self.push_screen(PopupMenu(items, x, y), self.run_menu_action)
+
+    @on(Pill.Pressed)
+    def pill_pressed(self, e: Pill.Pressed) -> None:
+        act = e.pill.action
+        if act == "menu":
+            r = e.pill.region
+            self.action_menu(r.x if r.x < self.size.width // 2 else max(0, r.x + r.width - 30), r.y + 1)
+        elif act:
+            self.run_action(act)
+
+    @on(TabStrip.Select)
+    def tab_selected(self, e: TabStrip.Select) -> None:
+        if e.close:
+            self.close_buffer(e.bid)
+        else:
+            self.activate(e.bid)
 
     def run_menu_action(self, action: str | None) -> None:
         if not action:
             return
-        if action.startswith("editor:"):
+        if action.startswith("submenu:"):
+            x, y = getattr(self, "menu_pos", (1, 1))
+            self.push_screen(PopupMenu(self.menu_items(action[8:]), x, y), self.run_menu_action)
+        elif action.startswith("editor:"):
             self.run_editor_action(action[7:])
         elif action.startswith("reveal:"):
             subprocess.Popen(["cove-files", action[7:]], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -688,6 +731,8 @@ class CoveCode(App):
             self.action_new_file()
         elif e.target == "dash-folder":
             self.action_open_folder()
+        elif e.target == "dash-commands":
+            self.action_command_palette()
         else:
             self.open_path(Path(e.target))
 
@@ -707,10 +752,6 @@ class CoveCode(App):
     def selection_changed(self, e: TextArea.SelectionChanged) -> None:
         self.refresh_status(shell=False)
 
-    @on(TabbedContent.TabActivated)
-    def tab_activated(self) -> None:
-        self.refresh_status()
-
     def update_branch(self) -> None:
         b = git_branch(self.root)
         if b != self.branch:
@@ -719,26 +760,42 @@ class CoveCode(App):
 
     def refresh_status(self, shell: bool = True) -> None:
         sb = self.query_one(StatusBar)
+        island = self.query_one("#island", Pill)
+        p = self.pal
         cur = self.current()
-        branch = f"⎇ {self.branch}" if self.branch else ""
+        branch = Text.assemble((icons.BRANCH + " ", Style(color=p["accent2"])), self.branch) if self.branch else ""
+        dirty_n = sum(1 for b in self.buffers.values() if self.is_dirty(b))
         if not cur:
-            sb.set(path=home_short(self.root), branch=branch, pos="", indent="", lang="")
+            sb.set(path=Text(home_short(self.root), style=Style(color=p["overlay1"])), branch=branch)
+            island.set(Text.assemble((icons.FOLDER + "  ", Style(color=p["accent"])), (self.root.name, Style(bold=True)),
+                                     *((("   " + icons.BRANCH + " ", Style(color=p["accent2"])), self.branch) if self.branch else ())))
         else:
             buf, ta = cur
             row, col = ta.cursor_location
             sel = ta.selected_text
-            pos = f"Стр {row + 1}, Кол {col + 1}" + (f"  ({len(sel)} выделено)" if sel else "")
+            pos = f"{row + 1}:{col + 1}" + (f"  \u00b7 {len(sel)} выд." if sel else "")
+            glyph, color = icons.for_path(buf.path)
+            dirty = ta.text != buf.saved_text
             if buf.path:
                 try:
                     shown = str(buf.path.relative_to(self.root))
                 except ValueError:
                     shown = home_short(buf.path)
             else:
-                shown = "Без имени"
-            dirty = ta.text != buf.saved_text
-            sb.set(path=("● " if dirty else "") + shown, branch=branch, pos=pos,
+                shown = "Новый файл"
+            sb.set(path=Text(shown, style=Style(color=p["overlay1"])), branch=branch, pos=pos,
                    indent="Табы" if ta.indent_type == "tabs" else f"Пробелы: {ta.indent_width}",
-                   lang=LANGUAGE_LABEL.get(ta.language or "", "Текст"))
+                   lang=Text.assemble((glyph + " ", Style(color=p[color])), LANGUAGE_LABEL.get(ta.language or "", "Текст")))
+            # остров: файл, проект, ветка, несохранённое — как остров шелла
+            parts: list = [(glyph + "  ", Style(color=p[color])), (buf.title, Style(bold=True))]
+            if dirty:
+                parts.append(("  " + icons.DOT, Style(color=p["yellow"])))
+            parts.append(("   " + self.root.name, Style(color=p["overlay1"])))
+            if self.branch:
+                parts += [("  " + icons.BRANCH + " ", Style(color=p["accent2"])), (self.branch, Style(color=p["subtext0"]))]
+            if dirty_n > (1 if dirty else 0):
+                parts.append((f"   {icons.SAVE} {dirty_n}", Style(color=p["yellow"])))
+            island.set(Text.assemble(*parts))
         if shell and not self.status_pending:
             self.status_pending = True
             self.set_timer(0.3, self.write_shell_status)
