@@ -321,7 +321,11 @@ class FindBar(Vertical):
             self.post_message(self.Replace(self.query_text, self.query_one("#replace", Input).value, bid == "replace-all"))
 
     def on_key(self, e: events.Key) -> None:
-        if e.key == "escape":
+        if e.key == "tab" and self.query_one("#replace-row").display and self.app.focused is self.query_one("#find"):
+            e.stop()
+            e.prevent_default()
+            self.query_one("#replace", Input).focus()
+        elif e.key == "escape":
             e.stop()
             self.post_message(self.Closed())
         elif e.key == "shift+enter":

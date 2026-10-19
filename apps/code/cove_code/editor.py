@@ -139,6 +139,22 @@ class CoveTextArea(TextArea):
             result = self.replace(text, *self.selection)
             self.move_cursor(result.end_location)
 
+    # ---- Enter с отступом: как у строки выше, после : { ( [ — на уровень глубже ----
+    async def _on_key(self, event) -> None:
+        if event.key != "enter" or self.read_only:
+            return   # остальное — обработчик TextArea (Textual вызывает его сам по цепочке классов)
+        event.prevent_default()
+        event.stop()
+        row, col = self.cursor_location
+        line = self.document.get_line(row)
+        indent = line[: len(line) - len(line.lstrip())]
+        before = line[:col].rstrip()
+        if before.endswith((":", "{", "(", "[")):
+            indent += "\t" if self.indent_type == "tabs" else " " * self.indent_width
+        start, end = self.selection
+        result = self.replace("\n" + indent, start, end)
+        self.move_cursor(result.end_location)
+
     # ---- правка строк ----
     def action_duplicate_line(self) -> None:
         row, col = self.cursor_location

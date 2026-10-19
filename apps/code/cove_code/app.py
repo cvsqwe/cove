@@ -73,7 +73,7 @@ class CoveCode(App):
         Binding("alt+z", "toggle_wrap", "Перенос", priority=True),
         Binding("ctrl+pagedown,ctrl+tab", "next_tab(1)", show=False, priority=True),
         Binding("ctrl+pageup,ctrl+shift+tab", "next_tab(-1)", show=False, priority=True),
-        Binding("ctrl+shift+p", "command_palette", show=False, priority=True),
+        Binding("f1,ctrl+shift+p", "command_palette", show=False, priority=True),
         Binding("f10", "menu", show=False, priority=True),
     ] + [Binding(f"alt+{i}", f"tab_index({i})", show=False, priority=True) for i in range(1, 10)]
 
@@ -127,7 +127,7 @@ class CoveCode(App):
 
     def on_mount(self) -> None:
         self.apply_palette(force=True)
-        self.set_interval(1.5, self.apply_palette)
+        self.set_interval(0.5, self.apply_palette)   # дёшево: только mtime файла
         self.set_interval(2.0, self.check_disk)
         self.set_interval(5.0, self.update_branch)
         self.query_one(FindBar).display = False
