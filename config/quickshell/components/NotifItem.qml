@@ -5,17 +5,23 @@ import Quickshell.Services.Notifications
 import qs.config
 import qs.services
 
-// Содержимое уведомления: иконка, приложение, заголовок, текст, кнопки действий.
-// Используется в острове и в истории центра управления.
+// Содержимое уведомления: иконка, приложение, заголовок, текст, кнопки действий, ответ.
+// notification — живое уведомление (остров) или запись истории Notifs.list (центр управления):
+// у записи живой объект в .n, после перезагрузки его нет — остаётся текст без кнопок.
 ColumnLayout {
     id: root
 
     required property var notification
     property int bodyLines: 3
     property bool compact: false
+    property bool canReply: true        // в острове нет фокуса клавиатуры — отвечают из центра управления
+    property bool replying: false
 
+    readonly property bool isRecord: notification?.key !== undefined
+    readonly property var live: isRecord ? notification.n : notification
     readonly property bool critical: notification?.urgency === NotificationUrgency.Critical
-    readonly property var buttons: (notification?.actions ?? []).filter(a => a.identifier !== "default")
+    readonly property var buttons: (live?.actions ?? []).filter(a => a.identifier !== "default")
+    readonly property bool hasReply: canReply && (live?.hasInlineReply ?? false)
 
     spacing: 6
 
@@ -60,6 +66,12 @@ ColumnLayout {
                     font.pixelSize: Theme.fontSizeSmall
                     elide: Text.ElideRight
                 }
+                StyledText {
+                    visible: root.isRecord
+                    text: Notifs.ago(root.notification?.time ?? 0)
+                    color: Theme.overlay0
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                }
                 MIcon {
                     icon: "󰅖"
                     color: close.containsMouse ? Theme.red : Theme.overlay1
@@ -69,7 +81,7 @@ ColumnLayout {
                         anchors.margins: -5
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: root.notification.dismiss()
+                        onClicked: Notifs.dismiss(root.notification)
                     }
                 }
             }
@@ -98,8 +110,30 @@ ColumnLayout {
 
     Flow {
         Layout.fillWidth: true
-        visible: root.buttons.length > 0
+        visible: root.buttons.length > 0 || (root.hasReply && !root.replying)
         spacing: 6
+
+        Rectangle {
+            visible: root.hasReply && !root.replying
+            implicitWidth: replyRow.implicitWidth + 22
+            implicitHeight: 28
+            radius: Theme.radiusSmall
+            color: replyBtn.containsMouse ? Theme.alpha(Theme.accent, 0.3) : Theme.alpha(Theme.accent, 0.16)
+            Row {
+                id: replyRow
+                anchors.centerIn: parent
+                spacing: 6
+                MIcon { anchors.verticalCenter: parent.verticalCenter; icon: "reply"; size: 14; color: Theme.accent }
+                StyledText { anchors.verticalCenter: parent.verticalCenter; text: I18n.tr("Ответить"); font.pixelSize: Theme.fontSizeSmall }
+            }
+            MouseArea {
+                id: replyBtn
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: { root.replying = true; Qt.callLater(() => replyField.forceActiveFocus()); }
+            }
+        }
 
         Repeater {
             model: root.buttons
@@ -127,4 +161,27 @@ ColumnLayout {
             }
         }
     }
+
+    // ответ прямо из уведомления (мессенджеры с inline-reply)
+    RowLayout {
+        Layout.fillWidth: true
+        visible: root.replying
+        spacing: 6
+        SField {
+            id: replyField
+            Layout.fillWidth: true
+            placeholderText: root.live?.inlineReplyPlaceholder || I18n.tr("Ответ…")
+            Keys.onEscapePressed: { text = ""; root.replying = false; }
+            onAccepted: send()
+            function send(): void {
+                const t = text.trim();
+                if (!t || !root.live) return;
+                root.live.sendInlineReply(t);
+                text = "";
+                root.replying = false;
+            }
+        }
+        IconButton { size: 32; iconSize: 15; icon: "send"; active: true; onClicked: replyField.send() }
+    }
+    onLiveChanged: if (!live) replying = false
 }

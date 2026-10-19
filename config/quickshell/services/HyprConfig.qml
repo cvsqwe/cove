@@ -51,9 +51,12 @@ Singleton {
         L.push(`        repeat_delay = ${i.repeatDelay}, repeat_rate = ${i.repeatRate},`);
         L.push(`        sensitivity = ${i.sensitivity}, accel_profile = ${q(i.accel)},`);
         L.push(`        natural_scroll = ${i.naturalScroll}, follow_mouse = ${i.followMouse},`);
+        L.push(`        touchpad = { tap_to_click = ${i.tapToClick}, natural_scroll = ${i.tpNatural}, disable_while_typing = ${i.tpTyping},`);
+        L.push(`                     clickfinger_behavior = ${i.tpClickfinger}, scroll_factor = ${Number(i.tpScroll).toFixed(2)} },`);
         L.push("    },");
         L.push("})");
         L.push("");
+        if (i.gestures) L.push(`hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })`, "");
 
         const style = { popin: "popin 87%", slide: "slide", gnomed: "gnomed", fade: "popin 100%" }[w.animation] ?? "popin 87%";
         const sp = Math.max(0.1, a.animSpeed);
@@ -212,6 +215,7 @@ Singleton {
         Settings.windows.dimInactive, Settings.windows.dimStrength, Settings.windows.glow, Settings.windows.layout, Settings.windows.animation,
         JSON.stringify(Settings.input.layouts), Settings.input.switchKey, Settings.input.repeatDelay, Settings.input.repeatRate,
         Settings.input.sensitivity, Settings.input.accel, Settings.input.naturalScroll, Settings.input.followMouse,
+        Settings.input.tapToClick, Settings.input.tpNatural, Settings.input.tpTyping, Settings.input.tpClickfinger, Settings.input.tpScroll, Settings.input.gestures,
         Settings.appearance.animations, Settings.appearance.animSpeed, Settings.appearance.cursorTheme, Settings.appearance.cursorSize, Settings.appearance.iconTheme,
         Settings.bar.bodyOpacity, Settings.bar.style, JSON.stringify(Settings.displays.monitors),
         Settings.general.terminal, Settings.general.browser, Settings.general.fileManager, Settings.general.editor,

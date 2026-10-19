@@ -81,9 +81,9 @@ PKG_GROUPS=(
     "files|миниатюры и просмотр в Cove Files|python-pillow ffmpegthumbnailer poppler"
     "tools|файловый менеджер yazi, спектр музыки в острове|yazi cava"
     "nvim|старый Cove Code на Neovim (cove-nvim)|neovim"
-    "eq|эквалайзер EasyEffects (кнопка в центре управления)|easyeffects"
+    "eq|выравнивание громкости и защита от перегруза в Настройки → Звук|lsp-plugins-lv2"
 )
-PKG_DEFAULT=(y y y y n n)
+PKG_DEFAULT=(y y y y n y)
 
 missing_of() { local p; for p in "$@"; do pacman -Qq "$p" >/dev/null 2>&1 || printf '%s ' "$p"; done; }
 

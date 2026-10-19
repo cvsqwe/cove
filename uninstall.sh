@@ -17,6 +17,11 @@ ask() { # ask "вопрос" [system] — 0 на «да»; системное с
     [[ "$a" =~ ^[YyДд] ]]
 }
 
+# звуковые эффекты Cove (Настройки → Звук) — юниты systemd-run, без шелла их некому выключить
+for u in cove-sound-out cove-sound-mic; do
+    systemctl --user stop "$u" 2>/dev/null && echo "  остановил $u" || true
+done
+
 if ask "Убрать конфиги Cove из ~/.config (вернуть прежние из бэкапа)?"; then
     while read -r src dst; do
         [[ -z "$src" || "$src" == \#* ]] && continue

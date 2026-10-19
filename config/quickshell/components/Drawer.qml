@@ -17,6 +17,9 @@ PanelWindow {
     property int drawerWidth: 400
     property int drawerHeight: 400
     property bool grabKeyboard: false
+    // клавиатура по клику в поле (пароль Wi-Fi, ответ на уведомление); режим задаётся при открытии —
+    // смена keyboardFocus у открытого слоя пересоздаёт его и сбрасывает захват фокуса (ящик закрывается)
+    property bool keyboardOnDemand: false
     // появление: slide — выезжает (растёт высота), grow — вырастает из центра, fade — проявляется
     property string anim: "slide"
     // фон: solid — сплошной, glass — полупрозрачный с размытием обоев, wallpaper — размытая обоина
@@ -48,7 +51,8 @@ PanelWindow {
     WlrLayershell.namespace: layerName
     mask: Region { item: drawer }
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: open && grabKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: !open ? WlrKeyboardFocus.None
+        : grabKeyboard ? WlrKeyboardFocus.Exclusive : keyboardOnDemand ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     HyprlandFocusGrab {
         windows: [win]

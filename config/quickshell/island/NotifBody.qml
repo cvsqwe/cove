@@ -23,6 +23,7 @@ Item {
         width: parent.width
         notification: root.n
         bodyLines: 3
+        canReply: false
     }
 
     MouseArea {

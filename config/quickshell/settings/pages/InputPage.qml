@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Io
 import qs.config
 import qs.components
 
@@ -9,6 +10,13 @@ SPage {
     subtitle: I18n.tr("Раскладки, их переключение, повтор клавиш, чувствительность.")
 
     readonly property var inp: Settings.input
+    // карточка «Тачпад» — только если он есть (или QS_TOUCHPAD=1 для проверки на компьютере)
+    property bool touchpad: false
+    Process {
+        running: true
+        command: ["sh", "-c", "if [ \"$QS_TOUCHPAD\" = 1 ] || hyprctl devices -j | grep -qi '\"name\": \"[^\"]*touchpad'; then echo yes; else echo no; fi"]
+        stdout: StdioCollector { onStreamFinished: page.touchpad = text.trim() === "yes" }
+    }
     readonly property var known: [
         { value: "us", label: I18n.tr("🇺🇸 Английская (US)") }, { value: "ru", label: I18n.tr("🇷🇺 Русская") },
         { value: "ua", label: I18n.tr("🇺🇦 Украинская") }, { value: "by", label: I18n.tr("🇧🇾 Белорусская") },
@@ -132,6 +140,48 @@ SPage {
             title: I18n.tr("Фокус следует за мышью")
             separator: false
             SSwitch { checked: page.inp.followMouse === 1; onToggled: v => page.inp.followMouse = v ? 1 : 0 }
+        }
+    }
+
+    SCard {
+        visible: page.touchpad
+        title: I18n.tr("Тачпад")
+        icon: "touchpad_mouse"
+        SRow {
+            icon: "touch_app"
+            title: I18n.tr("Касание — клик")
+            desc: I18n.tr("Лёгкое касание вместо нажатия")
+            SSwitch { checked: page.inp.tapToClick; onToggled: v => page.inp.tapToClick = v }
+        }
+        SRow {
+            icon: "swipe_vertical"
+            title: I18n.tr("Естественная прокрутка")
+            desc: I18n.tr("Как на телефоне: страница едет за пальцами")
+            SSwitch { checked: page.inp.tpNatural; onToggled: v => page.inp.tpNatural = v }
+        }
+        SRow {
+            icon: "speed"
+            title: I18n.tr("Скорость прокрутки")
+            SSlider { from: 0.2; to: 3; step: 0.1; decimals: 1; suffix: "×"; value: page.inp.tpScroll; onMoved: v => page.inp.tpScroll = v }
+        }
+        SRow {
+            icon: "ads_click"
+            title: I18n.tr("Правый клик двумя пальцами")
+            desc: I18n.tr("Иначе — нажатием в правый нижний угол")
+            SSwitch { checked: page.inp.tpClickfinger; onToggled: v => page.inp.tpClickfinger = v }
+        }
+        SRow {
+            icon: "keyboard"
+            title: I18n.tr("Не мешать при наборе")
+            desc: I18n.tr("Тачпад не реагирует, пока вы печатаете")
+            SSwitch { checked: page.inp.tpTyping; onToggled: v => page.inp.tpTyping = v }
+        }
+        SRow {
+            icon: "swipe"
+            title: I18n.tr("Жесты")
+            desc: I18n.tr("Три пальца влево-вправо — соседний воркспейс")
+            separator: false
+            SSwitch { checked: page.inp.gestures; onToggled: v => page.inp.gestures = v }
         }
     }
 }

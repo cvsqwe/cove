@@ -120,7 +120,7 @@ SPage {
         SRow {
             icon: "󰜉"
             title: I18n.tr("Перезапустить шелл")
-            SButton { text: I18n.tr("Перезапуск"); onClicked: Quickshell.execDetached(["sh", "-c", "pkill -x qs; setsid qs >/dev/null 2>&1 &"]) }
+            SButton { text: I18n.tr("Перезапуск"); onClicked: Quickshell.execDetached(["sh", "-c", "pkill -f '^qs$'; setsid qs >/dev/null 2>&1 &"]) }
         }
         SRow {
             icon: "fact_check"

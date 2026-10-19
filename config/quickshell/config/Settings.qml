@@ -25,6 +25,8 @@ Singleton {
     property alias input: data.input
     property alias notifications: data.notifications
     property alias wallpaper: data.wallpaper
+    property alias sound: data.sound
+    property alias power: data.power
     property alias idle: data.idle
     property alias nightLight: data.nightLight
     property alias focus: data.focus
@@ -115,7 +117,7 @@ Singleton {
 
             property JsonObject bar: JsonObject {
                 property var left: ["launcher", "workspaces", "window"]
-                property var right: ["tray", "updates", "sysmon", "weather", "layout", "network", "bluetooth", "volume", "notifs"]
+                property var right: ["tray", "updates", "sysmon", "weather", "layout", "network", "bluetooth", "volume", "battery", "notifs"]
                 property int workspaces: 5
                 property string workspaceStyle: "pills" // pills | dots | lines | squares | numbers | kanji | roman | icons
                 property bool workspaceOccupiedOnly: false
@@ -275,6 +277,13 @@ Singleton {
                 property string accel: "adaptive"     // adaptive | flat
                 property bool naturalScroll: false
                 property int followMouse: 1
+                // тачпад (ноутбук)
+                property bool tapToClick: true
+                property bool tpNatural: true         // естественная прокрутка на тачпаде (отдельно от мыши)
+                property bool tpTyping: true          // выключать тачпад, пока печатаете
+                property bool tpClickfinger: true     // правый клик — двумя пальцами, а не углом
+                property real tpScroll: 1.0           // скорость прокрутки
+                property bool gestures: true          // три пальца влево-вправо — воркспейсы
             }
 
             property JsonObject notifications: JsonObject {
@@ -297,6 +306,29 @@ Singleton {
                 property string transition: "grow"    // grow | fade | wipe | outer | wave | random
                 property bool blurWindows: false      // размывать обои, когда на воркспейсе есть окна
                 property bool liveSound: false        // звук у видеообоев
+            }
+
+            // звуковые эффекты (services/SoundFx.qml): свой filter-chain PipeWire вместо EasyEffects
+            property JsonObject sound: JsonObject {
+                property bool enabled: false          // эффекты на выходе
+                property var bands: []                // [{ f, g, q, type: bell|lowshelf|highshelf|lowpass|highpass|notch }]; пусто — 10 полос по нулям
+                property real preamp: 0               // дБ перед эквалайзером
+                property real bass: 0                 // подъём баса, дБ (полка 100 Гц)
+                property bool loudness: false         // выравнивание громкости (LSP autogain)
+                property real loudnessLevel: -18      // целевая громкость, LUFS
+                property bool limiter: true           // защита от перегруза (LSP limiter, −1 дБ)
+                property string preset: "flat"        // выбранный набор: id встроенного или имя своего
+                property var presets: ({})            // свои наборы: имя → { bands, preamp, bass }
+                property var devices: ({})            // выход (node.name) → набор, который на нём выбирали
+                property bool mic: false              // обработка микрофона (WebRTC)
+                property bool micNoise: true          // шумоподавление
+                property bool micGain: false          // автогромкость
+                property bool micHighpass: true       // срез гула и низких
+            }
+
+            // питание (services/Power.qml)
+            property JsonObject power: JsonObject {
+                property int saverAt: 20              // от батареи на N % и ниже — режим экономии (0 — не включать)
             }
 
             property JsonObject idle: JsonObject {

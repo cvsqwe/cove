@@ -218,6 +218,9 @@ Item {
                 spacing: 6
                 MIcon { anchors.verticalCenter: parent.verticalCenter; icon: "keyboard"; color: Theme.overlay1; size: Theme.fontSizeSmall }
                 StyledText { anchors.verticalCenter: parent.verticalCenter; text: Hypr.layout; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall }
+                Item { visible: Power.hasBattery; width: 10; height: 1 }
+                MIcon { visible: Power.hasBattery; anchors.verticalCenter: parent.verticalCenter; icon: Power.icon(); color: Power.low ? Theme.red : Theme.overlay1; size: Theme.fontSizeSmall + 1 }
+                StyledText { visible: Power.hasBattery; anchors.verticalCenter: parent.verticalCenter; text: Power.percent + "%"; color: Power.low ? Theme.red : Theme.overlay1; font.pixelSize: Theme.fontSizeSmall }
             }
         }
 

@@ -156,6 +156,12 @@ PanelWindow {
         // уровень микрофона не показываем: в звонках его постоянно крутит автоусиление (WebRTC)
         function onMicMutedChanged(): void { win.pingOsd("mic"); }
     }
+    // ---- питание: яркость и заряд ----
+    Connections {
+        target: Power
+        function onBrightnessShown(): void { win.pingOsd("brightness"); }
+        function onAlert(icon: string, text: string, tint: color): void { win.showToast(icon, text, tint, 3500); }
+    }
     function pingOsd(kind: string): void {
         if (!armed || !Settings.island.osd) return;
         osdKind = kind;

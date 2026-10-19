@@ -40,7 +40,7 @@ PanelWindow {
     readonly property var modules: ({
         launcher: launcherC, workspaces: workspacesC, window: windowC, tray: trayC, sysmon: sysmonC,
         weather: weatherC, layout: layoutC, network: networkC, bluetooth: bluetoothC, volume: volumeC,
-        mic: micC, notifs: notifsC, clock: clockC, focus: focusC, power: powerC, updates: updatesC
+        mic: micC, notifs: notifsC, clock: clockC, focus: focusC, power: powerC, updates: updatesC, battery: batteryC
     })
 
     Component {
@@ -73,6 +73,7 @@ PanelWindow {
     Component { id: focusC; FocusPill {} }
     Component { id: powerC; PowerPill {} }
     Component { id: updatesC; UpdatesPill {} }
+    Component { id: batteryC; BatteryPill {} }
 
     RectangularShadow {
         anchors.fill: body

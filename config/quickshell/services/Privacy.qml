@@ -15,6 +15,7 @@ Singleton {
     // захват звука, кроме «слушателей выхода» (визуализатор cava, запись системного звука)
     readonly property var micStreams: nodes.filter(n => n.type === PwNodeType.AudioInStream
         && n.properties["stream.capture.sink"] !== "true"
+        && !/^cove_(fx|mic)/.test(n.name ?? "")   // обработка микрофона Cove — не «кто-то слушает»
         && !/^(cava|quickshell|qs)$/i.test(n.properties["application.name"] ?? ""))
     // демонстрация экрана через xdg-desktop-portal-hyprland
     readonly property var screenStreams: nodes.filter(n => n.type === PwNodeType.VideoSource && /^xdph/i.test(n.name ?? ""))

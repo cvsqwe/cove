@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Networking
 import Quickshell.Bluetooth
+import Quickshell.Services.UPower
 import qs.config
 import qs.components
 import qs.services
@@ -15,8 +16,9 @@ Drawer {
 
     side: "right"
     drawerWidth: 430
-    drawerHeight: 760
+    drawerHeight: Math.min(920, (screen?.height ?? 1080) - 140)   // под переключателями — место для уведомлений
     open: Panels.control
+    keyboardOnDemand: true   // поле пароля Wi-Fi, ответ на уведомление
     onCloseRequested: Panels.control = false
     onOpenChanged: if (!open) resetPage.restart()
 
@@ -69,7 +71,15 @@ Drawer {
                     Layout.fillWidth: true
                     spacing: 0
                     StyledText { text: Settings.displayName; font.bold: true; font.pixelSize: Theme.fontSizeLarge }
-                    StyledText { text: I18n.tr("в работе ") + System.uptime; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall }
+                    RowLayout {
+                        spacing: 4
+                        MIcon { visible: Power.hasBattery; icon: Power.icon(); color: Power.tint(); size: Theme.fontSizeSmall + 1 }
+                        StyledText {
+                            text: Power.hasBattery ? `${Power.percent}% · ${Power.statusText}` : I18n.tr("в работе ") + System.uptime
+                            color: Power.low ? Theme.red : Theme.overlay1
+                            font.pixelSize: Theme.fontSizeSmall
+                        }
+                    }
                 }
                 IconButton { icon: "󰒓"; onClicked: Panels.openSettings("") }
                 IconButton { icon: "󰐥"; iconColor: Theme.red; onClicked: Panels.toggle("session") }
@@ -138,6 +148,25 @@ Drawer {
                 }
                 Toggle {
                     Layout.fillWidth: true
+                    visible: Power.hasProfiles
+                    icon: Power.profileInfo(Power.profile).icon
+                    label: I18n.tr("Режим питания")
+                    sub: Power.profileInfo(Power.profile).label
+                    on: Power.profile !== PowerProfile.Balanced
+                    onClicked: Power.cycleProfile()
+                }
+                Toggle {
+                    Layout.fillWidth: true
+                    icon: "graphic_eq"
+                    label: I18n.tr("Эффекты звука")
+                    sub: Settings.sound.enabled ? SoundFx.presetLabel(Settings.sound.preset) : I18n.tr("Выключены")
+                    on: Settings.sound.enabled
+                    hasMore: true
+                    onClicked: Settings.sound.enabled = !Settings.sound.enabled
+                    onMore: Panels.controlPage = "audio"
+                }
+                Toggle {
+                    Layout.fillWidth: true
                     icon: Settings.appearance.light ? "󰖙" : "󰖔"
                     label: Settings.appearance.light ? I18n.tr("Светлая тема") : I18n.tr("Тёмная тема")
                     sub: I18n.tr("Нажмите, чтобы сменить")
@@ -195,6 +224,14 @@ Drawer {
                     spacing: 10
 
                     RowLayout {
+                        visible: Power.hasBrightness
+                        spacing: 10
+                        MIcon { Layout.preferredWidth: 22; icon: Power.brightness > 0.5 ? "brightness_high" : "brightness_medium"; color: Theme.yellow; size: 18 }
+                        Slider { Layout.fillWidth: true; value: Power.brightness; color: Theme.yellow; onMoved: v => Power.setBrightness(v) }
+                        StyledText { Layout.preferredWidth: 30; horizontalAlignment: Text.AlignRight; text: Math.round(Power.brightness * 100) }
+                        Item { implicitWidth: 28 }
+                    }
+                    RowLayout {
                         spacing: 10
                         MIcon {
                             Layout.preferredWidth: 22
@@ -238,33 +275,28 @@ Drawer {
                 }
             }
 
-            ListView {
+            // по приложениям. Flickable с колонкой, а не ListView: у ListView при росте первой группы
+            // съезжает начало списка. ScriptModel сохраняет делегаты (раскрытие, начатый ответ).
+            Flickable {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                spacing: 8
-                model: Notifs.list
+                contentHeight: groupsCol.implicitHeight
                 boundsBehavior: Flickable.StopAtBounds
 
-                delegate: Rectangle {
-                    required property var modelData
-                    width: ListView.view.width
-                    implicitHeight: ni.implicitHeight + 24
-                    radius: Theme.radius
-                    color: Theme.mantle
-
-                    NotifItem {
-                        id: ni
-                        anchors.fill: parent
-                        anchors.margins: 12
-                        notification: parent.modelData
-                        compact: true
-                        bodyLines: 4
+                ColumnLayout {
+                    id: groupsCol
+                    width: parent.width
+                    spacing: 8
+                    Repeater {
+                        model: ScriptModel { values: Notifs.groups.map(g => g.app) }
+                        NotifGroup { Layout.fillWidth: true }
                     }
                 }
 
                 ColumnLayout {
-                    anchors.centerIn: parent
+                    x: (groupsCol.width - width) / 2
+                    y: 70
                     visible: Notifs.count === 0
                     spacing: 6
                     MIcon { Layout.alignment: Qt.AlignHCenter; icon: "󰂚"; color: Theme.surface2; size: 40 }

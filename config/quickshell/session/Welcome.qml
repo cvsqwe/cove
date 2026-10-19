@@ -113,6 +113,12 @@ Scope {
                                 onTextChanged: Settings.general.name = text.trim()
                             }
                         }
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 12
+                            StyledText { Layout.alignment: Qt.AlignTop; Layout.topMargin: 8; text: I18n.tr("Ваш город"); color: Theme.subtext1 }
+                            CitySearch { Layout.preferredWidth: 300 }
+                        }
                         Item { Layout.fillHeight: true }
                     }
 

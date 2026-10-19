@@ -12,6 +12,7 @@ SPage {
     subtitle: I18n.tr("Вы, ваш город, приложения по умолчанию, сон и блокировка, ночной свет и фокус.")
 
     readonly property var g: Settings.general
+    readonly property var p: Settings.power
     property var cityResults: []
 
     Process {
@@ -125,6 +126,54 @@ SPage {
                 title: modelData.label
                 separator: index < 3
                 SField { implicitWidth: 260; text: page.g[modelData.k]; placeholderText: modelData.ph; onEdited: t => page.g[modelData.k] = t }
+            }
+        }
+    }
+
+    SCard {
+        title: I18n.tr("Питание")
+        icon: "bolt"
+        SRow {
+            visible: Power.hasBattery
+            icon: Power.icon()
+            title: I18n.tr("Батарея {0}%", Power.percent)
+            desc: Power.statusText
+        }
+        SRow {
+            visible: Power.hasProfiles
+            icon: Power.profileInfo(Power.profile).icon
+            title: I18n.tr("Режим питания")
+            desc: I18n.tr("Экономия — дольше от батареи, мощность — для игр и сборки")
+            SSegment {
+                options: Power.profiles.map(p => ({ value: p.value, label: p.label }))
+                current: Power.profile
+                onPicked: v => Power.setProfile(v)
+            }
+        }
+        SRow {
+            visible: Power.hasBattery && Power.hasProfiles
+            icon: "energy_savings_leaf"
+            title: I18n.tr("Экономия на низком заряде")
+            desc: I18n.tr("От батареи на этом уровне и ниже. На зарядке вернётся прежний режим")
+            SSlider {
+                from: 0; to: 50; step: 5
+                value: page.p.saverAt
+                format: v => v > 0 ? v + "%" : I18n.tr("выкл")
+                onMoved: v => page.p.saverAt = v
+            }
+        }
+        SRow {
+            icon: "brightness_medium"
+            title: I18n.tr("Яркость экрана")
+            desc: Power.kind === "ddc" ? I18n.tr("Монитор по DDC/CI (ddcutil)")
+                : Power.kind === "backlight" ? I18n.tr("Подсветка экрана")
+                : I18n.tr("Для обычного монитора поставьте ddcutil и включите DDC/CI в меню монитора")
+            separator: false
+            SSlider {
+                visible: Power.hasBrightness
+                from: 0.01; to: 1; step: 0.01; percent: true
+                value: Power.brightness
+                onMoved: v => Power.setBrightness(v)
             }
         }
     }

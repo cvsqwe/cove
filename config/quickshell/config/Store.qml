@@ -23,6 +23,7 @@ Singleton {
     property alias bindsAdded: data.bindsAdded // новые хоткеи по умолчанию, уже добавленные к своим (services/Binds.qml)
     property alias alarms: data.alarms         // будильники [{ time: "07:30", label, days: [1..7], on }]
     property alias welcomed: data.welcomed     // Cove Welcome уже показан (session/Welcome.qml)
+    property alias savedProfile: data.savedProfile // режим питания до автоэкономии (services/Power.qml), -1 — нет
     property alias shelf: data.shelf           // полка острова [{ path, name, mime } | { text, name }] (services/Shelf.qml)
 
     // Живые обои: видео показывает слой wallpaper/LiveWallpaper.qml, а всё, что берёт обои как картинку
@@ -61,6 +62,7 @@ Singleton {
             property var bindsAdded: []
             property var shelf: []
             property bool welcomed: false
+            property int savedProfile: -1
         }
     }
 }

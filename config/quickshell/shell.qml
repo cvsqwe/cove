@@ -69,7 +69,7 @@ ShellRoot {
         Timers.active; Privacy.any; Downloads.active; Agenda.next; ClipGuard.sensitive; TerminalLook.apply(); Profiles.presets; Lens.busy; Assistant.busy; Sun.isDay; // остров: таймеры, индикаторы, календарь; пароли в буфере
         Wallpapers.restore();
         Shelf.init();
-        Shelf.init();
+        SoundFx.init(); // эквалайзер и обработка микрофона (filter-chain PipeWire)
         Notifs.count; // поднимаем сервер уведомлений сразу
         System.uptime; Keyboard.caps; // ночной свет, Caps Lock
         splash.boot();

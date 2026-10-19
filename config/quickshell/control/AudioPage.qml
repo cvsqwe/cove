@@ -12,7 +12,8 @@ SubPage {
     title: I18n.tr("Звук")
     icon: "󰕾"
 
-    readonly property var nodes: Pipewire.nodes.values.filter(n => n.audio)
+    // свои узлы эффектов (cove_fx_*, cove_mic*) — не устройства и не приложения
+    readonly property var nodes: Pipewire.nodes.values.filter(n => n.audio && !/^cove_(fx|mic)/.test(n.name ?? ""))
     readonly property var sinks: nodes.filter(n => n.isSink && !n.isStream)
     readonly property var sources: nodes.filter(n => !n.isSink && !n.isStream && !(n.name ?? "").endsWith(".monitor"))
     readonly property var streams: nodes.filter(n => n.isStream && !n.isSink)
@@ -113,10 +114,83 @@ SubPage {
         }
     }
 
+    // эффекты Cove (services/SoundFx): наборы эквалайзера, график, микрофон
+    StyledText { Layout.topMargin: 6; text: I18n.tr("Эффекты"); color: Theme.subtext1; font.bold: true; font.pixelSize: Theme.fontSizeSmall }
+    Rectangle {
+        Layout.fillWidth: true
+        implicitHeight: fx.implicitHeight + 24
+        radius: Theme.radius
+        color: Theme.mantle
+
+        ColumnLayout {
+            id: fx
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 12
+            spacing: 10
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+                MIcon { icon: "graphic_eq"; color: Settings.sound.enabled ? Theme.accent : Theme.overlay1; size: 20 }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 0
+                    StyledText { text: I18n.tr("Эквалайзер"); font.bold: true }
+                    StyledText {
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                        color: Theme.overlay1
+                        font.pixelSize: Theme.fontSizeSmall
+                        text: !Settings.sound.enabled ? I18n.tr("Выключен")
+                            : SoundFx.presetLabel(Settings.sound.preset) + (SoundFx.modified ? I18n.tr(" (изменён)") : "")
+                    }
+                }
+                SSwitch { checked: Settings.sound.enabled; onToggled: v => Settings.sound.enabled = v }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 110
+                radius: Theme.radiusSmall
+                color: Theme.crust
+                opacity: Settings.sound.enabled ? 1 : 0.6
+                EqCurve { anchors.fill: parent; anchors.margins: 4; labels: false }
+            }
+
+            Flow {
+                Layout.fillWidth: true
+                spacing: 6
+                Repeater {
+                    model: [...SoundFx.builtin.map(p => ({ id: p.id, label: p.label })), ...SoundFx.customNames.map(n => ({ id: n, label: n }))]
+                    Chip {
+                        required property var modelData
+                        implicitHeight: 28
+                        text: modelData.label
+                        active: Settings.sound.preset === modelData.id
+                        dim: active && SoundFx.modified
+                        onClicked: { SoundFx.load(modelData.id); Settings.sound.enabled = true; }
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+                MIcon { icon: "noise_control_off"; color: Settings.sound.mic ? Theme.accent2 : Theme.overlay1; size: 18 }
+                StyledText { Layout.fillWidth: true; text: I18n.tr("Шумоподавление микрофона"); font.pixelSize: Theme.fontSizeSmall + 1 }
+                SSwitch {
+                    checked: Settings.sound.mic && Settings.sound.micNoise
+                    onToggled: v => { Settings.sound.mic = v; if (v) Settings.sound.micNoise = true; }
+                }
+            }
+        }
+    }
+
     SButton {
-        Layout.topMargin: 6
-        icon: "󰥛"
-        text: I18n.tr("Эквалайзер (EasyEffects)")
-        onClicked: { Quickshell.execDetached(["easyeffects"]); Panels.control = false; }
+        icon: "tune"
+        text: I18n.tr("Все настройки звука")
+        onClicked: Panels.openSettings("sound")
     }
 }

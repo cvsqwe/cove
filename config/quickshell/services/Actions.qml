@@ -50,13 +50,15 @@ Singleton {
         { id: "shell.shotScreen", group: I18n.tr("Шелл"), icon: "󰹑", label: I18n.tr("Скриншот экрана"), lua: () => ipc("screenshot", "screen") },
         { id: "shell.shotWindow", group: I18n.tr("Шелл"), icon: "󰖯", label: I18n.tr("Скриншот окна"), lua: () => ipc("screenshot", "window") },
         { id: "shell.widgets", group: I18n.tr("Шелл"), icon: "󰖲", label: I18n.tr("Редактировать виджеты"), lua: () => ipc("desktop", "edit") },
-        { id: "shell.restart", group: I18n.tr("Шелл"), icon: "󰜉", label: I18n.tr("Перезапустить шелл"), lua: () => exec("pkill -x qs; qs") },
+        { id: "shell.restart", group: I18n.tr("Шелл"), icon: "󰜉", label: I18n.tr("Перезапустить шелл"), lua: () => exec("pkill -f '^qs$'; qs") },
 
         // ---- переключатели ----
         { id: "toggle.dnd", group: I18n.tr("Переключатели"), icon: "󰂛", label: I18n.tr("Не беспокоить"), lua: () => ipc("toggles", "dnd") },
         { id: "toggle.night", group: I18n.tr("Переключатели"), icon: "󰖔", label: I18n.tr("Ночной свет"), lua: () => ipc("toggles", "nightLight") },
         { id: "toggle.caffeine", group: I18n.tr("Переключатели"), icon: "󰅶", label: I18n.tr("Не засыпать"), lua: () => ipc("toggles", "caffeine") },
         { id: "toggle.game", group: I18n.tr("Переключатели"), icon: "󰊴", label: I18n.tr("Игровой режим"), lua: () => ipc("toggles", "gameMode") },
+        { id: "toggle.power", group: I18n.tr("Переключатели"), icon: "bolt", label: I18n.tr("Режим питания (по кругу)"), lua: () => ipc("power", "profile") },
+        { id: "toggle.effects", group: I18n.tr("Переключатели"), icon: "graphic_eq", label: I18n.tr("Звуковые эффекты"), lua: () => ipc("sound", "toggle") },
         { id: "toggle.theme", group: I18n.tr("Переключатели"), icon: "󰔎", label: I18n.tr("Светлая / тёмная тема"), lua: () => ipc("toggles", "light") },
 
         // ---- приложения ----
@@ -105,8 +107,8 @@ Singleton {
         { id: "media.play", group: I18n.tr("Медиа"), icon: "󰐎", label: I18n.tr("Пауза / играть"), lua: () => exec("playerctl play-pause") },
         { id: "media.next", group: I18n.tr("Медиа"), icon: "󰒭", label: I18n.tr("Следующий трек"), lua: () => exec("playerctl next") },
         { id: "media.prev", group: I18n.tr("Медиа"), icon: "󰒮", label: I18n.tr("Предыдущий трек"), lua: () => exec("playerctl previous") },
-        { id: "media.brightUp", group: I18n.tr("Медиа"), icon: "󰃠", label: I18n.tr("Ярче"), lua: () => exec("brightnessctl -e4 -n2 set 5%+") },
-        { id: "media.brightDown", group: I18n.tr("Медиа"), icon: "󰃞", label: I18n.tr("Темнее"), lua: () => exec("brightnessctl -e4 -n2 set 5%-") },
+        { id: "media.brightUp", group: I18n.tr("Медиа"), icon: "󰃠", label: I18n.tr("Ярче"), lua: () => ipc("brightness", "up") },
+        { id: "media.brightDown", group: I18n.tr("Медиа"), icon: "󰃞", label: I18n.tr("Темнее"), lua: () => ipc("brightness", "down") },
 
         // ---- система ----
         { id: "sys.dpms", group: I18n.tr("Система"), icon: "󰶐", label: I18n.tr("Выключить экран"), lua: () => `hl.dsp.dpms({ action = "toggle" })` },

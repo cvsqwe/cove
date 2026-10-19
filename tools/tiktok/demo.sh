@@ -108,7 +108,7 @@ kill -INT $REC; wait $REC 2>/dev/null
 # ---- вернуть всё как было ----
 cp "$D/settings.backup.json" ~/.config/quickshell/settings.json
 cp "$D/state.backup.json" ~/.local/state/quickshell/state.json
-pkill -x qs; sleep 0.5
+pkill -f '^qs$'; sleep 0.5
 hyprctl dispatch 'hl.dsp.exec_cmd("qs > ~/.config/qs.log 2>&1")' >/dev/null
 hyprctl dispatch "hl.dsp.focus({ workspace = \"$PREV_WS\" })" >/dev/null
 echo "запись: $D/raw.mp4"
