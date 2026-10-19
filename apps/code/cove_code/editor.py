@@ -8,11 +8,13 @@ from pathlib import Path
 from textual.binding import Binding
 from textual.widgets import TextArea
 
+from . import languages
+
 # расширение / имя файла → язык подсветки (tree-sitter из textual[syntax])
 LANGUAGES = {
     ".py": "python", ".pyi": "python",
     ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript", ".jsx": "javascript",
-    ".ts": "javascript", ".tsx": "javascript", ".qml": "javascript",
+    ".ts": "typescript", ".mts": "typescript", ".cts": "typescript", ".tsx": "tsx", ".qml": "qml",
     ".json": "json", ".jsonc": "json",
     ".md": "markdown", ".markdown": "markdown",
     ".toml": "toml", ".yaml": "yaml", ".yml": "yaml",
@@ -20,20 +22,29 @@ LANGUAGES = {
     ".css": "css", ".tcss": "css", ".scss": "css",
     ".sh": "bash", ".bash": "bash", ".zsh": "bash",
     ".rs": "rust", ".go": "go", ".java": "java", ".sql": "sql",
+    ".c": "c", ".h": "cpp", ".cpp": "cpp", ".cc": "cpp", ".cxx": "cpp", ".c++": "cpp", ".hpp": "cpp", ".hh": "cpp",
+    ".hxx": "cpp", ".ino": "cpp", ".ipp": "cpp", ".tpp": "cpp",
+    ".lua": "lua", ".cs": "csharp", ".php": "php", ".rb": "ruby", ".mk": "make", ".cmake": "cmake",
+    ".glsl": "glsl", ".vert": "glsl", ".frag": "glsl", ".comp": "glsl", ".geom": "glsl", ".nix": "nix", ".zig": "zig",
+    ".swift": "swift", ".dockerfile": "dockerfile",
 }
-NAMES = {"PKGBUILD": "bash", ".bashrc": "bash", ".profile": "bash", "Cargo.lock": "toml"}
+NAMES = {"PKGBUILD": "bash", ".bashrc": "bash", ".profile": "bash", "Cargo.lock": "toml", "Makefile": "make",
+         "makefile": "make", "GNUmakefile": "make", "CMakeLists.txt": "cmake", "Dockerfile": "dockerfile",
+         "Containerfile": "dockerfile", "Gemfile": "ruby", "Rakefile": "ruby"}
 
 # комментарий строки по языку (Ctrl+/); для языков без подсветки — по расширению
 LINE_COMMENT = {
     "python": "#", "bash": "#", "toml": "#", "yaml": "#",
     "javascript": "//", "rust": "//", "go": "//", "java": "//", "css": None, "sql": "--",
+    "c": "//", "cpp": "//", "lua": "--", "typescript": "//", "tsx": "//", "qml": "//", "csharp": "//", "php": "//",
+    "ruby": "#", "make": "#", "cmake": "#", "glsl": "//", "nix": "#", "zig": "//", "swift": "//", "dockerfile": "#",
 }
 EXT_COMMENT = {".lua": "--", ".fish": "#", ".conf": "#", ".ini": ";", ".c": "//", ".h": "//", ".cpp": "//", ".hpp": "//"}
 
 LANGUAGE_LABEL = {
     "python": "Python", "javascript": "JavaScript", "json": "JSON", "markdown": "Markdown", "toml": "TOML",
     "yaml": "YAML", "html": "HTML", "xml": "XML", "css": "CSS", "bash": "Shell", "rust": "Rust", "go": "Go",
-    "java": "Java", "sql": "SQL",
+    "java": "Java", "sql": "SQL", **languages.LABELS,
 }
 
 
@@ -206,7 +217,11 @@ def read_file(path: Path) -> str:
 
 def make_editor(buf: Buffer, text: str, theme: str) -> CoveTextArea:
     language = detect_language(buf.path)
-    ta = CoveTextArea.code_editor(text, language=language, theme="css", id=buf.id, soft_wrap=False)   # тему ставит App после register_theme
+    ta = CoveTextArea.code_editor(text, theme="css", id=buf.id, soft_wrap=False)   # тему ставит App после register_theme
+    languages.register_all(ta)
+    if language in languages.EXTRA and not languages.load(language):
+        language = None   # грамматика не поставилась — без подсветки, но без ошибки
+    ta.language = language
     ta.indent_type, ta.indent_width = detect_indent(text)
     ta.comment = LINE_COMMENT.get(language or "") or (EXT_COMMENT.get(buf.path.suffix.lower()) if buf.path else None)
     if buf.path and buf.path.suffix.lower() in (".md", ".txt", ".markdown"):

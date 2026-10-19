@@ -159,7 +159,10 @@ if want editor; then
     step "Cove Code — редактор"
     venv="$HOME/.local/share/cove/code-venv"
     # Textual с подсветкой (tree-sitter) — в своём окружении, системный Python не трогаем
-    if { [ -x "$venv/bin/python" ] || python3 -m venv "$venv"; } && "$venv/bin/pip" install -q --upgrade 'textual[syntax]'; then
+    if { [ -x "$venv/bin/python" ] || python3 -m venv "$venv"; } && "$venv/bin/pip" install -q --upgrade 'textual[syntax]' \
+            tree-sitter-c tree-sitter-cpp tree-sitter-lua tree-sitter-typescript tree-sitter-qmljs tree-sitter-c-sharp \
+            tree-sitter-php tree-sitter-ruby tree-sitter-make tree-sitter-cmake tree-sitter-glsl tree-sitter-nix \
+            tree-sitter-zig tree-sitter-swift tree-sitter-dockerfile; then
         ok "готово — запуск: cove [файл|папка], окном: cove-gui"
     else
         warn "не вышло поставить Textual в $venv — проверьте интернет и запустите ./install.sh editor ещё раз"

@@ -77,6 +77,19 @@ def app_theme(p: dict, name: str) -> Theme:
     )
 
 
+class Styles(dict):
+    """Стили подсветки с откатом к родителю: keyword.control → keyword, function.method.builtin → function.
+
+    TextArea ищет стиль по точному имени, а грамматики дают сотни уточнённых имён."""
+
+    def get(self, key, default=None):
+        while key:
+            if key in self:
+                return self[key]
+            key = key.rpartition(".")[0]
+        return default
+
+
 def editor_theme(p: dict, name: str) -> TextAreaTheme:
     def s(color: str, **kw) -> Style:
         return Style(color=p[color], **kw)
@@ -91,7 +104,7 @@ def editor_theme(p: dict, name: str) -> TextAreaTheme:
         cursor_line_gutter_style=Style(color=p["accent"], bgcolor=p["mantle"], bold=True),
         bracket_matching_style=Style(bgcolor=p["surface1"], bold=True),
         selection_style=Style(bgcolor=p["surface1"]),
-        syntax_styles={
+        syntax_styles=Styles({
             "comment": s("overlay1", italic=True),
             "string": s("green"),
             "string.documentation": s("overlay1", italic=True),
@@ -136,5 +149,42 @@ def editor_theme(p: dict, name: str) -> TextAreaTheme:
             "html.end_tag_error": s("red", underline=True),
             "regex.punctuation.bracket": s("pink"),
             "regex.operator": s("pink"),
-        },
+            # общие имена грамматик (nvim/helix): уточнения откатываются к ним
+            "constant": s("peach"),
+            "character": s("green"),
+            "escape": s("pink"),
+            "string.escape": s("pink"),
+            "string.special": s("teal"),
+            "string.regex": s("pink"),
+            "string.regexp": s("pink"),
+            "property": s("subtext1"),
+            "field": s("subtext1"),
+            "variable.member": s("subtext1"),
+            "variable.parameter": Style(color=p["text"], italic=True),
+            "parameter": Style(color=p["text"], italic=True),
+            "attribute": s("yellow"),
+            "tag.attribute": s("yellow"),
+            "constructor": s("yellow"),
+            "namespace": s("accent2"),
+            "module": s("accent2"),
+            "label": s("pink"),
+            "preproc": s("pink"),
+            "keyword.directive": s("pink"),
+            "keyword.import": keyword,
+            "keyword.modifier": keyword,
+            "keyword.type": keyword,
+            "storageclass": keyword,
+            "type.qualifier": keyword,
+            "function.macro": s("pink"),
+            "constant.macro": s("peach"),
+            "punctuation": s("subtext0"),
+            "comment.documentation": s("overlay1", italic=True),
+            "markup.heading": s("accent", bold=True),
+            "markup.raw": s("green"),
+            "markup.link": s("teal", underline=True),
+            "text.title": s("accent", bold=True),
+            "text.uri": s("teal", underline=True),
+            "text.literal": s("green"),
+            "error": s("red", underline=True),
+        }),
     )
