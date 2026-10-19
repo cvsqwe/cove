@@ -6,3 +6,4 @@ config/quickshell/TODO.md
 *.orig
 *~
 __pycache__/
+config/quickshell/*.bak-*

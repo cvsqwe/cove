@@ -14,6 +14,8 @@ Singleton {
     function caffeine(): void { Store.caffeine = !Store.caffeine; }
     function gameMode(): void { Store.gameMode = !Store.gameMode; }
     function light(): void { Settings.appearance.light = !Settings.appearance.light; }
+    // выкл → слабо → сильно → выкл
+    function antiFlash(): void { const n = Settings.nightLight; n.antiFlash = ({ off: "weak", weak: "strong" })[n.antiFlash] ?? "off"; }
 
     IpcHandler {
         target: "toggles"
@@ -22,5 +24,6 @@ Singleton {
         function caffeine(): void { root.caffeine(); }
         function gameMode(): void { root.gameMode(); }
         function light(): void { root.light(); }
+        function antiFlash(): void { root.antiFlash(); }
     }
 }

@@ -24,6 +24,7 @@ Scope {
         { id: "windows", icon: "󰖯", label: I18n.tr("Окна"), file: "WindowsPage", keys: I18n.tr("окна отступы рамка блюр тени прозрачность раскладка анимация игровой") },
         { id: "binds", icon: "󰌌", label: I18n.tr("Хоткеи"), file: "BindsPage", keys: I18n.tr("хоткеи клавиши бинды сочетания") },
         { id: "rules", icon: "󰁨", label: I18n.tr("Правила окон"), file: "RulesPage", keys: I18n.tr("правила окна воркспейс плавающее закрепить") },
+        { id: "vpn", icon: "vpn_lock", label: "VPN", file: "VpnSettingsPage", keys: I18n.tr("vpn впн прокси подписка сервер обход блокировок mihomo clash prizrak") },
         { id: "displays", icon: "monitor", label: I18n.tr("Мониторы"), file: "DisplaysPage", keys: I18n.tr("мониторы экран дисплей разрешение частота герц масштаб поворот расположение второй монитор") + " display monitor" },
         { id: "sound", icon: "graphic_eq", label: I18n.tr("Звук"), file: "SoundPage", keys: I18n.tr("звук эквалайзер бас громкость лимитер микрофон шумоподавление эхо наушники колонки") + " easyeffects equalizer eq" },
         { id: "input", icon: "󰍽", label: I18n.tr("Ввод"), file: "InputPage", keys: I18n.tr("клавиатура мышь раскладка язык повтор чувствительность") },
@@ -33,6 +34,7 @@ Scope {
         { id: "system", icon: "󰒓", label: I18n.tr("Система"), file: "SystemPage", keys: I18n.tr("имя город погода приложения терминал блокировка ночной свет фокус язык") + " language english" },
         { id: "terminal", icon: "terminal", label: I18n.tr("Терминал"), file: "TerminalPage", keys: I18n.tr("терминал kitty шрифт курсор вкладки прозрачность fish fastfetch") },
         { id: "time", icon: "schedule", label: I18n.tr("Время"), file: "TimePage", keys: I18n.tr("будильник таймер календарь события напоминание ics google") },
+        { id: "screentime", icon: "hourglass", label: I18n.tr("Экранное время"), file: "ScreenTimePage", keys: I18n.tr("экранное время приложения часы статистика неделя благополучие") + " screen time wellbeing" },
         { id: "autostart", icon: "󰐊", label: I18n.tr("Автозапуск"), file: "AutostartPage", keys: I18n.tr("автозапуск старт приложения") },
         { id: "dotfiles", icon: "󰊢", label: I18n.tr("Дотфайлы"), file: "DotfilesPage", keys: I18n.tr("git дотфайлы бэкап синхронизация") },
         { id: "about", icon: "cove", label: I18n.tr("О системе"), file: "AboutPage", keys: I18n.tr("система версия железо сброс cove заставка логотип бренд") }

@@ -34,6 +34,8 @@ The screenshots show the Russian interface. English can be selected in Settings.
 | Cove Code | Terminal and fastfetch |
 | <img src="docs/screens/cheatsheet.webp" alt="Cheatsheet"> | <img src="docs/screens/session.webp" alt="Power menu"> |
 | Hotkey cheatsheet | Power menu |
+| <img src="docs/screens/tasks.webp" alt="Task manager"> | <img src="docs/screens/screentime.webp" alt="Screen time"> |
+| Task manager | Screen time |
 
 ## Features
 
@@ -45,9 +47,9 @@ The screenshots show the Russian interface. English can be selected in Settings.
 - **Control center.** Wi-Fi, Bluetooth, audio, night light, Do Not Disturb, game mode.
 - **Desktop widgets.** 19 of them: clock, weather, player, spectrum, tasks, calendar and more. The editor opens right on the desktop.
 - **Wallpapers.** Day and night schedule, a separate wallpaper per workspace, slideshow, video wallpapers.
-- **Tools.** Screenshots with an editor, screen recording, text and QR recognition from the screen, color picker, notes, focus timer, alarms, window overview.
+- **Tools.** Screenshots with an editor, screen recording, text and QR recognition from the screen, color picker, notes, focus timer, alarms, window overview, task manager (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Esc</kbd>), on-screen text translation, lyrics for the playing song, screen time, VPN on Mihomo with subscriptions, protection from bright flashes.
 - **Lock screen, login screen and boot splash** (Plymouth and Limine) in the same style. The lock and login screens show the current wallpaper.
-- **Settings.** 19 sections: hotkeys with shortcut recording, window rules, style profiles, input, autostart, dotfiles backup to git.
+- **Settings.** 23 sections: hotkeys with shortcut recording, window rules, style profiles, input, autostart, dotfiles backup to git.
 - Russian and English interface.
 
 ### Colors from the wallpaper

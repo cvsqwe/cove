@@ -146,6 +146,21 @@ Drawer {
                     on: GameMode.active
                     onClicked: Store.gameMode = !Store.gameMode
                 }
+                // VPN — во всю ширину: включение одним нажатием, стрелка — серверы
+                Toggle {
+                    Layout.fillWidth: true
+                    Layout.columnSpan: 2
+                    icon: Vpn.on ? "vpn_lock" : "vpn_key_off"
+                    label: "VPN"
+                    sub: Vpn.on ? ((Vpn.where ? Vpn.where.flag + " " + Vpn.where.country + " · " : "") + Vpn.current)
+                        : Vpn.state === "starting" ? I18n.tr("Подключаюсь…")
+                        : Vpn.state === "error" ? Vpn.error.split("\n")[0]
+                        : !Vpn.ready || !Vpn.hasSources ? I18n.tr("Настроить") : I18n.tr("Отключено")
+                    on: Vpn.on
+                    hasMore: true
+                    onClicked: Vpn.ready && Vpn.hasSources ? Vpn.toggle() : (Panels.controlPage = "vpn")
+                    onMore: Panels.controlPage = "vpn"
+                }
                 Toggle {
                     Layout.fillWidth: true
                     visible: Power.hasProfiles
@@ -194,6 +209,7 @@ Drawer {
                         { icon: "󰈊", run: () => { Panels.control = false; pickDelay.restart(); } },
                         { icon: "󰔟", hot: Focus.active, run: () => Focus.toggle() },
                         { icon: "󰎞", run: () => Panels.toggle("notes") },
+                        { icon: "music_note", hot: SongId.busy, run: () => { Panels.control = false; SongId.recognize(); } },
                         { icon: "󰸉", run: () => Panels.toggle("wallpaper") }
                     ]
                     IconButton {
@@ -314,7 +330,7 @@ Drawer {
             Behavior on x { NumberAnimation { duration: Theme.anim; easing.type: Easing.OutCubic } }
             Behavior on opacity { NumberAnimation { duration: Theme.anim } }
             active: Panels.controlPage !== "" && root.open
-            source: ({ bluetooth: "BluetoothPage.qml", wifi: "WifiPage.qml", audio: "AudioPage.qml" })[Panels.controlPage] ?? ""
+            source: ({ bluetooth: "BluetoothPage.qml", wifi: "WifiPage.qml", audio: "AudioPage.qml", vpn: "VpnPage.qml" })[Panels.controlPage] ?? ""
         }
     }
 }

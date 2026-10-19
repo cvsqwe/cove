@@ -37,6 +37,9 @@ Singleton {
         L.push("    },");
         L.push("    decoration = {");
         L.push(`        rounding = ${w.rounding},`);
+        // защита от вспышки: шейдер смотрит на весь экран — перерисовывать монитор целиком
+        const af = Settings.nightLight.antiFlash;
+        if (af === "weak" || af === "strong") L.push(`        screen_shader = ${q(Quickshell.shellPath(`assets/shaders/anti-flash-${af}.glsl`))},`);
         L.push(`        active_opacity = ${w.activeOpacity}, inactive_opacity = ${w.inactiveOpacity},`);
         L.push(`        dim_inactive = ${w.dimInactive}, dim_strength = ${w.dimStrength},`);
         L.push(`        blur = { enabled = ${w.blur}, size = ${w.blurSize}, passes = ${w.blurPasses} },`);
@@ -46,6 +49,7 @@ Singleton {
         L.push(`    animations = { enabled = ${a.animations} },`);
         // только xcursor: hyprcursor-тема + setcursor на xcursor роняют Hyprland 0.56 (см. ниже про курсор)
         L.push("    cursor = { enable_hyprcursor = false },");
+        if (af === "weak" || af === "strong") L.push("    debug = { damage_tracking = 1 },");
         L.push("    input = {");
         L.push(`        kb_layout = ${q((i.layouts ?? ["us"]).join(","))}, kb_options = ${q(i.switchKey)},`);
         L.push(`        repeat_delay = ${i.repeatDelay}, repeat_rate = ${i.repeatRate},`);
@@ -216,6 +220,7 @@ Singleton {
         JSON.stringify(Settings.input.layouts), Settings.input.switchKey, Settings.input.repeatDelay, Settings.input.repeatRate,
         Settings.input.sensitivity, Settings.input.accel, Settings.input.naturalScroll, Settings.input.followMouse,
         Settings.input.tapToClick, Settings.input.tpNatural, Settings.input.tpTyping, Settings.input.tpClickfinger, Settings.input.tpScroll, Settings.input.gestures,
+        Settings.nightLight.antiFlash,
         Settings.appearance.animations, Settings.appearance.animSpeed, Settings.appearance.cursorTheme, Settings.appearance.cursorSize, Settings.appearance.iconTheme,
         Settings.bar.bodyOpacity, Settings.bar.style, JSON.stringify(Settings.displays.monitors),
         Settings.general.terminal, Settings.general.browser, Settings.general.fileManager, Settings.general.editor,

@@ -249,6 +249,16 @@ SPage {
             SSlider { from: 2500; to: 6000; step: 100; value: Settings.nightLight.temperature; suffix: " K"; onMoved: v => Settings.nightLight.temperature = v }
         }
         SRow {
+            icon: "flash_off"
+            title: I18n.tr("Защита от вспышки")
+            desc: I18n.tr("Приглушает экран, когда он почти весь белый: светлый сайт ночью не слепит. Тёмные окна не трогает")
+            SSegment {
+                options: [{ value: "off", label: I18n.tr("Выкл") }, { value: "weak", label: I18n.tr("Слабо") }, { value: "strong", label: I18n.tr("Сильно") }]
+                current: Settings.nightLight.antiFlash
+                onPicked: v => Settings.nightLight.antiFlash = v
+            }
+        }
+        SRow {
             icon: "󰃰"
             title: I18n.tr("По расписанию")
             SSwitch { checked: Settings.nightLight.schedule; onToggled: v => Settings.nightLight.schedule = v }

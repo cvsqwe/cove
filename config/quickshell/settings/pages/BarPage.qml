@@ -28,7 +28,8 @@ SPage {
         focus: { icon: "󰔟", label: I18n.tr("Фокус-таймер") },
         power: { icon: "󰐥", label: I18n.tr("Кнопка питания") },
         updates: { icon: "system_update_alt", label: I18n.tr("Обновления (видно, когда есть)") },
-        battery: { icon: "battery_full", label: I18n.tr("Батарея (видно на ноутбуке)") }
+        battery: { icon: "battery_full", label: I18n.tr("Батарея (видно на ноутбуке)") },
+        vpn: { icon: "vpn_lock", label: I18n.tr("VPN (видно, когда подключён)") }
     })
     readonly property var unused: Object.keys(catalog).filter(k => !b.left.includes(k) && !b.right.includes(k))
 

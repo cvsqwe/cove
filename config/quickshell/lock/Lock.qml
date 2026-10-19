@@ -16,6 +16,8 @@ Scope {
     property bool busy: false
     property bool failed: false
     property bool unlocking: false
+    // для остального шелла (экранное время не считает, пока заблокировано)
+    Binding { target: Panels; property: "locked"; value: sessionLock.locked }
 
     function lock(): void {
         password = "";

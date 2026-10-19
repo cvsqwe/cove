@@ -156,6 +156,14 @@ PanelWindow {
         // уровень микрофона не показываем: в звонках его постоянно крутит автоусиление (WebRTC)
         function onMicMutedChanged(): void { win.pingOsd("mic"); }
     }
+    // ---- «что за песня» ----
+    Connections {
+        target: SongId
+        function onListening(): void { win.showToast("hearing", I18n.tr("Слушаю…"), Theme.accent, 8500); }
+        function onFound(text: string): void { win.showToast("music_note", text, Theme.green, 4000); }
+        function onNotFound(): void { win.toast = null; }
+    }
+
     // ---- питание: яркость и заряд ----
     Connections {
         target: Power

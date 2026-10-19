@@ -117,6 +117,13 @@ SPage {
             SSwitch { checked: page.i.media; onToggled: v => page.i.media = v }
         }
         SRow {
+            visible: page.i.media
+            icon: "lyrics"
+            title: I18n.tr("Текст песни")
+            desc: I18n.tr("Звучащая строка вместо названия трека. Тексты — из открытой базы LRCLIB")
+            SSwitch { checked: page.i.lyrics; onToggled: v => page.i.lyrics = v }
+        }
+        SRow {
             icon: "privacy_tip"
             title: I18n.tr("Кто включил микрофон или камеру")
             desc: I18n.tr("Имя приложения на пару секунд; точки-индикаторы видны всегда")

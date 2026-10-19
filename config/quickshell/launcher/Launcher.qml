@@ -244,14 +244,27 @@ Drawer {
         const items = clips.filter(c => c.type === "img" ? q === "" || I18n.tr("картинка изображение image").includes(q) : c.text.toLowerCase().includes(q))
             .filter(c => !pins.includes(c.text))
             .slice(0, 80).map(c => c.type === "img" ? {
-                icon: "file://" + c.text, title: I18n.tr("Изображение ") + (c.size || ""), subtitle: I18n.tr("Enter — в буфер"),
-                run: () => Quickshell.execDetached(["sh", "-c", `cliphist decode ${c.id} | wl-copy`])
-            } : {
-                glyph: "󰅌", title: c.text.replace(/\s+/g, " ").slice(0, 120), subtitle: I18n.tr("Enter — в буфер · ПКМ — закрепить"),
+                image: "file://" + c.text, title: I18n.tr("Изображение ") + (c.size || ""), subtitle: I18n.tr("Enter — в буфер · Delete — удалить"),
                 run: () => Quickshell.execDetached(["sh", "-c", `cliphist decode ${c.id} | wl-copy`]),
-                alt: () => { Store.pinnedClips = [c.text, ...pins].slice(0, 30); }
+                del: () => root.clipDelete(c.id)
+            } : {
+                glyph: "󰅌", title: c.text.trim().slice(0, 400), lines: 3,
+                subtitle: I18n.tr("Enter — в буфер · ПКМ — закрепить · Delete — удалить"),
+                run: () => Quickshell.execDetached(["sh", "-c", `cliphist decode ${c.id} | wl-copy`]),
+                alt: () => { Store.pinnedClips = [c.text, ...pins].slice(0, 30); },
+                del: () => root.clipDelete(c.id)
             });
         return [...pinned, ...items];
+    }
+
+    // убрать запись из истории буфера (Delete) / всю историю (Shift+Delete); закреплённое остаётся
+    function clipDelete(id: string): void {
+        clips = clips.filter(c => c.id !== id);
+        Quickshell.execDetached(["sh", "-c", 'printf "%s\\t\\n" "$1" | cliphist delete', "_", id]);
+    }
+    function clipWipe(): void {
+        clips = [];
+        Quickshell.execDetached(["sh", "-c", 'cliphist wipe; rm -rf "${XDG_RUNTIME_DIR:-/tmp}/qs-clip"']);
     }
 
     // ; — эмодзи (assets/emoji.json: символ, английское имя, русские слова)
@@ -472,6 +485,12 @@ Drawer {
                     // в сетке ←/→ листают, когда курсор в конце строки
                     Keys.onRightPressed: e => { if (root.gridMode && cursorPosition === text.length) grid.moveCurrentIndexRight(); else e.accepted = false; }
                     Keys.onLeftPressed: e => { if (root.gridMode && cursorPosition === text.length) grid.moveCurrentIndexLeft(); else e.accepted = false; }
+                    // буфер: Delete в конце строки — убрать запись, Shift+Delete — очистить историю
+                    Keys.onDeletePressed: e => {
+                        if (root.prefix !== ":" || cursorPosition !== text.length) { e.accepted = false; return; }
+                        if (e.modifiers & Qt.ShiftModifier) root.clipWipe();
+                        else root.results[list.currentIndex]?.del?.();
+                    }
                     Keys.onReturnPressed: root.activate(root.current)
                     Keys.onEnterPressed: root.activate(root.current)
                 }
@@ -560,7 +579,9 @@ Drawer {
                 required property var modelData
                 required property int index
                 width: list.width
-                height: root.compact ? Math.max(36, root.look.iconSize + 8) : Math.max(50, root.look.iconSize + 18)
+                // картинки из буфера — крупным превью, длинный текст — до трёх строк
+                height: row.modelData.image ? 108
+                    : Math.max(root.compact ? Math.max(36, root.look.iconSize + 8) : Math.max(50, root.look.iconSize + 18), texts.implicitHeight + 16)
 
                 RowLayout {
                     anchors.fill: parent
@@ -568,7 +589,24 @@ Drawer {
                     anchors.rightMargin: 12
                     spacing: 12
 
+                    Rectangle {
+                        visible: !!row.modelData.image
+                        implicitWidth: 160
+                        implicitHeight: 92
+                        radius: Theme.radiusSmall
+                        color: Theme.crust
+                        clip: true
+                        Image {
+                            anchors.fill: parent
+                            anchors.margins: 2
+                            source: row.modelData.image ?? ""
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                            sourceSize: Qt.size(320, 184)
+                        }
+                    }
                     Item {
+                        visible: !row.modelData.image
                         implicitWidth: row.modelData.icon?.startsWith?.("file://") ? root.look.iconSize * 2 : root.look.iconSize
                         scale: root.look.highlight === "zoom" && row.ListView.isCurrentItem ? 1.18 : 1
                         Behavior on scale { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutBack } }
@@ -588,6 +626,7 @@ Drawer {
                     }
 
                     ColumnLayout {
+                        id: texts
                         Layout.fillWidth: true
                         spacing: 1
                         StyledText {
@@ -595,6 +634,8 @@ Drawer {
                             text: row.modelData.title
                             color: row.ListView.isCurrentItem ? Theme.accent : Theme.text
                             elide: Text.ElideRight
+                            wrapMode: row.modelData.lines ? Text.Wrap : Text.NoWrap
+                            maximumLineCount: row.modelData.lines ?? 1
                         }
                         StyledText {
                             Layout.fillWidth: true

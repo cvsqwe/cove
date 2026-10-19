@@ -27,6 +27,7 @@ Singleton {
     property alias wallpaper: data.wallpaper
     property alias sound: data.sound
     property alias power: data.power
+    property alias vpn: data.vpn
     property alias idle: data.idle
     property alias nightLight: data.nightLight
     property alias focus: data.focus
@@ -87,6 +88,7 @@ Singleton {
                 property int clipClearSeconds: 30    // очищать скопированный пароль через N секунд (0 — нет)
                 property string polkitStyle: "center" // center | island — где появляется запрос прав
                 property bool polkit: true           // свой агент polkit (запрос прав root); выкл — hyprpolkitagent
+                property bool screenTime: true       // экранное время: сколько времени в каких приложениях (services/ScreenTime.qml)
             }
 
             property JsonObject appearance: JsonObject {
@@ -117,7 +119,7 @@ Singleton {
 
             property JsonObject bar: JsonObject {
                 property var left: ["launcher", "workspaces", "window"]
-                property var right: ["tray", "updates", "sysmon", "weather", "layout", "network", "bluetooth", "volume", "battery", "notifs"]
+                property var right: ["tray", "updates", "sysmon", "weather", "layout", "network", "bluetooth", "volume", "battery", "vpn", "notifs"]
                 property int workspaces: 5
                 property string workspaceStyle: "pills" // pills | dots | lines | squares | numbers | kanji | roman | icons
                 property bool workspaceOccupiedOnly: false
@@ -233,6 +235,7 @@ Singleton {
                 property bool greeting: true
                 property bool agenda: true             // ближайшее событие календаря в капсуле
                 property bool media: true              // плеер (трек, обложка) в капсуле — выключить, например, для записи экрана
+                property bool lyrics: true             // текст песни в капсуле вместо названия (LRCLIB)
                 property bool privacyToast: true       // тост, когда приложение включает микрофон/камеру/экран
                 property bool shelf: true              // полка: бросить файл на капсулу, потом утащить куда нужно
                 property bool shelfRemove: true        // убирать с полки то, что утащили (иначе — только при «Переместить»)
@@ -326,6 +329,14 @@ Singleton {
                 property bool micHighpass: true       // срез гула и низких
             }
 
+            // свой VPN на ядре Mihomo (services/Vpn.qml, assets/vpn/vpn.py)
+            property JsonObject vpn: JsonObject {
+                property var sources: []              // [{ name, url } | { name, path }, enabled]
+                property string route: "ru"           // ru — российские сайты напрямую | all — всё через VPN
+                property var direct: []               // свои домены «всегда напрямую»
+                property bool autoConnect: false      // подключаться при входе
+            }
+
             // питание (services/Power.qml)
             property JsonObject power: JsonObject {
                 property int saverAt: 20              // от батареи на N % и ниже — режим экономии (0 — не включать)
@@ -338,6 +349,7 @@ Singleton {
             }
 
             property JsonObject nightLight: JsonObject {
+                property string antiFlash: "off"      // защита от вспышки: off | weak | strong (assets/shaders, screen_shader)
                 property int temperature: 4300
                 property bool schedule: false
                 property bool bySun: false            // расписание — от заката до восхода (services/Sun.qml)

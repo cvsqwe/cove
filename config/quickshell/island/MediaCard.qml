@@ -135,10 +135,37 @@ Card {
             }
         }
 
+        // текст песни: звучащая строка и следующая — на месте спектра
+        ColumnLayout {
+            Layout.fillWidth: true
+            visible: Lyrics.has
+            spacing: 1
+            StyledText {
+                id: curLine
+                Layout.fillWidth: true
+                text: Lyrics.line || "♪"
+                color: Theme.text
+                font.bold: true
+                elide: Text.ElideRight
+                Behavior on text { SequentialAnimation {
+                    NumberAnimation { target: curLine; property: "opacity"; to: 0.2; duration: 90 }
+                    PropertyAction {}
+                    NumberAnimation { target: curLine; property: "opacity"; to: 1; duration: Theme.anim }
+                } }
+            }
+            StyledText {
+                Layout.fillWidth: true
+                text: Lyrics.nextLine
+                color: Theme.overlay1
+                font.pixelSize: Theme.fontSizeSmall
+                elide: Text.ElideRight
+            }
+        }
+
         // спектр: место держим всегда, на паузе гаснет — карточка не прыгает
         Visualizer {
             Layout.alignment: Qt.AlignHCenter
-            visible: Settings.island.visualizer
+            visible: Settings.island.visualizer && !Lyrics.has
             bands: 28
             barWidth: 4
             spacing: 4

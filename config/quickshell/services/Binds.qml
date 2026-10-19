@@ -45,6 +45,7 @@ Singleton {
             b("SUPER", "comma", "shell.settings"),
             b("SUPER", "slash", "shell.cheatsheet"),
             b("SUPER SHIFT", "N", "shell.notes"),
+            b("CTRL SHIFT", "ESCAPE", "shell.tasks"),
             b("SUPER", "T", "shell.focus"),
             b("SUPER SHIFT", "C", "shell.picker"),
             b("SUPER ALT", "R", "shell.record"),
@@ -59,6 +60,7 @@ Singleton {
             b("SUPER SHIFT", "R", "shell.restart"),
             b("SUPER", "G", "toggle.game"),
             b("SUPER SHIFT", "T", "shell.ocr"),
+            b("SUPER CTRL", "T", "shell.translate"),
             b("SUPER SHIFT", "Q", "shell.qr"),
             b("SUPER SHIFT", "A", "shell.assistant")
         ];
@@ -94,7 +96,7 @@ Singleton {
     }
 
     // хоткеи, появившиеся после первого запуска: добавляются к своим один раз (удалённый не вернётся)
-    readonly property var added: ["shell.ocr", "shell.qr", "shell.assistant", "shell.overviewPrev"]
+    readonly property var added: ["shell.ocr", "shell.qr", "shell.assistant", "shell.overviewPrev", "shell.tasks", "shell.translate"]
 
     function ensureDefaults(): void {
         if (!Settings.binds || Settings.binds.length === 0) {

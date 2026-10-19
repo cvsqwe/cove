@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Hyprland
 import qs.config
 
-// Игровой режим: без анимаций, блюра и теней, «Не беспокоить», спектр выключен.
+// Игровой режим: без анимаций, блюра, теней и шейдера экрана, «Не беспокоить», спектр выключен.
 // Включается вручную (Super+G) или сам — когда на весь экран открыта игра.
 Singleton {
     id: root
@@ -29,7 +29,7 @@ Singleton {
         prevDnd = Store.dnd;
         Store.dnd = true;
         Quickshell.execDetached(["hyprctl", "eval",
-            "hl.config({ animations = { enabled = false }, decoration = { blur = { enabled = false }, shadow = { enabled = false }, glow = { enabled = false } } })"]);
+            "hl.config({ animations = { enabled = false }, decoration = { blur = { enabled = false }, shadow = { enabled = false }, glow = { enabled = false }, screen_shader = \"\" } })"]);
     }
 
     function disable(): void {

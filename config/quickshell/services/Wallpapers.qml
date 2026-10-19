@@ -26,7 +26,10 @@ Singleton {
     // Картинку под окнами awww показывает размытой (Settings.wallpaper.blurWindows), видео рисует
     // wallpaper/LiveWallpaper.qml поверх постера. Постер и размытая копия готовятся один раз в кэш.
     function blurredOf(still: string): string { return `${Store.cacheDir}/blur-${Store.hash(still)}.jpg`; }
-    readonly property bool busy: (Hyprland.focusedWorkspace?.toplevels?.values?.length ?? 0) > 0
+    readonly property bool busy: {
+        const ws = Hyprland.focusedWorkspace;
+        return !!ws && (ws.toplevels?.values?.length ?? 0) > 0;
+    }
     readonly property bool blurNow: w.blurWindows && busy
     onBlurNowChanged: blurDebounce.restart()
     Timer { id: blurDebounce; interval: 120; onTriggered: root.show(["--transition-type", "fade", "--transition-duration", "0.5", "--transition-fps", "60"]) }

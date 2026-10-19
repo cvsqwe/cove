@@ -324,7 +324,47 @@ Item {
                 }
                 MIcon { anchors.centerIn: parent; visible: !cover.visible; icon: "󰎆"; color: Media.accent }
             }
+            // текст песни: звучащая строка вместо названия; на проигрыше — снова название
+            Item {
+                id: lyricBox
+                readonly property bool on: Lyrics.line !== ""
+                visible: on
+                implicitWidth: Math.min(340, lyricText.implicitWidth)
+                implicitHeight: lyricText.implicitHeight
+                clip: true
+                property string shown: ""
+                StyledText {
+                    id: lyricText
+                    width: parent.width
+                    text: lyricBox.shown
+                    elide: Text.ElideRight
+                    color: Theme.text
+                    font.weight: Font.Medium
+                }
+                // смена строки: старая уходит вверх, новая выезжает снизу
+                SequentialAnimation {
+                    id: lyricSwap
+                    ParallelAnimation {
+                        NumberAnimation { target: lyricText; property: "opacity"; to: 0; duration: Theme.animFast }
+                        NumberAnimation { target: lyricText; property: "y"; to: -8; duration: Theme.animFast }
+                    }
+                    ScriptAction { script: { lyricBox.shown = Lyrics.line; lyricText.y = 8; } }
+                    ParallelAnimation {
+                        NumberAnimation { target: lyricText; property: "opacity"; to: 1; duration: Theme.anim; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: lyricText; property: "y"; to: 0; duration: Theme.anim; easing.type: Easing.OutCubic }
+                    }
+                }
+                Connections {
+                    target: Lyrics
+                    function onLineChanged(): void {
+                        if (Lyrics.line === "") return;
+                        if (lyricBox.shown === "" || !Settings.appearance.animations) lyricBox.shown = Lyrics.line;
+                        else lyricSwap.restart();
+                    }
+                }
+            }
             StyledText {
+                visible: !lyricBox.on
                 Layout.maximumWidth: 200
                 text: Media.title
                 elide: Text.ElideRight
@@ -332,7 +372,7 @@ Item {
                 font.weight: Font.Medium
             }
             StyledText {
-                visible: Media.artist !== ""
+                visible: Media.artist !== "" && !lyricBox.on
                 Layout.maximumWidth: 140
                 Layout.leftMargin: -4
                 text: Media.artist

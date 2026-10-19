@@ -20,6 +20,8 @@ Singleton {
     property bool dashboard: false
     property bool notes: false
     property bool cheatsheet: false
+    property bool tasks: false       // диспетчер задач (tasks/TasksPanel.qml)
+    property bool locked: false      // экран заблокирован (lock/Lock.qml)
     property string launcherQuery: "" // текст, с которым откроется лаунчер (например ":" — буфер)
 
     // переключение окон в обзоре (Super+Tab): первое нажатие открывает, следующие двигают выделение
@@ -41,7 +43,7 @@ Singleton {
     signal launcherRun()
     function openSettings(page: string): void { closeAll(); settingsRequested(page); }
 
-    readonly property var names: ["launcher", "control", "overview", "wallpaper", "session", "dashboard", "notes", "cheatsheet"]
+    readonly property var names: ["launcher", "control", "overview", "wallpaper", "session", "dashboard", "notes", "cheatsheet", "tasks"]
 
     function closeAll(): void {
         for (const n of names) root[n] = false;
@@ -98,4 +100,5 @@ Singleton {
     IpcHandler { target: "dashboard"; function toggle(): void { root.toggle("dashboard"); } }
     IpcHandler { target: "notes"; function toggle(): void { root.toggle("notes"); } }
     IpcHandler { target: "cheatsheet"; function toggle(): void { root.toggle("cheatsheet"); } }
+    IpcHandler { target: "tasks"; function toggle(): void { root.toggle("tasks"); } }
 }
