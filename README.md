@@ -122,6 +122,8 @@ cd ~/cove
 
 ## Благодарности
 
+Спасибо авторам шеллов, у которых я подсмотрел идеи: [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland) (illogical-impulse, с него всё началось), [caelestia-dots/shell](https://github.com/caelestia-dots/shell), [noctalia-dev/noctalia](https://github.com/noctalia-dev/noctalia) и [AvengeMedia/DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell). VPN сделан по образцу [Prizrak-Box](https://github.com/legiz-ru/Prizrak-Box) и работает на ядре [Mihomo](https://github.com/MetaCubeX/mihomo). Тексты песен берутся из [LRCLIB](https://github.com/tranxuanthang/lrclib), песни узнаёт [SongRec](https://github.com/marin-m/SongRec), а эквалайзер можно перенести из [EasyEffects](https://github.com/wwmm/easyeffects).
+
 Проект построен на [Hyprland](https://hypr.land), [Quickshell](https://quickshell.org), [Textual](https://textual.textualize.io), [Neovim](https://neovim.io), [Pywalfox](https://github.com/Frewacom/pywalfox) и [Material Symbols](https://fonts.google.com/icons).
 
 Обои скачиваются из [dharmx/walls](https://github.com/dharmx/walls), [D3Ext/aesthetic-wallpapers](https://github.com/D3Ext/aesthetic-wallpapers) и [orangci/walls-catppuccin-mocha](https://github.com/orangci/walls-catppuccin-mocha), права на них принадлежат авторам. Курсоры: [Bibata](https://github.com/ful1e5/Bibata_Cursor), [Catppuccin](https://github.com/catppuccin/cursors), [Google](https://github.com/ful1e5/Google_Cursor), [macOS](https://github.com/ful1e5/apple_cursor), [phinger](https://github.com/phisch/phinger-cursors).

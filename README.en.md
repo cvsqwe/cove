@@ -124,6 +124,8 @@ Any shortcut can be changed in the Hotkeys section of the settings.
 
 ## Credits
 
+Thanks to the shells I borrowed ideas from: [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland) (illogical-impulse, where it all started), [caelestia-dots/shell](https://github.com/caelestia-dots/shell), [noctalia-dev/noctalia](https://github.com/noctalia-dev/noctalia) and [AvengeMedia/DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell). The VPN follows [Prizrak-Box](https://github.com/legiz-ru/Prizrak-Box) and runs on the [Mihomo](https://github.com/MetaCubeX/mihomo) core. Lyrics come from [LRCLIB](https://github.com/tranxuanthang/lrclib), song recognition from [SongRec](https://github.com/marin-m/SongRec), and the equalizer can be imported from [EasyEffects](https://github.com/wwmm/easyeffects).
+
 Built on [Hyprland](https://hypr.land), [Quickshell](https://quickshell.org), [Textual](https://textual.textualize.io), [Neovim](https://neovim.io), [Pywalfox](https://github.com/Frewacom/pywalfox) and [Material Symbols](https://fonts.google.com/icons).
 
 Wallpapers are downloaded from [dharmx/walls](https://github.com/dharmx/walls), [D3Ext/aesthetic-wallpapers](https://github.com/D3Ext/aesthetic-wallpapers) and [orangci/walls-catppuccin-mocha](https://github.com/orangci/walls-catppuccin-mocha), all rights belong to their authors. Cursors: [Bibata](https://github.com/ful1e5/Bibata_Cursor), [Catppuccin](https://github.com/catppuccin/cursors), [Google](https://github.com/ful1e5/Google_Cursor), [macOS](https://github.com/ful1e5/apple_cursor), [phinger](https://github.com/phisch/phinger-cursors).
