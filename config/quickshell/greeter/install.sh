@@ -14,14 +14,16 @@ ACCENT=$(pick cursor);           ACCENT=${ACCENT:-#cba6f7}
 BASE=$(pick background);         BASE=${BASE:-#1e1e2e}
 TEXT=$(pick foreground);         TEXT=${TEXT:-#cdd6f4}
 DIM=$(pick color15);             DIM=${DIM:-#a6adc8}
-WALL=$(python3 -c "import json;print(json.load(open('$STATE'))['wallpaper'])" 2>/dev/null || echo "$SRC/../assets/wallpapers/cove-dark.png")
+WALL="$HOME/.cache/quickshell/wallpapers/lock.jpg"   # готовит шелл (services/Wallpapers.qml) из текущих обоев
+[ -s "$WALL" ] || WALL="$SRC/../assets/wallpapers/cove-dark.png"
 
 echo "==> Копирую гритер в $DST (акцент $ACCENT)"
 sudo mkdir -p "$DST"
 sed -e "s|@USER@|$USER|" -e "s|@ACCENT@|$ACCENT|" -e "s|@BASE@|$BASE|" -e "s|@TEXT@|$TEXT|" -e "s|@DIM@|$DIM|" \
     "$SRC/shell.qml" | sudo tee "$DST/shell.qml" >/dev/null
 sudo install -m644 "$SRC/hyprland.lua" /etc/greetd/hyprland-greeter.lua
-sudo install -m644 "$WALL" "$DST/wallpaper"
+# файл обоев — пользователя: шелл сам обновляет его при смене обоев
+sudo install -m644 -o "$USER" "$WALL" "$DST/wallpaper"
 sudo chmod -R a+rX "$DST"
 
 echo "==> Сохраняю текущий конфиг greetd в config.toml.tuigreet"

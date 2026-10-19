@@ -110,6 +110,28 @@ Singleton {
         }
     }
 
+    // Обои для экранов вне шелла: lock.jpg в кэше — фон запасного hyprlock, копия в гритер —
+    // фон экрана входа (файл в /etc/greetd/qs-greeter принадлежит пользователю, см. greeter/install.sh).
+    // Пересобираем, только если обои правда сменились (в режиме workspace они меняются часто).
+    readonly property string lockWall: Store.cacheDir + "/lock.jpg"
+    readonly property string greeterWall: "/etc/greetd/qs-greeter/wallpaper"
+    readonly property string syncKey: Store.ready ? Store.still : ""
+    onSyncKeyChanged: if (syncKey) syncDelay.restart()
+    Timer { id: syncDelay; interval: 3000; onTriggered: syncOutside.running = true }
+    Process {
+        id: syncOutside
+        command: ["sh", "-c",
+            'f="$1" out="$2" greeter="$3" stamp="$2.src"
+            [ -s "$f" ] || exit 0
+            mkdir -p "$(dirname "$out")"
+            if [ "$(cat "$stamp" 2>/dev/null)" != "$f" ] || [ ! -s "$out" ]; then
+                magick "$f[0]" -resize 1920x1080^ -quality 90 "$out.tmp" && mv -f "$out.tmp" "$out" || cp -f "$f" "$out"
+                printf %s "$f" > "$stamp"
+            fi
+            if [ -w "$greeter" ] && ! cmp -s "$out" "$greeter"; then cat "$out" > "$greeter"; fi',
+            "_", Store.still, root.lockWall, root.greeterWall]
+    }
+
     Timer {
         interval: 60 * 1000
         running: root.w.mode === "time"
