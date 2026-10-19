@@ -1,0 +1,21 @@
+{
+  "name": "Vesktop (Discord)",
+  "icon": "forum",
+  "order": 4,
+  "package": "vesktop",
+  "hint": "Тема Vencord, обновляется на лету при смене обоев.",
+  "detect": {
+    "bin": [
+      "vesktop"
+    ],
+    "path": [
+      "~/.config/vesktop"
+    ]
+  },
+  "files": [
+    {
+      "template": "cove.theme.css",
+      "output": "~/.config/vesktop/themes/cove.theme.css"
+    }
+  ]
+}

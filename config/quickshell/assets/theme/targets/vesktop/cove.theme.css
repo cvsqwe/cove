@@ -1,0 +1,102 @@
+/**
+ * @name Cove
+ * @description Цвета системы Cove (сгенерировано движком тем, правки затрутся)
+ * @author Cove
+ * @version 1.0.0
+ */
+:root, .theme-dark, .theme-light, .theme-darker, .theme-midnight, .visual-refresh {
+    --font-primary: "{{font}}", "gg sans", sans-serif;
+    --font-display: "{{font}}", "gg sans", sans-serif;
+    --font-code: "{{mono}}", monospace;
+
+    /* обновлённый интерфейс Discord */
+    --background-base-lowest: {{crust}};
+    --background-base-lower: {{mantle}};
+    --background-base-low: {{base}};
+    --background-surface-high: {{surface0}};
+    --background-surface-higher: {{surface1}};
+    --background-surface-highest: {{surface2}};
+    --bg-base-primary: {{base}};
+    --bg-base-secondary: {{mantle}};
+    --bg-base-tertiary: {{crust}};
+    --bg-surface-raised: {{surface0}};
+    --bg-surface-overlay: {{mantle}};
+    --bg-overlay-chat: {{base}};
+    --bg-overlay-app-frame: {{crust}};
+    --app-frame-background: {{crust}};
+    --chat-background-default: {{base}};
+    --chat-text-muted: {{subtext0}};
+    --text-default: {{text}};
+    --text-strong: {{text}};
+    --text-subtle: {{subtext0}};
+    --text-brand: {{accent}};
+    --icon-default: {{subtext1}};
+    --icon-muted: {{overlay1}};
+    --icon-strong: {{text}};
+    --border-subtle: {{surface0}};
+    --border-normal: {{surface1}};
+    --border-strong: {{surface2}};
+    --border-faint: {{surface0 | alpha:0.6}};
+
+    /* классические переменные */
+    --background-primary: {{base}};
+    --background-secondary: {{mantle}};
+    --background-secondary-alt: {{crust}};
+    --background-tertiary: {{crust}};
+    --background-floating: {{crust}};
+    --background-nested-floating: {{mantle}};
+    --background-accent: {{accent}};
+    --background-mobile-primary: {{base}};
+    --background-mobile-secondary: {{mantle}};
+    --background-message-hover: {{text | alpha:0.03}};
+    --background-modifier-hover: {{text | alpha:0.06}};
+    --background-modifier-active: {{text | alpha:0.1}};
+    --background-modifier-selected: {{accent | alpha:0.16}};
+    --background-modifier-accent: {{surface0}};
+    --background-mentioned: {{yellow | alpha:0.08}};
+    --background-mentioned-hover: {{yellow | alpha:0.12}};
+    --channeltextarea-background: {{surface0}};
+    --input-background: {{crust}};
+    --modal-background: {{base}};
+    --modal-footer-background: {{mantle}};
+    --home-background: {{base}};
+    --deprecated-card-bg: {{surface0}};
+    --text-normal: {{text}};
+    --text-muted: {{subtext0}};
+    --text-link: {{accent}};
+    --text-positive: {{green}};
+    --text-warning: {{yellow}};
+    --text-danger: {{red}};
+    --header-primary: {{text}};
+    --header-secondary: {{subtext1}};
+    --channels-default: {{subtext0}};
+    --channel-icon: {{overlay1}};
+    --interactive-normal: {{subtext1}};
+    --interactive-hover: {{text}};
+    --interactive-active: {{text}};
+    --interactive-muted: {{overlay0}};
+    --scrollbar-thin-thumb: {{surface1}};
+    --scrollbar-auto-thumb: {{surface1}};
+    --scrollbar-auto-track: transparent;
+
+    /* фирменный цвет */
+    --brand-experiment: {{accent}};
+    --brand-500: {{accent}};
+    --brand-560: {{accent | darken:0.1}};
+    --brand-600: {{accent | darken:0.18}};
+    --brand-360: {{accent | lighten:0.15}};
+    --control-brand-foreground: {{accent}};
+    --control-brand-foreground-new: {{accent}};
+    --button-filled-brand-background: {{accent}};
+    --button-filled-brand-background-hover: {{accent | lighten:0.08}};
+    --button-filled-brand-text: {{crust}};
+    --mention-foreground: {{accent}};
+    --mention-background: {{accent | alpha:0.18}};
+    --status-positive: {{green}};
+    --status-warning: {{yellow}};
+    --status-danger: {{red}};
+    --green-360: {{green}};
+    --red-400: {{red}};
+}
+
+::selection { background: {{accent | alpha:0.35}}; }

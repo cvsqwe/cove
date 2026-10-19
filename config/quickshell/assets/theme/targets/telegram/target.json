@@ -1,0 +1,20 @@
+{
+  "name": "Telegram",
+  "icon": "send",
+  "order": 3,
+  "package": "telegram-desktop",
+  "hint": "Telegram не перечитывает тему сам: после смены обоев нажми «Применить» и подтверди в окне Telegram.",
+  "action": "Применить",
+  "detect": {
+    "bin": [
+      "telegram-desktop",
+      "Telegram"
+    ]
+  },
+  "files": [
+    {
+      "template": "colors.tdesktop-theme",
+      "output": "~/.cache/cove/telegram/colors.tdesktop-theme"
+    }
+  ]
+}

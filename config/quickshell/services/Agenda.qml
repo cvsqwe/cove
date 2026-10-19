@@ -134,10 +134,11 @@ Singleton {
         const from = new Date(); from.setHours(0, 0, 0, 0);
         const to = new Date(from.getTime() + 14 * 86400000);
         const out = [];
+        const raw = [];
         let ev = null;
         for (const line of lines) {
             if (line === "BEGIN:VEVENT") { ev = { exdates: [] }; continue; }
-            if (line === "END:VEVENT") { if (ev) expand(ev, from, to, cal, out); ev = null; continue; }
+            if (line === "END:VEVENT") { if (ev) raw.push(ev); ev = null; continue; }
             if (!ev) continue;
             const i = line.indexOf(":");
             if (i < 0) continue;
@@ -146,14 +147,19 @@ Singleton {
             const params = ps.join(";");
             if (key === "SUMMARY") ev.title = unesc(value);
             else if (key === "LOCATION") ev.location = unesc(value);
+            else if (key === "UID") ev.uid = value.trim();
             else if (key === "DTSTART") ev.start = parseDate(value, params);
             else if (key === "DTEND") ev.end = parseDate(value, params);
             else if (key === "DURATION") ev.duration = value;
             else if (key === "RRULE") ev.rrule = value;
             else if (key === "STATUS") ev.status = value;
             else if (key === "EXDATE") for (const v of value.split(",")) { const d = parseDate(v, params); if (d) ev.exdates.push(d.date.getTime()); }
-            else if (key === "RECURRENCE-ID") ev.recurrence = true;
+            else if (key === "RECURRENCE-ID") { const d = parseDate(value, params); if (d) ev.recurrenceId = d.date.getTime(); }
         }
+        // изменённые экземпляры повторов (RECURRENCE-ID) вычёркиваем из основного события, иначе двоятся
+        for (const e of raw.filter(e => e.uid && e.recurrenceId))
+            for (const base of raw) if (base.uid === e.uid && base.rrule) base.exdates.push(e.recurrenceId);
+        for (const e of raw) expand(e, from, to, cal, out);
         return out;
     }
 

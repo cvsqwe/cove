@@ -1,0 +1,51 @@
+# Cove: сгенерировано движком тем (assets/theme/targets/yazi) — правки затрутся
+[mgr]
+cwd = { fg = "{{accent2}}" }
+find_keyword = { fg = "{{yellow}}", bold = true, italic = true, underline = true }
+find_position = { fg = "{{accent2}}", bg = "reset", bold = true, italic = true }
+marker_copied = { fg = "{{green}}", bg = "{{green}}" }
+marker_cut = { fg = "{{red}}", bg = "{{red}}" }
+marker_marked = { fg = "{{teal}}", bg = "{{teal}}" }
+marker_selected = { fg = "{{accent}}", bg = "{{accent}}" }
+count_copied = { fg = "{{crust}}", bg = "{{green}}" }
+count_cut = { fg = "{{crust}}", bg = "{{red}}" }
+count_selected = { fg = "{{crust}}", bg = "{{accent}}" }
+border_symbol = "│"
+border_style = { fg = "{{surface1}}" }
+
+[indicator]
+current = { fg = "{{crust}}", bg = "{{accent}}", bold = true }
+
+[tabs]
+active = { fg = "{{crust}}", bg = "{{accent}}", bold = true }
+inactive = { fg = "{{subtext0}}", bg = "{{surface0}}" }
+
+[mode]
+normal_main = { fg = "{{crust}}", bg = "{{accent}}", bold = true }
+normal_alt = { fg = "{{accent}}", bg = "{{surface0}}" }
+select_main = { fg = "{{crust}}", bg = "{{green}}", bold = true }
+select_alt = { fg = "{{green}}", bg = "{{surface0}}" }
+unset_main = { fg = "{{crust}}", bg = "{{accent2}}", bold = true }
+unset_alt = { fg = "{{accent2}}", bg = "{{surface0}}" }
+
+[status]
+overall = { fg = "{{subtext1}}" }
+perm_type = { fg = "{{accent}}" }
+perm_read = { fg = "{{yellow}}" }
+perm_write = { fg = "{{red}}" }
+perm_exec = { fg = "{{green}}" }
+perm_sep = { fg = "{{overlay0}}" }
+progress_label = { fg = "{{text}}", bold = true }
+progress_normal = { fg = "{{accent}}", bg = "{{surface0}}" }
+progress_error = { fg = "{{red}}", bg = "{{surface0}}" }
+
+[filetype]
+rules = [
+  { mime = "image/*", fg = "{{teal}}" },
+  { mime = "{audio,video}/*", fg = "{{yellow}}" },
+  { mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "{{pink}}" },
+  { mime = "application/{pdf,doc,rtf}", fg = "{{green}}" },
+  { url = "*", is = "orphan", fg = "{{red}}" },
+  { url = "*", is = "exec", fg = "{{green}}" },
+  { url = "*/", fg = "{{accent}}" },
+]

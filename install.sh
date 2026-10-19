@@ -59,14 +59,18 @@ EOF
 PACKAGES=(
     # Hyprland и окружение
     hyprland quickshell awww hypridle hyprlock hyprsunset hyprpicker hyprpolkitagent
-    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt6-svg qt6-imageformats qt6-multimedia qt6-wayland
+    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt6-svg qt6-imageformats qt6-multimedia qt6-wayland qt6ct
     # звук, сеть, железо
     pipewire pipewire-pulse wireplumber networkmanager bluez bluez-utils
-    brightnessctl playerctl power-profiles-daemon upower lm_sensors
+    brightnessctl playerctl power-profiles-daemon upower lm_sensors udisks2
     # скриншоты, запись, буфер
     grim slurp satty gpu-screen-recorder cliphist wl-clipboard libnotify
+    # текст и QR с экрана (Super+Shift+T / Super+Shift+Q)
+    tesseract tesseract-data-rus tesseract-data-eng zbar
     # терминал и Cove Code
     kitty fish starship fastfetch zoxide eza bat git-delta fzf fd ripgrep yazi neovim
+    # миниатюры и просмотр (Cove Files)
+    python-pillow ffmpegthumbnailer poppler
     # прочее
     cava git curl unzip python librsvg
     # шрифты и темы

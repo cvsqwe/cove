@@ -11,7 +11,9 @@ Singleton {
     id: root
 
     readonly property var player: {
-        const all = Mpris.players.values;
+        // остановленные «плееры» не показываем: веб-мессенджеры (MAX, VK) выдают заголовок вкладки
+        // за трек — «25 непрочитанных чатов» в острове
+        const all = Mpris.players.values.filter(p => p.playbackState !== MprisPlaybackState.Stopped);
         return all.find(p => p.isPlaying) ?? all.find(p => (p.trackTitle ?? "") !== "") ?? null;
     }
     readonly property bool active: player !== null && (player.trackTitle ?? "") !== ""

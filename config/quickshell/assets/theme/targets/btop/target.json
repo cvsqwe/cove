@@ -1,0 +1,18 @@
+{
+  "name": "btop",
+  "icon": "monitor_heart",
+  "order": 7,
+  "package": "btop",
+  "hint": "Тема cove для btop, прозрачный фон терминала.",
+  "detect": {
+    "bin": [
+      "btop"
+    ]
+  },
+  "files": [
+    {
+      "template": "cove.theme",
+      "output": "~/.config/btop/themes/cove.theme"
+    }
+  ]
+}

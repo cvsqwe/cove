@@ -1,0 +1,18 @@
+{
+  "name": "yazi",
+  "icon": "folder_open",
+  "order": 6,
+  "package": "yazi",
+  "hint": "Файловый менеджер в терминале: рамки, вкладки, режимы и строка состояния в цветах Cove.",
+  "detect": {
+    "bin": [
+      "yazi"
+    ]
+  },
+  "files": [
+    {
+      "template": "theme.toml",
+      "output": "~/.config/yazi/theme.toml"
+    }
+  ]
+}

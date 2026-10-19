@@ -1,0 +1,18 @@
+{
+  "name": "Qt-приложения",
+  "icon": "widgets",
+  "order": 2,
+  "package": "qt6ct",
+  "hint": "Приложения на Qt (через qt6ct). Применяется к новым окнам; переменная QT_QPA_PLATFORMTHEME ставится при входе.",
+  "detect": {
+    "bin": [
+      "qt6ct"
+    ]
+  },
+  "files": [
+    {
+      "template": "cove.conf",
+      "output": "~/.config/qt6ct/colors/cove.conf"
+    }
+  ]
+}

@@ -16,8 +16,10 @@ Singleton {
     property alias bar: data.bar
     property alias island: data.island
     property alias launcher: data.launcher
+    property alias assistant: data.assistant
     property alias firefox: data.firefox
     property alias terminal: data.terminal
+    property alias apps: data.apps
     property alias windows: data.windows
     property alias input: data.input
     property alias notifications: data.notifications
@@ -160,6 +162,13 @@ Singleton {
                 ]
             }
 
+            // ассистент в лаунчере (префикс *): assets/assistant.py; ключ API — отдельным файлом, не здесь
+            property JsonObject assistant: JsonObject {
+                property string provider: "claude"   // claude (Claude Code) | anthropic | openai | ollama | off
+                property string model: ""            // пусто — модель провайдера по умолчанию
+                property string baseUrl: ""          // для openai-совместимых и Ollama; пусто — стандартный адрес
+            }
+
             // вид Firefox в стиле шелла (services/FirefoxLook.qml, assets/firefox/)
             property JsonObject firefox: JsonObject {
                 property string layout: "floating"   // floating | oneline | island | vertical | classic
@@ -177,6 +186,10 @@ Singleton {
                 ]
             }
 
+            // Перекраска сторонних приложений движком тем (assets/theme/cove-theme.py)
+            property JsonObject apps: JsonObject {
+                property var off: []                  // id целей, которые не трогаем (gtk, qt, telegram…)
+            }
             property JsonObject terminal: JsonObject {
                 property string font: "JetBrainsMono Nerd Font"
                 property real fontSize: 11.5

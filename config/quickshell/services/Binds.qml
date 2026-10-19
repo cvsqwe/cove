@@ -56,7 +56,10 @@ Singleton {
             b("SUPER ALT", "W", "shell.shotWindow"),
             b("SUPER", "Print", "shell.shotScreen"),
             b("SUPER SHIFT", "R", "shell.restart"),
-            b("SUPER", "G", "toggle.game")
+            b("SUPER", "G", "toggle.game"),
+            b("SUPER SHIFT", "T", "shell.ocr"),
+            b("SUPER SHIFT", "Q", "shell.qr"),
+            b("SUPER SHIFT", "A", "shell.assistant")
         ];
 
         for (const d of ["left", "right", "up", "down"]) {
@@ -89,8 +92,24 @@ Singleton {
         return list;
     }
 
+    // хоткеи, появившиеся после первого запуска: добавляются к своим один раз (удалённый не вернётся)
+    readonly property var added: ["shell.ocr", "shell.qr", "shell.assistant"]
+
     function ensureDefaults(): void {
-        if (!Settings.binds || Settings.binds.length === 0) Settings.binds = defaults();
+        if (!Settings.binds || Settings.binds.length === 0) {
+            Settings.binds = defaults();
+            Store.bindsAdded = added;
+            return;
+        }
+        const done = Store.bindsAdded ?? [], todo = added.filter(a => !done.includes(a));
+        if (!todo.length) return;
+        const list = Settings.binds.slice(), taken = new Set(list.map(x => normMods(x.mods) + "+" + String(x.key).toUpperCase()));
+        for (const d of defaults().filter(x => todo.includes(x.action))) {
+            if (list.some(x => x.action === d.action) || taken.has(normMods(d.mods) + "+" + d.key.toUpperCase())) continue;
+            list.push(d);
+        }
+        Settings.binds = list;
+        Store.bindsAdded = [...done, ...todo];
     }
 
     function normMods(mods: string): string {

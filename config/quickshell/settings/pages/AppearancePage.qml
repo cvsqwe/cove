@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 import qs.components
+import qs.services
 
 SPage {
     id: page
@@ -180,6 +181,47 @@ SPage {
             title: I18n.tr("Непрозрачность панелей")
             separator: false
             SSlider { from: 0.5; to: 1; step: 0.02; value: page.a.panelOpacity; percent: true; onMoved: v => page.a.panelOpacity = v }
+        }
+    }
+
+    SCard {
+        title: I18n.tr("Приложения")
+        icon: "apps"
+
+        StyledText {
+            Layout.fillWidth: true
+            Layout.leftMargin: 14
+            Layout.rightMargin: 14
+            text: I18n.tr("Цвета Cove уходят и в сторонние приложения: меняются вместе с обоями и темой. Выключенное возвращается к своему прежнему виду.")
+            color: Theme.overlay1
+            font.pixelSize: Theme.fontSizeSmall
+            wrapMode: Text.Wrap
+        }
+        Repeater {
+            model: AppThemes.targets
+            SRow {
+                id: tr
+                required property var modelData
+                required property int index
+                readonly property string res: AppThemes.results[modelData.id] ?? ""
+                icon: modelData.icon
+                title: I18n.tr(modelData.name)
+                desc: !modelData.installed ? (modelData.package ? I18n.tr("Не установлено — нужен пакет ") + modelData.package : I18n.tr("Не установлено"))
+                    : res.startsWith("error") ? I18n.tr("Ошибка: ") + res.slice(7)
+                    : I18n.tr(modelData.hint)
+                separator: index < AppThemes.targets.length - 1
+                opacity: modelData.installed ? 1 : 0.55
+                SButton {
+                    visible: tr.modelData.installed && tr.modelData.action !== "" && AppThemes.enabled(tr.modelData.id)
+                    text: I18n.tr(tr.modelData.action)
+                    onClicked: AppThemes.action(tr.modelData.id)
+                }
+                SSwitch {
+                    visible: tr.modelData.installed
+                    checked: AppThemes.enabled(tr.modelData.id)
+                    onToggled: v => AppThemes.setEnabled(tr.modelData.id, v)
+                }
+            }
         }
     }
 

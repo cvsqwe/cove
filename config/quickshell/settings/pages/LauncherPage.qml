@@ -325,4 +325,72 @@ SPage {
             SButton { icon: "󰐕"; text: I18n.tr("Добавить"); onClicked: page.l.bangs = [...Settings.copy(page.l.bangs ?? []), { key: "new", name: I18n.tr("Новый поиск"), url: "https://example.com/?q=%s" }] }
         }
     }
+
+    // ассистент: префикс * (services/Assistant.qml, assets/assistant.py)
+    SCard {
+        id: ai
+        title: I18n.tr("Ассистент")
+        icon: "auto_awesome"
+        readonly property var a: Settings.assistant
+        readonly property var cur: Assistant.providers.find(p => p.value === a.provider) ?? Assistant.providers[0]
+
+        SRow {
+            icon: "hub"
+            title: I18n.tr("Провайдер")
+            desc: ai.cur.hint + I18n.tr(". Спросить — *вопрос в лаунчере или Super+Shift+A.")
+            SDropdown {
+                options: Assistant.providers
+                current: ai.a.provider
+                onPicked: v => ai.a.provider = v
+            }
+        }
+        SRow {
+            visible: ai.a.provider !== "off"
+            icon: "neurology"
+            title: I18n.tr("Модель")
+            desc: ai.a.provider === "claude" ? I18n.tr("Пусто — модель Claude Code по умолчанию; можно opus, sonnet, haiku")
+                : ai.a.provider === "anthropic" ? I18n.tr("Пусто — claude-opus-5-5")
+                : ai.a.provider === "ollama" ? I18n.tr("Имя скачанной модели, например llama3.2 (ollama list)")
+                : I18n.tr("Имя модели у сервиса")
+            SField { implicitWidth: 220; text: ai.a.model; placeholderText: I18n.tr("по умолчанию"); onEdited: t => ai.a.model = t.trim() }
+        }
+        SRow {
+            visible: ai.a.provider === "openai" || ai.a.provider === "ollama"
+            icon: "link"
+            title: I18n.tr("Адрес API")
+            desc: I18n.tr("Пусто — ") + (ai.a.provider === "ollama" ? "http://localhost:11434/v1" : "https://api.openai.com/v1")
+            SField { implicitWidth: 260; text: ai.a.baseUrl; placeholderText: "https://…/v1"; onEdited: t => ai.a.baseUrl = t.trim() }
+        }
+        SRow {
+            visible: Assistant.needsKey
+            icon: "key"
+            title: I18n.tr("Ключ API")
+            desc: Assistant.hasKey ? I18n.tr("Сохранён в ~/.local/state/cove (виден только вам, в профиль не попадает)")
+                : ai.a.provider === "anthropic" ? I18n.tr("Не задан — возьмётся ANTHROPIC_API_KEY или вход «ant auth login», если есть")
+                : I18n.tr("Не задан")
+            SField {
+                id: keyField
+                implicitWidth: 220
+                echoMode: TextInput.Password
+                placeholderText: Assistant.hasKey ? I18n.tr("заменить…") : I18n.tr("вставьте ключ")
+                onEdited: t => { if (t.trim() !== "") { Assistant.saveKey(t); keyField.text = ""; } }
+            }
+            SButton { visible: Assistant.hasKey; icon: "delete"; text: I18n.tr("Удалить"); onClicked: Assistant.saveKey("") }
+        }
+        SRow {
+            visible: Assistant.needsSdk
+            icon: "deployed_code"
+            title: I18n.tr("Библиотека anthropic")
+            desc: Assistant.installing ? I18n.tr("Устанавливается…")
+                : Assistant.hasSdk ? I18n.tr("Установлена в ~/.local/share/cove/assistant-venv")
+                : (Assistant.installLog || I18n.tr("Нужна для Anthropic API, ставится отдельно от системного Python"))
+            separator: false
+            SButton {
+                visible: !Assistant.installing
+                icon: Assistant.hasSdk ? "update" : "download"
+                text: Assistant.hasSdk ? I18n.tr("Обновить") : I18n.tr("Установить")
+                onClicked: Assistant.installSdk()
+            }
+        }
+    }
 }

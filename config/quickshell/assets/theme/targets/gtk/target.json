@@ -1,0 +1,24 @@
+{
+  "name": "GTK-приложения",
+  "icon": "web_asset",
+  "order": 1,
+  "package": "adw-gtk-theme",
+  "hint": "Файлы, Настройки GNOME, Firefox-диалоги и всё на GTK3/GTK4. Новые окна — сразу, открытые — после перезапуска.",
+  "detect": {
+    "path": [
+      "/usr/share/themes/adw-gtk3",
+      "/usr/share/themes/adw-gtk3-dark",
+      "~/.local/share/themes/adw-gtk3"
+    ]
+  },
+  "files": [
+    {
+      "template": "gtk.css",
+      "output": "~/.config/gtk-3.0/gtk.css"
+    },
+    {
+      "template": "gtk.css",
+      "output": "~/.config/gtk-4.0/gtk.css"
+    }
+  ]
+}

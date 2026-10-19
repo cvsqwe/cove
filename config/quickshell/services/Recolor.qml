@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Разносит палитру шелла по kitty, Firefox и Cove Code (рамки окон Hyprland — в services/HyprConfig.qml).
+// Разносит палитру шелла по kitty, Firefox и Cove Code; остальные приложения — services/AppThemes.qml (рамки окон Hyprland — в services/HyprConfig.qml).
 // Firefox: цвета на лету через Pywalfox (~/.cache/wal/colors.json + `pywalfox update`),
 // форма (скругления, шрифт) — userChrome.css из assets/firefox-theme.sh, применяется после перезапуска Firefox.
 Singleton {
@@ -36,6 +36,7 @@ Singleton {
         Quickshell.execDetached(["pkill", "-USR1", "-x", "kitty"]);
         firefoxColors();
         coveColors();
+        AppThemes.apply();   // GTK, Qt, Telegram, Vesktop и другие — assets/theme/
     }
 
     // Cove Code (~/.config/cove/lua/cove/theme.lua) следит за этим файлом и перекрашивается на лету

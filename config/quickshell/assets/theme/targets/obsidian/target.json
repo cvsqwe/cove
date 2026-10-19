@@ -1,0 +1,15 @@
+{
+  "name": "Obsidian",
+  "icon": "edit_note",
+  "order": 5,
+  "package": "obsidian",
+  "hint": "Сниппет cove.css во всех хранилищах, обновляется на лету. Новое хранилище подхватится при следующей смене обоев.",
+  "detect": {
+    "bin": [
+      "obsidian"
+    ],
+    "path": [
+      "~/.config/obsidian"
+    ]
+  }
+}

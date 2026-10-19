@@ -67,6 +67,8 @@ Singleton {
         L.push(`hl.env("XCURSOR_SIZE", ${q(a.cursorSize)})`);
         L.push(`hl.env("HYPRCURSOR_SIZE", ${q(a.cursorSize)})`);
         L.push(`hl.env("QS_ICON_THEME", ${q(a.iconTheme)})`);
+        // Qt-приложения берут палитру Cove из qt6ct (services/AppThemes.qml)
+        if (AppThemes.active("qt")) L.push(`hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")`);
         L.push("");
 
         // ---- хоткеи ----
@@ -205,7 +207,7 @@ Singleton {
         Settings.appearance.animations, Settings.appearance.animSpeed, Settings.appearance.cursorTheme, Settings.appearance.cursorSize, Settings.appearance.iconTheme,
         Settings.bar.bodyOpacity, Settings.bar.style,
         Settings.general.terminal, Settings.general.browser, Settings.general.fileManager, Settings.general.editor,
-        Theme.accent, Theme.accent2, Theme.surface0
+        Theme.accent, Theme.accent2, Theme.surface0, AppThemes.active("qt")
     ]
     onWatchChanged: debounce.restart()
     property var watchIdle: [Settings.idle.lockMinutes, Settings.idle.dpmsMinutes, Settings.idle.suspendMinutes]

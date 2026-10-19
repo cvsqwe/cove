@@ -20,6 +20,7 @@ Singleton {
     property alias pinnedClips: data.pinnedClips // закреплённое в буфере обмена
     property alias launches: data.launches
     property alias launchedAt: data.launchedAt // счётчик запусков приложений для сортировки
+    property alias bindsAdded: data.bindsAdded // новые хоткеи по умолчанию, уже добавленные к своим (services/Binds.qml)
     property alias alarms: data.alarms         // будильники [{ time: "07:30", label, days: [1..7], on }]
 
     // Живые обои: видео показывает слой wallpaper/LiveWallpaper.qml, а всё, что берёт обои как картинку
@@ -55,6 +56,7 @@ Singleton {
             property var launches: ({})
             property var launchedAt: ({})   // id приложения → время последнего запуска (сортировка «недавние»)
             property var alarms: []
+            property var bindsAdded: []
         }
     }
 }

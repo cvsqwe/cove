@@ -35,7 +35,7 @@ Scope {
         target: "lock"
         function lock(): void { root.lock(); }
         function isLocked(): bool { return sessionLock.locked; }
-        function preview(): void { root.previewing = true; }
+        function preview(): void { root.previewing = !root.previewing; }
     }
 
     // ---- предпросмотр: тот же экран обычным окном поверх всего, без блокировки и пароля ----

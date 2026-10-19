@@ -44,6 +44,7 @@ Singleton {
         function toggle(): void { root.toggle("launcher"); }
         function clipboard(): void { root.launcherQuery = ":"; root.toggle("launcher"); }
         function palette(): void { root.launcherQuery = "#"; root.toggle("launcher"); }
+        function assistant(): void { root.launcherQuery = "*"; root.toggle("launcher"); }
         function search(q: string): void { root.launcherQuery = q; root.launcher = false; root.toggle("launcher"); }   // qs ipc call launcher search "!yt "
     }
     IpcHandler {

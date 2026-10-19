@@ -14,6 +14,7 @@ import qs.services
 //   =  калькулятор     /  файлы в ~     >  команда в терминале
 //   ?  поиск в сети    :  история буфера обмена   #  действия
 //   !  быстрые поиски (!yt котики)     @  открытые окна
+//   *  ассистент (провайдер — Настройки → Лаунчер → Ассистент)
 Drawer {
     id: root
 
@@ -39,7 +40,7 @@ Drawer {
     }
 
     readonly property string query: search.text
-    readonly property string prefix: "=/>?:#!@;+<".includes(query.charAt(0)) ? query.charAt(0) : ""
+    readonly property string prefix: "=/>?:#!@;+<*".includes(query.charAt(0)) ? query.charAt(0) : ""
     readonly property string term: (prefix ? query.slice(1) : query).trim()
     // сетка — только для приложений; калькулятор, файлы и прочее всегда списком
     readonly property bool gridMode: look.layout === "grid" && prefix === ""
@@ -211,13 +212,18 @@ Drawer {
     }
 
     function fileResults(): var {
-        if (term === "") return [{ glyph: "󰈞", title: I18n.tr("Поиск файлов в домашней папке"), subtitle: I18n.tr("Например: /отчёт") }];
-        return files.map(f => ({
-            glyph: "󰈔",
-            title: f.split("/").pop(),
-            subtitle: f.replace(Settings.home, "~"),
-            run: () => Qt.openUrlExternally("file://" + f)
-        }));
+        if (term === "") return [{ glyph: "󰈞", title: I18n.tr("Поиск файлов и папок в домашней папке"), subtitle: I18n.tr("Например: /отчёт · ПКМ — открыть папку с файлом") }];
+        return files.map(f => {
+            const dir = f.endsWith("/"), path = dir ? f.slice(0, -1) : f;   // fd помечает папки косой чертой
+            const parent = path.slice(0, path.lastIndexOf("/")) || "/";
+            return {
+                glyph: dir ? "folder" : "draft",
+                title: path.split("/").pop(),
+                subtitle: parent.replace(Settings.home, "~"),
+                run: () => Qt.openUrlExternally("file://" + path),
+                alt: () => { Qt.openUrlExternally("file://" + parent); Panels.launcher = false; }
+            };
+        });
     }
 
     function clipResults(): var {
@@ -313,11 +319,16 @@ Drawer {
         case ";": return emojiResults(term);
         case "+": return timerResults(term);
         case "<": return historyResults();
+        case "*": return [];   // свой вид — AssistantView
         default: return apps(term.toLowerCase());
         }
     }
 
     function activate(i: int): void {
+        if (prefix === "*") {
+            if (term !== "" && !Assistant.busy) { Assistant.ask(term); search.text = "*"; }
+            return;
+        }
         const r = results[i];
         if (!r || !r.run) return;
         r.run();
@@ -337,7 +348,7 @@ Drawer {
 
     Process {
         id: fileProc
-        command: ["fd", "-i", "-t", "f", "--max-results", "50", "--exclude", ".git", "--exclude", "node_modules", root.term, Settings.home]
+        command: ["fd", "-i", "-t", "f", "-t", "d", "--max-results", "50", "--exclude", ".git", "--exclude", "node_modules", root.term, Settings.home]
         stdout: StdioCollector { onStreamFinished: root.files = text.split("\n").filter(s => s !== "") }
     }
 
@@ -387,7 +398,7 @@ Drawer {
             Item { Layout.fillWidth: true }
             StyledText {
                 visible: root.look.hints
-                text: "= / > ? : # ! @ ; + <"
+                text: "= / > ? : # ! @ ; + < *"
                 color: Theme.overlay0
                 font.pixelSize: Theme.fontSizeSmall
             }
@@ -430,7 +441,7 @@ Drawer {
 
                 MIcon {
                     icon: ({ "=": "calculate", "/": "folder_open", ">": "terminal", "?": "language", ":": "content_paste",
-                             "#": "bolt", "!": "travel_explore", "@": "select_window", ";": "mood", "+": "timer", "<": "history" })[root.prefix] ?? "search"
+                             "#": "bolt", "!": "travel_explore", "@": "select_window", ";": "mood", "+": "timer", "<": "history", "*": "auto_awesome" })[root.prefix] ?? "search"
                     color: Theme.accent
                     size: 18
                 }
@@ -438,7 +449,7 @@ Drawer {
                 TextField {
                     id: search
                     Layout.fillWidth: true
-                    placeholderText: root.look.placeholder || I18n.tr("Приложения, =расчёт, /файлы, >команда, !поиск, @окна, :буфер, ;эмодзи, +таймер, <история")
+                    placeholderText: root.look.placeholder || I18n.tr("Приложения, =расчёт, /файлы, >команда, !поиск, @окна, :буфер, ;эмодзи, +таймер, <история, *ассистент")
                     placeholderTextColor: Theme.overlay0
                     color: Theme.text
                     font.family: Theme.font
@@ -505,9 +516,15 @@ Drawer {
             }
         }
 
+        AssistantView {
+            visible: root.prefix === "*"
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }
+
         ListView {
             id: list
-            visible: !root.gridMode
+            visible: !root.gridMode && root.prefix !== "*"
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
