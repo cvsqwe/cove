@@ -17,6 +17,11 @@ ask() { # ask "вопрос" [system] — 0 на «да»; системное с
     [[ "$a" =~ ^[YyДд] ]]
 }
 
+# VPN Cove: служба и правило polkit (system/vpn/install.sh)
+if [ -f /etc/systemd/system/cove-vpn@.service ] && ask "Убрать VPN Cove (служба cove-vpn и правило polkit)?" system; then
+    sudo bash "$REPO/system/vpn/install.sh" remove >/dev/null && echo "  VPN Cove убран"
+fi
+
 # звуковые эффекты Cove (Настройки → Звук) — юниты systemd-run, без шелла их некому выключить
 for u in cove-sound-out cove-sound-mic; do
     systemctl --user stop "$u" 2>/dev/null && echo "  остановил $u" || true

@@ -5,7 +5,7 @@
 #   ./install.sh -y           всё, ответы по умолчанию
 #   ./install.sh check        только проверить систему, ничего не менять
 #   ./install.sh <шаг>…       только эти шаги: packages fonts link editor shell
-#                             nvidia wallpapers cursors firefox greeter boot
+#                             nvidia wallpapers cursors firefox greeter boot vpn
 #
 # Конфиги ставятся симлинками на этот репозиторий: `git pull` — и система обновлена.
 # Всё, что лежало на их месте, переносится в ~/.local/state/cove/backup-<дата>/ (откат — ./uninstall.sh).
@@ -82,8 +82,9 @@ PKG_GROUPS=(
     "tools|файловый менеджер yazi, спектр музыки в острове|yazi cava"
     "nvim|старый Cove Code на Neovim (cove-nvim)|neovim"
     "eq|выравнивание громкости и защита от перегруза в Настройки → Звук|lsp-plugins-lv2"
+    "songid|«что за песня играет» (Shazam) в центре управления|songrec"
 )
-PKG_DEFAULT=(y y y y n y)
+PKG_DEFAULT=(y y y y n y y)
 
 missing_of() { local p; for p in "$@"; do pacman -Qq "$p" >/dev/null 2>&1 || printf '%s ' "$p"; done; }
 
@@ -453,6 +454,19 @@ if want boot; then
         command -v plymouthd >/dev/null || sudo pacman -S --needed --noconfirm plymouth
         bash "$REPO/system/boot/install.sh" install
         warn "Заставка включится после: bash $REPO/system/boot/install.sh apply (пересборка initramfs)"
+    fi
+fi
+
+# ---------------------------------------------------------------- VPN
+if want vpn; then
+    if explicit || ask "Поставить свой VPN Cove (ядро Mihomo из AUR + служба; подписки — в Настройки → VPN)?" n; then
+        step "VPN"
+        if ! command -v mihomo >/dev/null; then
+            aur=$(command -v yay || command -v paru || true)
+            if [ -n "$aur" ]; then "$aur" -S --needed mihomo-bin && ok "ядро mihomo"
+            else warn "нет помощника AUR (yay или paru): поставьте mihomo-bin и повторите ./install.sh vpn"; fi
+        fi
+        command -v mihomo >/dev/null && sudo bash "$REPO/system/vpn/install.sh" install "$USER" >/dev/null && ok "служба cove-vpn@$USER (включается без пароля)"
     fi
 fi
 
