@@ -65,6 +65,7 @@ Scope {
 
     PanelWindow {
         id: win
+        screen: Panels.screen
         visible: root.open || fade.running
         anchors { top: true; bottom: true; left: true; right: true }
         exclusionMode: ExclusionMode.Ignore

@@ -12,6 +12,7 @@ Item {
     id: root
 
     property var toast: null // { icon, text, color }
+    signal shelfClicked()
     readonly property bool media: Media.active && !GameMode.active && Settings.island.media
     readonly property string content: toast ? "toast" : media ? "media" : "idle"
     readonly property var isl: Settings.island
@@ -163,6 +164,33 @@ Item {
                 color: Theme.teal
                 font.pixelSize: Theme.fontSizeSmall
                 font.bold: true
+            }
+        }
+
+        // полка: сколько лежит; клик — раскрыть
+        Item {
+            visible: Shelf.count > 0 && Settings.island.shelf
+            anchors.verticalCenter: parent.verticalCenter
+            width: shelfRow.implicitWidth
+            height: 22
+            Row {
+                id: shelfRow
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 3
+                MIcon { anchors.verticalCenter: parent.verticalCenter; icon: "inventory_2"; size: Theme.fontSize; color: Theme.accent }
+                StyledText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Shelf.count
+                    color: Theme.accent
+                    font.pixelSize: Theme.fontSizeSmall
+                    font.bold: true
+                }
+            }
+            MouseArea {
+                anchors.fill: parent
+                anchors.margins: -4
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.shelfClicked()
             }
         }
 

@@ -48,6 +48,7 @@ Scope {
 
     PanelWindow {
         id: win
+        screen: Displays.primaryScreen
         visible: root.shown
         anchors { top: true; bottom: true; left: true; right: true }
         exclusionMode: ExclusionMode.Ignore

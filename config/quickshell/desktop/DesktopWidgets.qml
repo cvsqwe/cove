@@ -14,6 +14,7 @@ import qs.services
 // Ctrl+D — копия, Esc — снять выделение / выйти. Типы виджетов — desktop/Catalog.qml.
 PanelWindow {
     id: win
+    screen: Displays.primaryScreen   // Настройки → Мониторы → «Основной»
 
     property bool editing: false
     property string selected: ""

@@ -72,6 +72,12 @@ SPage {
             SSwitch { checked: Settings.appearance.splash; onToggled: v => Settings.appearance.splash = v }
         }
         SRow {
+            icon: "waving_hand"
+            title: I18n.tr("Приветствие Cove")
+            desc: I18n.tr("Первый запуск: язык, имя, обои, настроение и главные хоткеи")
+            SButton { text: I18n.tr("Открыть"); onClicked: Quickshell.execDetached(["qs", "ipc", "call", "welcome", "open"]) }
+        }
+        SRow {
             icon: "󰋩"
             title: I18n.tr("Значок в баре")
             desc: I18n.tr("Знак Cove на кнопке лаунчера")

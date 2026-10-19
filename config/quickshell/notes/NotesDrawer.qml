@@ -10,6 +10,7 @@ import qs.services
 // Заметки — ящик справа (Super+Shift+N). Обычные .md в ~/Notes, сохраняются сами при вводе.
 Drawer {
     id: root
+    screen: Panels.screen   // монитор с фокусом в момент открытия
 
     side: "right"
     drawerWidth: 640

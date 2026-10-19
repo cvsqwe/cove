@@ -27,6 +27,7 @@ Scope {
     }
 
     PanelWindow {
+        screen: Panels.screen
         visible: root.open
         anchors { top: true; bottom: true; left: true; right: true }
         exclusionMode: ExclusionMode.Ignore

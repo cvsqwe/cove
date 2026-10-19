@@ -17,6 +17,7 @@ import qs.services
 //   *  ассистент (провайдер — Настройки → Лаунчер → Ассистент)
 Drawer {
     id: root
+    screen: Panels.screen   // монитор с фокусом в момент открытия
 
     readonly property var look: Settings.launcher
     side: look.position

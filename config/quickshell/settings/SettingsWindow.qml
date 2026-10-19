@@ -24,6 +24,7 @@ Scope {
         { id: "windows", icon: "󰖯", label: I18n.tr("Окна"), file: "WindowsPage", keys: I18n.tr("окна отступы рамка блюр тени прозрачность раскладка анимация игровой") },
         { id: "binds", icon: "󰌌", label: I18n.tr("Хоткеи"), file: "BindsPage", keys: I18n.tr("хоткеи клавиши бинды сочетания") },
         { id: "rules", icon: "󰁨", label: I18n.tr("Правила окон"), file: "RulesPage", keys: I18n.tr("правила окна воркспейс плавающее закрепить") },
+        { id: "displays", icon: "monitor", label: I18n.tr("Мониторы"), file: "DisplaysPage", keys: I18n.tr("мониторы экран дисплей разрешение частота герц масштаб поворот расположение второй монитор") + " display monitor" },
         { id: "input", icon: "󰍽", label: I18n.tr("Ввод"), file: "InputPage", keys: I18n.tr("клавиатура мышь раскладка язык повтор чувствительность") },
         { id: "notifications", icon: "󰂚", label: I18n.tr("Уведомления"), file: "NotificationsPage", keys: I18n.tr("уведомления звук не беспокоить расписание заглушить") },
         { id: "wallpaper", icon: "󰸉", label: I18n.tr("Обои"), file: "WallpaperPage", keys: I18n.tr("обои фон слайдшоу время воркспейс переход") },

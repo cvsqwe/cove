@@ -7,6 +7,7 @@ import qs.services
 // Затемнение экрана вокруг лаунчера (Настройки → Лаунчер → «Затемнять экран»). Клик — закрыть.
 PanelWindow {
     id: win
+    screen: Panels.screen   // монитор с фокусом в момент открытия
     readonly property bool on: Panels.launcher && Settings.launcher.dim
     anchors { top: true; bottom: true; left: true; right: true }
     exclusionMode: ExclusionMode.Ignore

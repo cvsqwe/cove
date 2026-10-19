@@ -19,7 +19,8 @@ import qs.desktop
 
 ShellRoot {
     Variants {
-        model: Quickshell.screens
+        // панель и остров: на всех мониторах или только на основном (Настройки → Мониторы)
+        model: Quickshell.screens.filter(s => Displays.hasBar(s))
 
         Scope {
             id: perScreen
@@ -46,6 +47,7 @@ ShellRoot {
     NotesDrawer {}
     DesktopWidgets {}
     Splash { id: splash }
+    Welcome { id: welcome }
 
     // Запуск сервисов — только когда settings.json и state.json прочитаны: до этого в них
     // значения по умолчанию, и одноразовые действия (обои, палитра, конфиг Hyprland) взяли бы их.
@@ -66,8 +68,11 @@ ShellRoot {
         PolkitAuth.enabled; // свой агент polkit (или запасной hyprpolkitagent)
         Timers.active; Privacy.any; Downloads.active; Agenda.next; ClipGuard.sensitive; TerminalLook.apply(); Profiles.presets; Lens.busy; Assistant.busy; Sun.isDay; // остров: таймеры, индикаторы, календарь; пароли в буфере
         Wallpapers.restore();
+        Shelf.init();
+        Shelf.init();
         Notifs.count; // поднимаем сервер уведомлений сразу
         System.uptime; Keyboard.caps; // ночной свет, Caps Lock
         splash.boot();
+        welcome.boot();
     }
 }

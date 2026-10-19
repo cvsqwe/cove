@@ -14,6 +14,7 @@ import qs.services
 // отпустить Super — перейти. Стрелки ←/→ и Enter тоже работают.
 PanelWindow {
     id: win
+    screen: Panels.screen   // монитор с фокусом в момент открытия
 
     readonly property bool open: Panels.overview
     readonly property real scale: 0.16

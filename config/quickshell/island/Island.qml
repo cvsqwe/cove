@@ -9,7 +9,7 @@ import qs.services
 
 // Динамический остров: капсула в центре панели, которая перетекает между состояниями
 // и выпадает из панели вниз.
-// Приоритет тела: дашборд > уведомление > скриншот > пипетка > громкость > ничего.
+// Приоритет тела: бросок на полку > дашборд > уведомление > полка > скриншот > пипетка > громкость > ничего.
 // Капсула сама показывает тосты (воркспейс, раскладка, Caps, приветствие), плеер или часы.
 PanelWindow {
     id: win
@@ -22,18 +22,22 @@ PanelWindow {
     mask: Region { item: island }
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "qs-island"
-    WlrLayershell.keyboardFocus: Panels.dashboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: dash ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     property bool osdVisible: false
     property bool shotVisible: false
     property bool pickerVisible: false
     property bool armed: false
     property var toast: null
+    property bool dropHover: false   // над островом держат перетаскиваемый файл
+    // на нескольких мониторах дашборд и полка раскрываются только на одном острове
+    readonly property bool here: Settings.displays.bars === "primary" || screen?.name === Panels.screen?.name
+    readonly property bool dash: Panels.dashboard && here
 
     // раскрытие при наведении: с задержкой, чтобы не срабатывать от пролетающей мыши
     property bool peekOpen: false
     property bool peekSuppressed: false   // после действия из «peek» не раскрываться снова сразу
-    readonly property bool peekWanted: Settings.island.peek && hovering && !peekSuppressed && !Panels.dashboard
+    readonly property bool peekWanted: Settings.island.peek && (hovering || Shelf.dragging) && !peekSuppressed && !dash
     onPeekWantedChanged: {
         if (peekWanted) { peekClose.stop(); peekOpenTimer.restart(); }
         else { peekOpenTimer.stop(); peekClose.restart(); }
@@ -48,8 +52,10 @@ PanelWindow {
         && hover.point.position.x >= 0 && hover.point.position.x <= island.width
         && hover.point.position.y >= 0 && hover.point.position.y <= island.height
 
-    readonly property string mode: Panels.dashboard ? "dashboard"
+    readonly property string mode: dropHover ? "shelf"
+        : dash ? "dashboard"
         : Notifs.current ? "notif"
+        : Shelf.shown && (Shelf.where === screen?.name || Settings.displays.bars === "primary") && Settings.island.shelf ? "shelf"
         : shotVisible ? "shot"
         : pickerVisible ? "picker"
         : osdVisible ? "osd"
@@ -58,6 +64,7 @@ PanelWindow {
 
     readonly property real bodyWidth: mode === "dashboard" ? dashboard.implicitWidth + 32
         : mode === "notif" ? 460
+        : mode === "shelf" ? shelf.implicitWidth + 36
         : mode === "shot" ? shot.implicitWidth + 36
         : mode === "picker" ? picker.implicitWidth + 36
         : mode === "osd" ? 360
@@ -65,6 +72,7 @@ PanelWindow {
         : 0
     readonly property real bodyHeight: mode === "dashboard" ? dashboard.implicitHeight + 28
         : mode === "notif" ? notif.implicitHeight + 26
+        : mode === "shelf" ? shelf.implicitHeight + 26
         : mode === "shot" ? shot.implicitHeight + 28
         : mode === "picker" ? picker.implicitHeight + 28
         : mode === "osd" ? 46
@@ -156,6 +164,13 @@ PanelWindow {
         Sounds.tick();
     }
 
+    // ---- полка: закрывается, когда мышь ушла и ничего не тащат ----
+    Timer {
+        interval: 1400
+        running: Shelf.shown && !win.hovering && !win.dropHover && !Shelf.dragging
+        onTriggered: Shelf.shown = false
+    }
+
     // ---- скриншот и пипетка ----
     Timer { id: shotTimer; interval: 6000; running: win.shotVisible && !win.hovering; onTriggered: win.shotVisible = false }
     Connections {
@@ -184,7 +199,7 @@ PanelWindow {
 
     HyprlandFocusGrab {
         windows: [win]
-        active: Panels.dashboard
+        active: win.dash
         onCleared: Panels.dashboard = false
     }
 
@@ -235,6 +250,25 @@ PanelWindow {
 
         HoverHandler { id: hover }
 
+        // бросить файл, текст или ссылку на остров — он ляжет на полку
+        DropArea {
+            anchors.fill: parent
+            enabled: Settings.island.shelf
+            onEntered: d => {
+                d.accept(Qt.CopyAction);
+                if (Shelf.dragging) Shelf.overIsland = true;   // своё же с полки — вернули обратно
+                else win.dropHover = true;
+            }
+            onExited: { win.dropHover = false; Shelf.overIsland = false; }
+            onDropped: d => {
+                win.dropHover = false;
+                if (Shelf.dragging) return;
+                Shelf.drop(d.urls, d.hasText ? d.text : "");
+                d.accept(Qt.CopyAction);   // не «переместить»: источник не должен удалять файл
+                Shelf.showOn(win.screen?.name ?? "");
+            }
+        }
+
         // капсула внутри панели
         Rectangle {
             id: capsule
@@ -257,7 +291,7 @@ PanelWindow {
                 onClicked: m => {
                     if (m.button === Qt.MiddleButton) Media.player?.togglePlaying();
                     else if (m.button === Qt.RightButton) Media.player?.next();
-                    else Panels.toggle("dashboard");
+                    else { Panels.toggle("dashboard"); Panels.screen = win.screen; }
                 }
                 onWheel: w => Audio.step(w.angleDelta.y > 0 ? 0.05 : -0.05)
             }
@@ -267,6 +301,7 @@ PanelWindow {
                 z: 1
                 anchors.centerIn: parent
                 toast: win.toast
+                onShelfClicked: Shelf.where === win.screen?.name && Shelf.shown ? Shelf.shown = false : Shelf.showOn(win.screen?.name ?? "")
             }
         }
 
@@ -311,6 +346,12 @@ PanelWindow {
                 kind: win.osdKind
                 shown: win.mode === "osd"
             }
+            ShelfBody {
+                id: shelf
+                anchors.horizontalCenter: parent.horizontalCenter
+                shown: win.mode === "shelf"
+                dropping: win.dropHover
+            }
             NotifBody {
                 id: notif
                 width: parent.width
@@ -341,7 +382,7 @@ PanelWindow {
         }
 
         Keys.onEscapePressed: Panels.dashboard = false
-        focus: Panels.dashboard
+        focus: win.dash
     }
 
     // вогнутые «наплывы» там, где остров выходит из панели

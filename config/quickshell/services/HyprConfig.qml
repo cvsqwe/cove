@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Генерирует ~/.config/hypr/generated.lua (хоткеи, вид окон, ввод, правила, автозапуск)
+// Генерирует ~/.config/hypr/generated.lua (хоткеи, вид окон, ввод, мониторы, правила, автозапуск)
 // и ~/.config/hypr/hypridle.conf из Settings, затем перезагружает Hyprland.
 // Если после перезагрузки Hyprland сообщает об ошибках — возвращает прошлую рабочую версию.
 Singleton {
@@ -61,6 +61,14 @@ Singleton {
         L.push(`hl.animation({ leaf = "windowsOut", enabled = true, speed = ${(1.49 / sp).toFixed(2)}, bezier = "linear", style = ${q(style)} })`);
         L.push(`hl.animation({ leaf = "windows", enabled = true, speed = ${(4.79 / sp).toFixed(2)}, spring = "easy" })`);
         L.push("");
+
+        // ---- мониторы (Настройки → Мониторы) ----
+        const mons = Settings.displays.monitors ?? [];
+        if (mons.length) {
+            L.push(I18n.tr("-- Мониторы"));
+            for (const c of mons) L.push(Displays.lua(c));
+            L.push("");
+        }
 
         // ---- окружение ----
         L.push(`hl.env("XCURSOR_THEME", ${q(a.cursorTheme)})`);
@@ -205,7 +213,7 @@ Singleton {
         JSON.stringify(Settings.input.layouts), Settings.input.switchKey, Settings.input.repeatDelay, Settings.input.repeatRate,
         Settings.input.sensitivity, Settings.input.accel, Settings.input.naturalScroll, Settings.input.followMouse,
         Settings.appearance.animations, Settings.appearance.animSpeed, Settings.appearance.cursorTheme, Settings.appearance.cursorSize, Settings.appearance.iconTheme,
-        Settings.bar.bodyOpacity, Settings.bar.style,
+        Settings.bar.bodyOpacity, Settings.bar.style, JSON.stringify(Settings.displays.monitors),
         Settings.general.terminal, Settings.general.browser, Settings.general.fileManager, Settings.general.editor,
         Theme.accent, Theme.accent2, Theme.surface0, AppThemes.active("qt")
     ]

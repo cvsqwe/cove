@@ -15,6 +15,7 @@ Singleton {
     property alias appearance: data.appearance
     property alias bar: data.bar
     property alias island: data.island
+    property alias displays: data.displays
     property alias launcher: data.launcher
     property alias assistant: data.assistant
     property alias firefox: data.firefox
@@ -231,6 +232,17 @@ Singleton {
                 property bool agenda: true             // ближайшее событие календаря в капсуле
                 property bool media: true              // плеер (трек, обложка) в капсуле — выключить, например, для записи экрана
                 property bool privacyToast: true       // тост, когда приложение включает микрофон/камеру/экран
+                property bool shelf: true              // полка: бросить файл на капсулу, потом утащить куда нужно
+                property bool shelfRemove: true        // убирать с полки то, что утащили (иначе — только при «Переместить»)
+                property int shelfMax: 30
+            }
+
+            property JsonObject displays: JsonObject {
+                // свои настройки мониторов; пусто — как решит Hyprland (и ~/.config/hypr/monitors.lua)
+                // [{ key: "desc:…" | имя выхода, name, enabled, mode: "1920x1080@144", x, y, scale, transform, vrr, mirror }]
+                property var monitors: []
+                property string primary: ""          // имя выхода: виджеты рабочего стола, заставка; пусто — первый
+                property string bars: "all"          // all | primary — где панель и остров
             }
 
             property JsonObject windows: JsonObject {

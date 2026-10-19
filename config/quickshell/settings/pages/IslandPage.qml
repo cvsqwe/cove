@@ -132,6 +132,31 @@ SPage {
     }
 
     SCard {
+        title: I18n.tr("Полка")
+        icon: "inventory_2"
+        SRow {
+            icon: "drag_pan"
+            title: I18n.tr("Полка для файлов")
+            desc: I18n.tr("Перетащите файл, текст или ссылку на остров, потом вытащите в нужное окно")
+            SSwitch { checked: page.i.shelf; onToggled: v => page.i.shelf = v }
+        }
+        SRow {
+            visible: page.i.shelf
+            icon: "output"
+            title: I18n.tr("Убирать с полки после перетаскивания")
+            desc: I18n.tr("Вернули плитку на остров — останется. Выключено — лежит, пока не уберёте сами")
+            SSwitch { checked: page.i.shelfRemove; onToggled: v => page.i.shelfRemove = v }
+        }
+        SRow {
+            visible: page.i.shelf
+            icon: "stacks"
+            title: I18n.tr("Сколько держать на полке")
+            separator: false
+            SSlider { from: 5; to: 100; step: 5; value: page.i.shelfMax; onMoved: v => page.i.shelfMax = v }
+        }
+    }
+
+    SCard {
         title: I18n.tr("Уведомления в острове")
         icon: "󰂚"
         SRow {

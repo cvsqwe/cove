@@ -10,6 +10,7 @@ import qs.services
 // ←/→ — выбор, Enter — применить, Esc — закрыть. Палитра перестраивается сама.
 PanelWindow {
     id: win
+    screen: Panels.screen   // монитор с фокусом в момент открытия
 
     readonly property bool open: Panels.wallpaper
     readonly property int drawerHeight: 250

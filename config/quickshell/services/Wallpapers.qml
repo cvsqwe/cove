@@ -42,6 +42,13 @@ Singleton {
             "_", still, root.blurNow ? "1" : "0", blurredOf(still), ...trans]);
     }
 
+    // awww ставит картинку только на подключённые сейчас мониторы — новому показываем заново
+    Connections {
+        target: Quickshell
+        function onScreensChanged(): void { screensDebounce.restart(); }
+    }
+    Timer { id: screensDebounce; interval: 800; onTriggered: root.show(["--transition-type", "none"]) }
+
     function apply(path: string): void {
         if (!path) return;
         if (!Store.isVideo(path)) {

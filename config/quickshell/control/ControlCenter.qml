@@ -11,6 +11,7 @@ import qs.services
 // Главный экран + подстраницы Bluetooth / Сеть / Звук (Panels.controlPage).
 Drawer {
     id: root
+    screen: Panels.screen   // монитор с фокусом в момент открытия
 
     side: "right"
     drawerWidth: 430

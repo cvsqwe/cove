@@ -31,6 +31,13 @@ ColumnLayout {
         { icon: "tune", label: I18n.tr("Центр управления"), run: () => { root.done(); Panels.toggle("control"); } }
     ]
 
+    // полка, если на ней что-то лежит
+    ShelfRow {
+        visible: Shelf.count > 0 && Settings.island.shelf
+        Layout.alignment: Qt.AlignHCenter
+        Layout.preferredWidth: implicitWidth
+    }
+
     // плеер
     RowLayout {
         visible: Media.active && Settings.island.media

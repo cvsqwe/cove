@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import qs.config
 
 // Какие панели/ящики открыты. Одновременно открыт максимум один.
@@ -44,7 +45,20 @@ Singleton {
 
     function closeAll(): void {
         for (const n of names) root[n] = false;
+        pickScreen();
     }
+
+    // монитор для лаунчера, центра управления, обзора и т. п. — где фокус в момент открытия
+    property var screen: null
+    function pickScreen(): void {
+        const n = Hyprland.focusedMonitor?.name;
+        screen = Quickshell.screens.find(s => s.name === n) ?? Quickshell.screens[0] ?? null;
+    }
+    Connections {
+        target: Quickshell
+        function onScreensChanged(): void { root.pickScreen(); }
+    }
+    Component.onCompleted: pickScreen()
 
     function toggle(name: string): void {
         const v = !root[name];

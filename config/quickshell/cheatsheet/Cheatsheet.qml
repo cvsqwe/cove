@@ -10,6 +10,7 @@ import qs.services
 // Шпаргалка хоткеев (Super+/). Строится из настроек — всегда актуальна.
 PanelWindow {
     id: win
+    screen: Panels.screen   // монитор с фокусом в момент открытия
 
     readonly property bool open: Panels.cheatsheet
     readonly property var groups: Actions.groups.map(g => ({

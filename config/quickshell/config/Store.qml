@@ -22,6 +22,8 @@ Singleton {
     property alias launchedAt: data.launchedAt // счётчик запусков приложений для сортировки
     property alias bindsAdded: data.bindsAdded // новые хоткеи по умолчанию, уже добавленные к своим (services/Binds.qml)
     property alias alarms: data.alarms         // будильники [{ time: "07:30", label, days: [1..7], on }]
+    property alias welcomed: data.welcomed     // Cove Welcome уже показан (session/Welcome.qml)
+    property alias shelf: data.shelf           // полка острова [{ path, name, mime } | { text, name }] (services/Shelf.qml)
 
     // Живые обои: видео показывает слой wallpaper/LiveWallpaper.qml, а всё, что берёт обои как картинку
     // (палитра, экран блокировки, превью), — кадр-постер из кэша (его готовит services/Wallpapers.qml).
@@ -57,6 +59,8 @@ Singleton {
             property var launchedAt: ({})   // id приложения → время последнего запуска (сортировка «недавние»)
             property var alarms: []
             property var bindsAdded: []
+            property var shelf: []
+            property bool welcomed: false
         }
     }
 }
