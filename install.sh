@@ -4,7 +4,7 @@
 #   ./install.sh              всё по шагам, необязательное спрашивает
 #   ./install.sh -y           всё, ответы по умолчанию
 #   ./install.sh <шаг>…       только эти шаги: packages fonts link editor shell
-#                             wallpapers cursors firefox greeter
+#                             wallpapers cursors firefox greeter boot
 #
 # Конфиги ставятся симлинками на этот репозиторий: `git pull` — и система обновлена.
 # Всё, что лежало на их месте, переносится в ~/.local/state/cove/backup-<дата>/ (откат — ./uninstall.sh).
@@ -265,6 +265,16 @@ if want greeter; then
         step "Экран входа"
         command -v greetd >/dev/null || sudo pacman -S --needed --noconfirm greetd
         bash "$REPO/config/quickshell/greeter/install.sh"
+    fi
+fi
+
+# ---------------------------------------------------------------- загрузка
+if want boot; then
+    if explicit || ask "Поставить заставку загрузки Cove (Plymouth в стиле экрана входа, меню Limine)?" n; then
+        step "Заставка загрузки"
+        command -v plymouthd >/dev/null || sudo pacman -S --needed --noconfirm plymouth
+        bash "$REPO/system/boot/install.sh" install
+        warn "Заставка включится после: bash $REPO/system/boot/install.sh apply (пересборка initramfs)"
     fi
 fi
 
