@@ -21,6 +21,16 @@ Singleton {
     property bool cheatsheet: false
     property string launcherQuery: "" // текст, с которым откроется лаунчер (например ":" — буфер)
 
+    // переключение окон в обзоре (Super+Tab): первое нажатие открывает, следующие двигают выделение
+    property bool overviewSwitch: false
+    signal overviewStep(int d)
+    function overviewNext(d: int): void {
+        if (overview) { overviewStep(d); return; }
+        closeAll();
+        overviewSwitch = true;
+        overview = true;
+    }
+
     property string controlPage: "" // подстраница центра управления: bluetooth | wifi | audio
     function openControl(page: string): void { const was = control && controlPage === page; closeAll(); controlPage = page; control = !was; }
 
@@ -52,7 +62,12 @@ Singleton {
         function toggle(): void { root.toggle("control"); }
         function open(page: string): void { root.openControl(page); }
     }
-    IpcHandler { target: "overview";  function toggle(): void { root.toggle("overview"); } }
+    IpcHandler {
+        target: "overview"
+        function toggle(): void { root.overviewSwitch = false; root.toggle("overview"); }
+        function next(): void { root.overviewNext(1); }
+        function prev(): void { root.overviewNext(-1); }
+    }
     IpcHandler {
         target: "wallpaper"
         function toggle(): void { root.toggle("wallpaper"); }

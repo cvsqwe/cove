@@ -37,6 +37,7 @@ Singleton {
             b("SUPER", "N", "shell.control"),
             b("SUPER", "A", "shell.dashboard"),
             b("SUPER", "TAB", "shell.overview"),
+            b("SUPER SHIFT", "TAB", "shell.overviewPrev"),
             b("SUPER", "W", "shell.wallpaper"),
             b("SUPER", "ESCAPE", "shell.session"),
             b("SUPER", "M", "shell.session"),
@@ -93,7 +94,7 @@ Singleton {
     }
 
     // хоткеи, появившиеся после первого запуска: добавляются к своим один раз (удалённый не вернётся)
-    readonly property var added: ["shell.ocr", "shell.qr", "shell.assistant"]
+    readonly property var added: ["shell.ocr", "shell.qr", "shell.assistant", "shell.overviewPrev"]
 
     function ensureDefaults(): void {
         if (!Settings.binds || Settings.binds.length === 0) {
