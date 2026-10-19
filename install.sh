@@ -155,10 +155,15 @@ LUA
 fi
 
 # ---------------------------------------------------------------- Cove Code
-if want editor && command -v nvim >/dev/null; then
-    step "Cove Code — плагины редактора"
-    NVIM_APPNAME=cove nvim --headless "+Lazy! restore" +qa >/dev/null 2>&1 && ok "готово — запуск: cove [файл|папка]" \
-        || warn "не вышло, плагины поставятся при первом запуске cove"
+if want editor; then
+    step "Cove Code — редактор"
+    venv="$HOME/.local/share/cove/code-venv"
+    # Textual с подсветкой (tree-sitter) — в своём окружении, системный Python не трогаем
+    if { [ -x "$venv/bin/python" ] || python3 -m venv "$venv"; } && "$venv/bin/pip" install -q --upgrade 'textual[syntax]'; then
+        ok "готово — запуск: cove [файл|папка], окном: cove-gui"
+    else
+        warn "не вышло поставить Textual в $venv — проверьте интернет и запустите ./install.sh editor ещё раз"
+    fi
 fi
 
 # ---------------------------------------------------------------- оболочка

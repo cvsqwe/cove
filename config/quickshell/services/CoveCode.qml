@@ -5,8 +5,8 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 
-// Cove Code (Neovim с NVIM_APPNAME=cove) пишет своё состояние в ~/.cache/cove/status.json
-// (lua/cove/shell.lua): проект, файл, ветка, несохранённое, ошибки. Панель показывает его
+// Cove Code (apps/code, терминальный редактор на Textual) пишет своё состояние в ~/.cache/cove/status.json
+// (cove_code/app.py → write_shell_status): проект, файл, ветка, несохранённое, ошибки. Панель показывает его
 // вместо голого заголовка, когда активно окно Cove Code.
 Singleton {
     id: root

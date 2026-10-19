@@ -1,0 +1,186 @@
+/* Cove Code: цвета — из палитры шелла ($primary = акцент, $cove-* — поверхности), см. palette.py */
+
+Screen {
+    background: $background;
+    layers: base popup;
+}
+
+/* ---- строка меню ---- */
+#menubar {
+    height: 1;
+    background: $cove-mantle;
+}
+#brand {
+    color: $primary;
+    text-style: bold;
+    padding: 0 1 0 0;
+}
+#brand:hover { background: $cove-surface0; }
+.menu-item {
+    color: $foreground;
+    padding: 0 0;
+}
+.menu-item:hover {
+    background: $cove-surface0;
+    color: $primary;
+}
+#menu-spacer { width: 1fr; }
+#project {
+    color: $cove-overlay1;
+    padding: 0 1;
+}
+
+/* ---- тело ---- */
+#body { height: 1fr; }
+
+#sidebar {
+    width: 30;
+    background: $cove-mantle;
+    border-right: tall $cove-surface0;
+    padding: 0 0 0 1;
+    scrollbar-size-vertical: 1;
+}
+#sidebar:focus { border-right: tall $primary 60%; }
+#sidebar > .tree--cursor { background: $cove-surface0; color: $foreground; text-style: none; }
+#sidebar:focus > .tree--cursor { background: $primary 25%; }
+#sidebar > .directory-tree--folder { color: $primary; text-style: bold; }
+#sidebar > .directory-tree--extension { color: $cove-subtext0; }
+#sidebar > .directory-tree--hidden { color: $cove-overlay0; }
+
+#main { width: 1fr; }
+#switcher { height: 1fr; }
+
+/* ---- вкладки ---- */
+Tabs { height: 1fr; }
+Tabs > ContentTabs {
+    background: $cove-mantle;
+    height: 2;
+}
+Tabs ContentTab {
+    padding: 0 2;
+    color: $cove-overlay1;
+}
+Tabs ContentTab:hover { color: $foreground; background: $cove-surface0; }
+Tabs ContentTab.-active { color: $foreground; text-style: bold; background: $background; }
+Tabs ContentTab.dirty { color: $warning; }
+Tabs ContentTab.dirty.-active { color: $warning; }
+Tabs Underline > .underline--bar { color: $primary; background: $cove-mantle; }
+Tabs TabPane { padding: 0; }
+
+CoveTextArea {
+    border: none;
+    padding: 0;
+    height: 1fr;
+    scrollbar-size-vertical: 1;
+    scrollbar-size-horizontal: 1;
+}
+CoveTextArea:focus { border: none; }
+
+/* ---- поиск ---- */
+#findbar {
+    height: auto;
+    background: $cove-mantle;
+    border-top: tall $cove-surface0;
+    padding: 0 1;
+}
+.find-row { height: 3; }
+.find-row Input { width: 1fr; border: tall $cove-surface0; background: $background; }
+.find-row Input:focus { border: tall $primary; }
+#find-count { width: 12; content-align: center middle; height: 3; color: $cove-overlay1; }
+Button.small {
+    min-width: 5;
+    width: auto;
+    height: 3;
+    border: none;
+    background: $cove-surface0;
+    margin: 0 0 0 1;
+}
+Button.small:hover { background: $cove-surface1; }
+
+/* ---- строка состояния ---- */
+#statusbar {
+    height: 1;
+    background: $cove-mantle;
+    color: $cove-subtext0;
+}
+#st-path { padding: 0 1; color: $foreground; }
+#st-spacer { width: 1fr; }
+.st-item { padding: 0 1; }
+.st-item:hover { background: $cove-surface0; color: $primary; }
+#st-branch { color: $secondary; }
+
+/* ---- стартовый экран ---- */
+#dashboard {
+    align: center middle;
+    padding: 2 0;
+}
+#logo { color: $primary; width: auto; margin: 1 0 0 0; }
+#dash-project { color: $cove-subtext0; margin: 1 0 2 0; width: auto; }
+#dash-buttons { width: auto; height: 3; }
+#dash-buttons Button { margin: 0 1; border: none; height: 3; background: $cove-surface0; }
+#dash-buttons Button:hover { background: $cove-surface1; }
+#dash-buttons Button.-primary { background: $primary; color: $cove-crust; text-style: bold; }
+#dash-recent-title { color: $cove-overlay1; margin: 2 0 1 0; width: auto; }
+#dash-recent { width: 70; height: auto; }
+Button.recent {
+    width: 100%;
+    height: 1;
+    min-height: 1;
+    border: none;
+    background: transparent;
+    content-align: left middle;
+    text-align: left;
+    color: $foreground;
+    text-style: none;
+}
+Button.recent:hover, Button.recent:focus { background: $cove-surface0; color: $primary; }
+
+/* ---- диалоги ---- */
+.dialog-screen {
+    align: center top;
+    background: $cove-crust 60%;
+}
+.dialog {
+    width: 64;
+    height: auto;
+    margin: 4 0 0 0;
+    padding: 1 2;
+    background: $cove-mantle;
+    border: round $primary;
+}
+.dialog.quick { width: 80; }
+.dialog-title { text-style: bold; color: $primary; margin: 0 0 1 0; }
+.dialog-text { color: $foreground; margin: 0 0 1 0; }
+.dialog Input { border: tall $cove-surface0; background: $background; }
+.dialog Input:focus { border: tall $primary; }
+.dialog .buttons { height: auto; align: right middle; margin: 1 0 0 0; }
+.dialog Button { margin: 0 0 0 1; border: none; height: 3; background: $cove-surface0; }
+.dialog Button:hover { background: $cove-surface1; }
+.dialog Button.-primary { background: $primary; color: $cove-crust; text-style: bold; }
+.dialog Button.-error { background: $error 25%; color: $error; }
+#results {
+    height: auto;
+    max-height: 20;
+    border: none;
+    background: transparent;
+    margin: 1 0 0 0;
+}
+#results > .option-list--option-highlighted { background: $primary 25%; color: $foreground; }
+
+/* ---- всплывающее меню ---- */
+.popup-screen { background: transparent; }
+#popup {
+    height: auto;
+    max-height: 24;
+    background: $cove-mantle;
+    border: round $cove-surface1;
+    padding: 0;
+}
+#popup > .option-list--option-highlighted { background: $primary 25%; color: $foreground; }
+#popup > .option-list--option-hover { background: $cove-surface0; }
+#popup > .option-list--separator { color: $cove-surface1; }
+
+Toast {
+    background: $cove-mantle;
+    border-left: outer $primary;
+}

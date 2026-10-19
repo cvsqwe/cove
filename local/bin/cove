@@ -1,3 +1,10 @@
 #!/bin/sh
-# Cove Code в текущем терминале. Отдельный профиль Neovim: ~/.config/cove
-exec env NVIM_APPNAME=cove nvim "$@"
+# Cove Code — терминальный редактор Cove (apps/code): cove [файл|папка]
+# Окружение Python с Textual — ~/.local/share/cove/code-venv (ставит ./install.sh editor).
+here=$(dirname "$(readlink -f "$0")")
+venv="$HOME/.local/share/cove/code-venv"
+if [ ! -x "$venv/bin/python" ]; then
+    echo "Cove Code: нет окружения — выполните: $here/../../install.sh editor" >&2
+    exit 1
+fi
+PYTHONPATH="$here/../../apps/code${PYTHONPATH:+:$PYTHONPATH}" exec "$venv/bin/python" -m cove_code "$@"
