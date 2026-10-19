@@ -1,0 +1,10 @@
+#!/bin/sh
+# Cove Files: открыть папку (или показать файл в папке). Уже запущен — новое окно в том же процессе.
+app="$(dirname "$(readlink -f "$0")")/../../apps/files"
+target="${1:-$HOME}"
+case "$target" in file://*) target=$(python3 -c 'import sys,urllib.parse;print(urllib.parse.unquote(sys.argv[1][7:]))' "$target") ;; esac
+target=$(readlink -f -- "$target" 2>/dev/null || echo "$HOME")
+[ -f "$target" ] && target=$(dirname -- "$target")
+if qs -p "$app" ipc call files open "$target" >/dev/null 2>&1; then exit 0; fi
+export QS_APP_ID=cove-files COVE_FILES_OPEN="$target"
+exec qs -p "$app" -n -d >/dev/null 2>&1

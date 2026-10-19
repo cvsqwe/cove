@@ -1,0 +1,21 @@
+[Desktop Entry]
+Type=Application
+Name=Cove Files
+Name[ru]=Файлы
+GenericName=File Manager
+GenericName[ru]=Файловый менеджер
+Comment=Browse files and folders
+Comment[ru]=Файлы и папки в стиле Cove
+Exec=cove-files %U
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileTools;FileManager;Utility;
+MimeType=inode/directory;
+Keywords=files;folders;explorer;файлы;папки;проводник;
+StartupWMClass=cove-files
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New Window
+Name[ru]=Новое окно
+Exec=cove-files

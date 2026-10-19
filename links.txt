@@ -14,3 +14,5 @@ config/starship.toml         .config/starship.toml
 local/bin/cove               .local/bin/cove
 local/bin/cove-gui           .local/bin/cove-gui
 local/share/applications/cove.desktop  .local/share/applications/cove.desktop
+local/bin/cove-files         .local/bin/cove-files
+local/share/applications/cove-files.desktop  .local/share/applications/cove-files.desktop
