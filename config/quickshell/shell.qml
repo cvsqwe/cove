@@ -18,6 +18,7 @@ import qs.notes
 import qs.desktop
 import qs.tasks
 import qs.lens
+import qs.games
 
 ShellRoot {
     Variants {
@@ -45,6 +46,7 @@ ShellRoot {
     PolkitPrompt {}
     Lock {}
     SettingsWindow {}
+    GamesWindow {}
     Cheatsheet {}
     NotesDrawer {}
     TasksPanel {}

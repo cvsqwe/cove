@@ -25,6 +25,8 @@ Singleton {
     property alias welcomed: data.welcomed     // Cove Welcome уже показан (session/Welcome.qml)
     property alias savedProfile: data.savedProfile // режим питания до автоэкономии (services/Power.qml), -1 — нет
     property alias shelf: data.shelf           // полка острова [{ path, name, mime } | { text, name }] (services/Shelf.qml)
+    property alias gameScores: data.gameScores // рекорды игр { ключ: число } (games/GamesWindow.qml)
+    property alias gameSound: data.gameSound   // звуки в играх
 
     // Живые обои: видео показывает слой wallpaper/LiveWallpaper.qml, а всё, что берёт обои как картинку
     // (палитра, экран блокировки, превью), — кадр-постер из кэша (его готовит services/Wallpapers.qml).
@@ -61,6 +63,8 @@ Singleton {
             property var alarms: []
             property var bindsAdded: []
             property var shelf: []
+            property var gameScores: ({})
+            property bool gameSound: true
             property bool welcomed: false
             property int savedProfile: -1
         }

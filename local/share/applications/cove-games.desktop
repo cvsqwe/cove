@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Cove Games
+Name[ru]=Игры
+GenericName=Games
+GenericName[ru]=Игры
+Comment=Quick games: Block Blast, 2048, Tetris, Snake, Minesweeper, typing test
+Comment[ru]=Быстрые игры: блоки, 2048, тетрис, змейка, сапёр, тренажёр печати
+Exec=qs ipc call games open hub
+Icon=applications-games
+Terminal=false
+Categories=Game;ArcadeGame;
+Keywords=games;2048;tetris;snake;minesweeper;typing;игры;тетрис;змейка;сапёр;печать;

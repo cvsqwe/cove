@@ -18,3 +18,4 @@ local/share/applications/cove.desktop  .local/share/applications/cove.desktop
 local/bin/cove-files         .local/bin/cove-files
 local/share/applications/cove-files.desktop  .local/share/applications/cove-files.desktop
 local/bin/covectl            .local/bin/covectl
+local/share/applications/cove-games.desktop  .local/share/applications/cove-games.desktop
