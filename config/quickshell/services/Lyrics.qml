@@ -79,6 +79,11 @@ Singleton {
     }
     readonly property string line: index >= 0 ? lines[index][1] : ""
     readonly property string nextLine: index + 1 < lines.length ? lines[index + 1][1] : ""
+    // сколько звучит строка (для длинных строк, которые остров показывает частями);
+    // перед проигрышем следующая строка далеко — берём время, за которое строку успевают спеть
+    readonly property real lineStart: index >= 0 ? lines[index][0] : 0
+    readonly property real lineEnd: index < 0 ? 0
+        : Math.min(index + 1 < lines.length ? lines[index + 1][0] : lineStart + 8, lineStart + 1.5 + line.length * 0.09)
 
     IpcHandler {
         target: "lyrics"

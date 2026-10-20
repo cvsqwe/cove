@@ -324,42 +324,99 @@ Item {
                 }
                 MIcon { anchors.centerIn: parent; visible: !cover.visible; icon: "󰎆"; color: Media.accent }
             }
-            // текст песни: звучащая строка вместо названия; на проигрыше — снова название
+            // текст песни: звучащая строка вместо названия; на проигрыше — снова название.
+            // Длинная строка делится по словам на равные части, которые сменяют друг друга,
+            // пока строка звучит (время — пропорционально длине части).
             Item {
                 id: lyricBox
                 readonly property bool on: Lyrics.line !== ""
+                readonly property int maxW: 340
                 visible: on
-                implicitWidth: Math.min(340, lyricText.implicitWidth)
+                // ширина едет плавно вместе со сменой строки, а не прыгает в середине анимации
+                property real boxW: 0
+                implicitWidth: boxW
                 implicitHeight: lyricText.implicitHeight
                 clip: true
                 property string shown: ""
+                property string pending: ""
+                property var parts: []
+                property var ends: []          // доля времени строки, к которой кончается часть
+                readonly property int part: {
+                    const span = Lyrics.lineEnd - Lyrics.lineStart;
+                    const f = span > 0 ? (Lyrics.pos + 0.25 - Lyrics.lineStart) / span : 0;
+                    for (let i = 0; i < ends.length; i++) if (f < ends[i]) return i;
+                    return Math.max(0, ends.length - 1);
+                }
+                readonly property string target: parts[part] ?? ""
+                onTargetChanged: show(target)
+
+                Behavior on boxW {
+                    enabled: Settings.appearance.animations
+                    NumberAnimation { duration: Theme.anim; easing.type: Easing.OutCubic }
+                }
+                StyledText { id: lyricMeasure; visible: false; font.weight: Font.Medium }
+
+                function widthOf(t: string): real { lyricMeasure.text = t; return lyricMeasure.implicitWidth; }
+                // жадно по словам, не шире limit
+                function pack(words, limit: real): var {
+                    const out = [];
+                    let cur = "";
+                    for (const w of words) {
+                        const t = cur ? cur + " " + w : w;
+                        if (cur && widthOf(t) > limit) { out.push(cur); cur = w; }
+                        else cur = t;
+                    }
+                    if (cur) out.push(cur);
+                    return out;
+                }
+                function split(line: string): void {
+                    let res = [line];
+                    const full = widthOf(line);
+                    if (full > maxW) {
+                        const words = line.split(/\s+/).filter(w => w !== "");
+                        res = pack(words, maxW);
+                        // выровнять части по длине, чтобы не было хвоста из одного слова
+                        const even = pack(words, Math.min(maxW, full / res.length + 24));
+                        if (even.length === res.length) res = even;
+                    }
+                    const total = res.reduce((a, t) => a + t.length, 0) || 1;
+                    let acc = 0;
+                    ends = res.map(t => (acc += t.length) / total);
+                    parts = res;
+                }
+                function show(t: string): void {
+                    if (t === "") return;
+                    pending = t;
+                    boxW = Math.min(maxW, widthOf(t));
+                    if (shown === "" || !Settings.appearance.animations) shown = t;
+                    else lyricSwap.restart();
+                }
+                Component.onCompleted: if (Lyrics.line !== "") split(Lyrics.line)
+                Connections {
+                    target: Lyrics
+                    function onLineChanged(): void { if (Lyrics.line !== "") lyricBox.split(Lyrics.line); }
+                }
+
                 StyledText {
                     id: lyricText
-                    width: parent.width
+                    width: Math.min(lyricBox.maxW, implicitWidth)
                     text: lyricBox.shown
                     elide: Text.ElideRight
                     color: Theme.text
                     font.weight: Font.Medium
                 }
-                // смена строки: старая уходит вверх, новая выезжает снизу
+                // смена: старая часть уходит вверх, новая выезжает снизу
                 SequentialAnimation {
                     id: lyricSwap
                     ParallelAnimation {
                         NumberAnimation { target: lyricText; property: "opacity"; to: 0; duration: Theme.animFast }
                         NumberAnimation { target: lyricText; property: "y"; to: -8; duration: Theme.animFast }
                     }
-                    ScriptAction { script: { lyricBox.shown = Lyrics.line; lyricText.y = 8; } }
+                    PauseAnimation { duration: Math.max(0, Theme.anim - Theme.animFast) }   // новая часть — когда ширина уже встала
+                    ScriptAction { script: { lyricBox.shown = lyricBox.pending; lyricText.y = 8; } }
                     ParallelAnimation {
                         NumberAnimation { target: lyricText; property: "opacity"; to: 1; duration: Theme.anim; easing.type: Easing.OutCubic }
                         NumberAnimation { target: lyricText; property: "y"; to: 0; duration: Theme.anim; easing.type: Easing.OutCubic }
-                    }
-                }
-                Connections {
-                    target: Lyrics
-                    function onLineChanged(): void {
-                        if (Lyrics.line === "") return;
-                        if (lyricBox.shown === "" || !Settings.appearance.animations) lyricBox.shown = Lyrics.line;
-                        else lyricSwap.restart();
                     }
                 }
             }
