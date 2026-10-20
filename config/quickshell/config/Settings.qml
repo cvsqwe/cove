@@ -51,6 +51,24 @@ Singleton {
         onTriggered: file.writeAdapter()
     }
 
+    // Версия схемы settings.json. Переименовали настройку или поменяли её смысл — поднимите
+    // schemaVersion и добавьте шаг в migrations. Шаг получает сырой JSON из файла (старые ключи
+    // ещё в нём: адаптер неизвестные ключи отбрасывает) и сам Settings, куда пишет новые значения.
+    // Пример: 2: (raw, s) => { if (raw.bar?.oldName !== undefined) s.bar.newName = raw.bar.oldName; }
+    readonly property int schemaVersion: 1
+    readonly property var migrations: ({})
+    function migrate(): void {
+        if (data.schema >= schemaVersion) return;
+        let raw = {};
+        try { raw = JSON.parse(file.text()); } catch (e) {}
+        for (let v = data.schema + 1; v <= schemaVersion; v++) {
+            // не вызывать migrations[v] опционально прямо по ключу: такой вызов роняет движок QML (Qt 6.12)
+            try { const step = migrations[v]; if (step) step(raw, root); } catch (e) { console.warn("Settings: миграция", v, "не удалась:", e); }
+        }
+        data.schema = schemaVersion;
+        saveDelay.restart();   // изменение внутри onLoaded само запись не запускает
+    }
+
     FileView {
         id: file
         path: Quickshell.shellPath("settings.json")
@@ -62,11 +80,15 @@ Singleton {
         // Пачка изменений подряд (город + широта + долгота) пишется одним разом: раньше каждое поле
         // писало файл, слежение перечитывало промежуточную версию и откатывало соседние поля.
         onAdapterUpdated: if (loaded) saveDelay.restart()
-        onLoaded: root.ready = true
-        onLoadFailed: err => { if (err === FileViewError.FileNotFound) writeAdapter(); root.ready = true; }
+        onLoaded: { root.migrate(); root.ready = true; }
+        // нового файла нет — пишем умолчания сразу с текущей версией схемы
+        onLoadFailed: err => { if (err === FileViewError.FileNotFound) { data.schema = root.schemaVersion; writeAdapter(); } root.ready = true; }
 
         JsonAdapter {
             id: data
+
+            // версия схемы; у старых файлов без неё — 0 (см. migrate)
+            property int schema: 0
 
             property JsonObject general: JsonObject {
                 property string language: "auto"     // ru | en | auto (по $LANG)

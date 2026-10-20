@@ -34,6 +34,11 @@ EOF
     if [ -n "$bad" ]; then say "QML: синтаксические ошибки"; say "$bad"; fail=1; else say "QML: ${#qml[@]} файлов, синтаксис в порядке"; fi
 fi
 
+# опасный синтаксис: obj[key]?.(…) — опциональный вызов по вычисляемому ключу роняет движок QML
+# (Qt 6.12) ещё при загрузке, без единой строки в логе
+bad=$(grep -rnE '\]\?\.\(' --include='*.qml' . 2>/dev/null | grep -v '^\./\.git/' | grep -vE ':[0-9]+:[[:space:]]*//')
+if [ -n "$bad" ]; then say "QML: obj[key]?.(…) роняет шелл — вызывайте через переменную"; say "$bad"; fail=1; fi
+
 # --- Python ---
 mapfile -t py < <(files '*.py')
 bad=$(python3 - "${py[@]}" <<'EOF'
