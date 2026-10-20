@@ -117,10 +117,27 @@ Singleton {
     readonly property color subtext1: o("subtext1", dynamic ? tone(0.25, 0.80) : pr("subtext1"))
     readonly property color text: o("text", dynamic ? tone(0.35, 0.90) : pr("text"))
 
+    // контраст по WCAG: светлота в HSL у жёлтого и синего даёт очень разную видимую яркость
+    function lum(c: color): real {
+        const f = v => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+    }
+    function contrast(a: color, b: color): real {
+        const x = lum(a), y = lum(b);
+        return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+    }
+    // светлота акцента: в светлой теме тёплые и зелёные оттенки темнеют, пока контраст с фоном не станет 4:1
+    // (иначе на жёлтых и зелёных обоях акцентный текст почти сливался с фоном — до 1.3:1)
+    function accentTone(h: real, l0: real): color {
+        let l = l0;
+        if (light) while (l > 0.12 && contrast(Qt.hsla(h, sat, l, 1), base) < 4) l -= 0.02;
+        return Qt.hsla(h, sat, l, 1);
+    }
+
     // акценты
     readonly property real accentL: light ? 0.46 : 0.78
-    readonly property color accent: o("accent", dynamic ? Qt.hsla(hue, sat, accentL, 1) : pr("accent"))
-    readonly property color accent2: o("accent2", dynamic ? Qt.hsla(hue2, sat, accentL - 0.02, 1) : pr("accent2"))
+    readonly property color accent: o("accent", dynamic ? accentTone(hue, accentL) : pr("accent"))
+    readonly property color accent2: o("accent2", dynamic ? accentTone(hue2, accentL - 0.02) : pr("accent2"))
     readonly property color lavender: dynamic ? Qt.hsla(hue, sat * 0.6, light ? 0.5 : 0.84, 1) : pr("lavender")
     readonly property color blue: accent2
 
@@ -151,8 +168,8 @@ Singleton {
     // сила теней (0 — без теней); множитель к альфе RectangularShadow
     readonly property real shadow: a.shadow ?? 1
     readonly property color island: crust
-    // текст на акцентной заливке: на светлом акценте — тёмный, на тёмном — белый
-    readonly property color onAccent: accent.hslLightness > 0.55 ? (light ? text : crust) : "#ffffff"
+    // текст на акцентной заливке: белый или тёмный — что контрастнее
+    readonly property color onAccent: contrast(accent, "#ffffff") >= contrast(accent, light ? text : crust) ? "#ffffff" : (light ? text : crust)
 
     function alpha(c: color, v: real): color { return Qt.rgba(c.r, c.g, c.b, v); }
 
