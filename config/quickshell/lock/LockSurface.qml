@@ -11,6 +11,13 @@ Item {
 
     required property var lock
 
+    // раскладка — Оформление → Компоненты (Settings.appearance.lockStyle):
+    //   center — всё по центру на размытых обоях; side — крупные часы и пароль внизу слева;
+    //   minimal — небольшие часы, обои без размытия; poster — огромные тонкие часы в две строки слева
+    readonly property string look: Settings.appearance.lockStyle ?? "center"
+    readonly property bool leftSide: look === "side" || look === "poster"
+    readonly property int align: leftSide ? Qt.AlignLeft : Qt.AlignHCenter
+
     SystemClock {
         id: clock
         precision: SystemClock.Seconds
@@ -28,11 +35,21 @@ Item {
     MultiEffect {
         anchors.fill: parent
         source: wall
-        blurEnabled: true
+        blurEnabled: root.look === "center" || root.look === "side"
         blurMax: 64
-        blur: 1.0
-        brightness: -0.28
-        saturation: 0.1
+        blur: root.look === "side" ? 0.55 : 1.0
+        brightness: root.look === "minimal" ? -0.4 : root.look === "poster" ? -0.1 : -0.28
+        saturation: root.look === "center" ? 0.1 : root.look === "minimal" ? 0.5 : 0.9
+    }
+    // у плаката и боковой раскладки — затемнение слева, под текстом
+    Rectangle {
+        anchors.fill: parent
+        visible: root.leftSide
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.55) }
+            GradientStop { position: 0.6; color: "transparent" }
+        }
     }
 
     Item {
@@ -49,19 +66,25 @@ Item {
         Behavior on scale { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
 
         ColumnLayout {
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: -60
+            anchors.centerIn: root.leftSide ? undefined : parent
+            anchors.verticalCenterOffset: root.look === "minimal" ? -20 : -60
+            anchors.left: root.leftSide ? parent.left : undefined
+            anchors.leftMargin: 110
+            anchors.bottom: root.look === "side" ? parent.bottom : undefined
+            anchors.bottomMargin: 110
+            anchors.verticalCenter: root.look === "poster" ? parent.verticalCenter : undefined
             spacing: 4
 
             StyledText {
-                Layout.alignment: Qt.AlignHCenter
-                text: Qt.formatDateTime(clock.date, "HH:mm")
-                font.pixelSize: 120
-                font.bold: true
+                Layout.alignment: root.align
+                text: Qt.formatDateTime(clock.date, root.look === "poster" ? "HH\nmm" : "HH:mm")
+                font.pixelSize: ({ side: 112, minimal: 64, poster: 210 })[root.look] ?? 120
+                font.weight: root.look === "poster" ? Font.Light : Font.Bold
+                lineHeight: root.look === "poster" ? 0.8 : 1
                 color: Theme.text
             }
             StyledText {
-                Layout.alignment: Qt.AlignHCenter
+                Layout.alignment: root.align
                 text: {
                     const s = I18n.locale.toString(clock.date, "dddd, d MMMM");
                     return s.charAt(0).toUpperCase() + s.slice(1);
@@ -83,7 +106,7 @@ Item {
                     return out.slice(0, 5);
                 }
                 visible: Notifs.count > 0
-                Layout.alignment: Qt.AlignHCenter
+                Layout.alignment: root.align
                 Layout.topMargin: 12
                 implicitWidth: notifRow.implicitWidth + 24
                 implicitHeight: 34
@@ -118,7 +141,8 @@ Item {
 
             // аватар (Настройки → Система)
             Rectangle {
-                Layout.alignment: Qt.AlignHCenter
+                visible: root.look === "center" || root.look === "side"
+                Layout.alignment: root.align
                 Layout.bottomMargin: 12
                 implicitWidth: 72
                 implicitHeight: 72
@@ -141,7 +165,7 @@ Item {
             // поле пароля
             Rectangle {
                 id: field
-                Layout.alignment: Qt.AlignHCenter
+                Layout.alignment: root.align
                 implicitWidth: 340
                 implicitHeight: 54
                 radius: height / 2
@@ -213,7 +237,7 @@ Item {
             }
 
             Row {
-                Layout.alignment: Qt.AlignHCenter
+                Layout.alignment: root.align
                 Layout.topMargin: 6
                 spacing: 6
                 MIcon { anchors.verticalCenter: parent.verticalCenter; icon: "keyboard"; color: Theme.overlay1; size: Theme.fontSizeSmall }

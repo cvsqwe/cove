@@ -329,7 +329,7 @@ Item {
             // пока строка звучит (время — пропорционально длине части).
             Item {
                 id: lyricBox
-                readonly property bool on: Lyrics.line !== ""
+                readonly property bool on: Settings.island.lyrics && Lyrics.line !== ""
                 readonly property int maxW: 340
                 visible: on
                 // ширина едет плавно вместе со сменой строки, а не прыгает в середине анимации

@@ -13,7 +13,7 @@ Item {
     default property alias control: slot.data
 
     Layout.fillWidth: true
-    implicitHeight: Math.max(54, text.implicitHeight + 22)
+    implicitHeight: Math.max(Math.round(54 * Theme.density), text.implicitHeight + Math.round(22 * Theme.density))
 
     Rectangle {
         anchors.fill: parent

@@ -87,9 +87,10 @@ Drawer {
 
             // переключатели
             GridLayout {
+                readonly property string look: Settings.appearance.tileStyle ?? "tiles"
                 Layout.fillWidth: true
-                columns: 2
-                rowSpacing: 8
+                columns: look === "round" ? 4 : look === "list" ? 1 : 2
+                rowSpacing: look === "round" ? 12 : look === "list" ? 4 : 8
                 columnSpacing: 8
 
                 Toggle {
@@ -149,7 +150,7 @@ Drawer {
                 // VPN — во всю ширину: включение одним нажатием, стрелка — серверы
                 Toggle {
                     Layout.fillWidth: true
-                    Layout.columnSpan: 2
+                    Layout.columnSpan: (Settings.appearance.tileStyle ?? "tiles") === "tiles" ? 2 : 1
                     icon: Vpn.on ? "vpn_lock" : "vpn_key_off"
                     label: "VPN"
                     sub: Vpn.on ? ((Vpn.where ? Vpn.where.flag + " " + Vpn.where.country + " · " : "") + Vpn.current)

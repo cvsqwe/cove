@@ -50,6 +50,8 @@ Scope {
         target: "settings"
         function toggle(): void { root.shown ? (root.shown = false) : root.open(""); }
         function open(page: string): void { root.open(page); }
+        // qs ipc call settings get appearance tileOn — значение в памяти шелла (для проверки)
+        function get(section: string, key: string): string { return JSON.stringify(Settings[section]?.[key]); }
     }
 
     // открыть из Panels (шестерёнка в центре управления)

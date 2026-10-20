@@ -145,7 +145,8 @@ SPage {
             icon: "󱂩"
             title: I18n.tr("Расположение")
             SSegment {
-                options: [{ value: "floating", label: I18n.tr("Плавающая") }, { value: "notch", label: I18n.tr("Чёлка") }, { value: "drops", label: I18n.tr("Капли") }, { value: "docked", label: I18n.tr("У края") }]
+                options: [{ value: "floating", label: I18n.tr("Плавающая") }, { value: "islands", label: I18n.tr("Таблетки") }, { value: "compact", label: I18n.tr("Компакт") },
+                    { value: "line", label: I18n.tr("Линия") }, { value: "notch", label: I18n.tr("Чёлка") }, { value: "drops", label: I18n.tr("Капли") }, { value: "docked", label: I18n.tr("У края") }]
                 current: page.b.style
                 onPicked: v => page.b.style = v
             }

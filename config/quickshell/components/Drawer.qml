@@ -23,7 +23,7 @@ PanelWindow {
     // появление: slide — выезжает (растёт высота), grow — вырастает из центра, fade — проявляется
     property string anim: "slide"
     // фон: solid — сплошной, glass — полупрозрачный с размытием обоев, wallpaper — размытая обоина
-    property string background: "solid"
+    property string background: "solid"   // solid — по материалу из Оформления (Theme.panel)
     property string layerName: "qs-drawer"
     default property alias content: body.data
     readonly property real progress: anim === "slide" ? drawer.height / Math.max(1, drawerHeight) : drawer.opacity
@@ -62,11 +62,11 @@ PanelWindow {
 
     RectangularShadow {
         anchors.fill: drawer
-        visible: win.card && drawer.height > 1
+        visible: win.card && drawer.height > 1 && Theme.shadow > 0
         radius: Math.min(Theme.radius + 6, drawer.height / 2)
         offset.y: 3
         blur: 20
-        color: Qt.rgba(0, 0, 0, 0.38 * Math.min(1, win.progress * 2))
+        color: Qt.rgba(0, 0, 0, 0.38 * Theme.shadow * Math.min(1, win.progress * 2))
     }
 
     Rectangle {
@@ -83,14 +83,16 @@ PanelWindow {
         Behavior on scale { NumberAnimation { duration: Theme.anim; easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
         color: win.background === "solid" ? Theme.panel : Theme.alpha(Theme.base, win.background === "glass" ? 0.72 : 0.55)
         clip: true
-        border.width: win.card ? 1 : 0
-        border.color: Theme.surface0
+        border.width: win.card ? Theme.borderWidth : 0
+        border.color: Theme.edge
         topLeftRadius: win.card ? r : 0
         topRightRadius: win.card ? r : 0
         bottomRightRadius: win.card || win.side === "left" ? r : 0
         bottomLeftRadius: win.card || win.side === "right" ? r : 0
 
         Behavior on height { NumberAnimation { duration: Theme.animSlow; easing.type: Easing.OutExpo } }
+
+        MaterialFx { visible: win.background === "solid" && (Theme.noise || Theme.sheen); radius: drawer.r }
 
         // фон «обои»: текущая обоина, сильно размытая и притемнённая
         ClippingRectangle {

@@ -15,7 +15,7 @@ RowLayout {
     spacing: 0   // отступы между капсулами — leftMargin, чтобы пустые капсулы не оставляли дыр
 
     readonly property bool drops: Theme.barDrops
-    readonly property bool wing: Theme.barNotch       // модули внутри общего крыла
+    readonly property bool wing: Theme.barNotch || Theme.barIslands   // модули внутри общего крыла / таблетки
     readonly property string mode: (drops || wing) && Settings.bar.capsules === "none" ? "groups" : wing ? "groups" : Settings.bar.capsules
     readonly property bool bare: wing || mode === "none"
     readonly property var groupOf: ({
@@ -105,7 +105,7 @@ RowLayout {
                 radius: cap.radius
                 offset.y: 2
                 blur: 14
-                color: Qt.rgba(0, 0, 0, 0.35)
+                color: Qt.rgba(0, 0, 0, 0.35 * Theme.shadow)
             }
 
             // точка-разделитель перед модулем

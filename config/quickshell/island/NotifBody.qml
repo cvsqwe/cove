@@ -22,7 +22,10 @@ Item {
         id: item
         width: parent.width
         notification: root.n
-        bodyLines: 3
+        // вид — Оформление → Компоненты: compact — одна строка, rich — подробно
+        readonly property string look: Settings.appearance.notifStyle ?? "normal"
+        compact: look === "compact"
+        bodyLines: look === "compact" ? 1 : look === "rich" ? 6 : 3
         canReply: false
     }
 

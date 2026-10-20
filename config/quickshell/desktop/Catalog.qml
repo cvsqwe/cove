@@ -9,6 +9,17 @@ import qs.config
 // style — фон по умолчанию: glass | solid | none; interactive — клики работают вне редактора.
 // schema — поля инспектора: bool | seg (options) | text | num (from, to, step) | items (список задач).
 Singleton {
+    // все варианты плеера — один виджет desktop/widgets/Media.qml с разными opts
+    readonly property var mediaSchema: [
+        { key: "layout", label: I18n.tr("Вид"), kind: "seg", options: [{ value: "card", label: I18n.tr("Карточка") }, { value: "tall", label: I18n.tr("Обложка") },
+            { value: "mini", label: I18n.tr("Мини") }, { value: "vinyl", label: I18n.tr("Винил") }, { value: "lyrics", label: I18n.tr("Текст") }] },
+        { key: "lyrics", label: I18n.tr("Текст песни"), kind: "seg", options: [{ value: "off", label: I18n.tr("Нет") }, { value: "line", label: I18n.tr("Строка") }, { value: "lines", label: I18n.tr("Несколько") }] },
+        { key: "spectrum", label: I18n.tr("Спектр"), kind: "seg", options: [{ value: "off", label: I18n.tr("Нет") }, { value: "strip", label: I18n.tr("Полоской") }, { value: "back", label: I18n.tr("Фоном") }] },
+        { key: "progress", label: I18n.tr("Полоса прогресса"), kind: "bool" },
+        { key: "controls", label: I18n.tr("Кнопки"), kind: "bool" },
+        { key: "extra", label: I18n.tr("Перемешивание и повтор"), kind: "bool" }
+    ]
+
     readonly property var types: ({
         clock: { label: I18n.tr("Часы"), icon: "󰥔", desc: I18n.tr("Большое время и дата"), file: "Clock", style: "none",
             opts: { format: "24", seconds: false, date: true, align: "left", weight: "bold" },
@@ -32,8 +43,23 @@ Singleton {
             opts: { forecast: true },
             schema: [{ key: "forecast", label: I18n.tr("Прогноз"), kind: "bool" }] },
         media: { label: I18n.tr("Плеер"), icon: "󰎆", desc: I18n.tr("Обложка, трек и кнопки"), file: "Media", style: "glass", interactive: true,
-            opts: { visualizer: true },
-            schema: [{ key: "visualizer", label: I18n.tr("Спектр"), kind: "bool" }] },
+            opts: { layout: "card", lyrics: "off", spectrum: "strip", progress: true, controls: true, extra: false },
+            schema: mediaSchema },
+        mediaLyrics: { label: I18n.tr("Плеер с текстом"), icon: "lyrics", desc: I18n.tr("Плеер и строки песни, которые звучат сейчас"), file: "Media", style: "glass", interactive: true,
+            opts: { layout: "card", lyrics: "lines", spectrum: "off", progress: true, controls: true, extra: false },
+            schema: mediaSchema },
+        mediaTall: { label: I18n.tr("Плеер-обложка"), icon: "album", desc: I18n.tr("Большая обложка, спектр поверх неё"), file: "Media", style: "glass", interactive: true,
+            opts: { layout: "tall", lyrics: "line", spectrum: "strip", progress: true, controls: true, extra: true },
+            schema: mediaSchema },
+        mediaMini: { label: I18n.tr("Мини-плеер"), icon: "queue_music", desc: I18n.tr("Узкая полоска: трек и кнопки"), file: "Media", style: "glass", interactive: true,
+            opts: { layout: "mini", lyrics: "off", spectrum: "off", progress: true, controls: true, extra: false },
+            schema: mediaSchema },
+        vinyl: { label: I18n.tr("Пластинка"), icon: "radio", desc: I18n.tr("Крутящийся винил с тонармом"), file: "Media", style: "glass", interactive: true,
+            opts: { layout: "vinyl", lyrics: "off", spectrum: "strip", progress: true, controls: true, extra: false },
+            schema: mediaSchema },
+        karaoke: { label: I18n.tr("Текст песни"), icon: "mic", desc: I18n.tr("Крупные строки, как в караоке"), file: "Media", style: "glass", interactive: true,
+            opts: { layout: "lyrics", lyrics: "lines", spectrum: "back", progress: true, controls: true, extra: false },
+            schema: mediaSchema },
         visualizer: { label: I18n.tr("Спектр"), icon: "󰎇", desc: I18n.tr("Большой эквалайзер под музыку"), file: "Spectrum", style: "none",
             opts: { mirrored: true, height: 120, bars: 48 },
             schema: [
@@ -100,6 +126,6 @@ Singleton {
     })
 
     // порядок в галерее «Добавить»
-    readonly property var order: ["clock", "analog", "greeting", "weather", "media", "visualizer", "rings", "sysmon", "info",
+    readonly property var order: ["clock", "analog", "greeting", "weather", "media", "mediaLyrics", "mediaTall", "mediaMini", "vinyl", "karaoke", "visualizer", "rings", "sysmon", "info",
         "calendar", "agenda", "todo", "notes", "text", "quote", "countdown", "focus", "photo", "net"]
 }

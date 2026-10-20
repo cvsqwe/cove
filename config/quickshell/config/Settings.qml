@@ -92,7 +92,10 @@ Singleton {
             }
 
             property JsonObject appearance: JsonObject {
-                property string palette: "wallpaper" // wallpaper | catppuccin | custom
+                property string palette: "wallpaper" // wallpaper | custom | ключ из config/Palettes.qml (catppuccin, gruvbox, nord…)
+                property string scheme: "tonal"      // для обоев/своего цвета: tonal | vibrant | muted | neutral | contrast | expressive
+                property bool harmonize: false       // смысловые цвета (красный, зелёный…) чуть сдвинуты к оттенку акцента
+                property var overrides: ({})          // свои цвета поверх палитры: { accent: "#…", base: "#…", … }
                 property string customAccent: "#cba6f7"
                 property bool coverAccent: false     // перекрашивать систему в цвет обложки трека
                 property bool light: false
@@ -102,7 +105,21 @@ Singleton {
                 property real saturation: 1.0
                 property real tint: 1.0              // насколько поверхности окрашены в акцент
                 property real panelOpacity: 1.0
+                property string material: "solid"    // solid | glass | frosted | acrylic — фон панелей, острова, ящиков
+                property int borderWidth: 1          // обводка панелей и карточек: 0 | 1 | 2
+                property real shadow: 1.0            // сила теней: 0 — без теней
                 property string font: "Adwaita Sans"   // интерфейс; иконки Nerd Font подхватываются фолбэком
+                property string fontHeading: ""      // крупный текст (заголовки, часы, числа от 20 px); пусто — как интерфейс
+                property string density: "normal"    // compact | normal | comfy — высота строк, плиток и капсул
+                property string iconStyle: "rounded" // rounded | outlined | sharp — набор Material Symbols
+                property bool iconFill: false        // все значки залитые
+                property int iconWeight: 400         // толщина линий значков: 200…700
+                // компоненты (Оформление → Компоненты)
+                property string tileStyle: "tiles"   // Центр управления: tiles | round | list
+                property string tileOn: "fill"       // включённая плитка: fill | tint | outline
+                property string osdStyle: "slider"   // громкость/яркость: slider | ring | minimal
+                property string notifStyle: "normal" // уведомление в острове: compact | normal | rich
+                property string lockStyle: "center"  // экран блокировки: center | side | minimal | poster
                 property int fontSize: 13
                 property int radius: 14
                 property int frameRadius: 18

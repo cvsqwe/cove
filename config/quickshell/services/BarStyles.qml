@@ -26,6 +26,12 @@ Singleton {
           cfg: { style: "notch", capsules: "groups", capsuleFill: "dark", shape: "round", bodyOpacity: 1.0, iconColors: "mono", separators: false, labels: "hover" } },
         { name: I18n.tr("Капли"), desc: I18n.tr("Модули свисают с края экрана, как остров"),
           cfg: { style: "drops", capsules: "groups", capsuleFill: "dark", shape: "round", bodyOpacity: 1.0, iconColors: "mono", separators: false, labels: "hover" } },
+        { name: I18n.tr("Таблетки"), desc: I18n.tr("Две плавающие таблетки по краям и остров между ними"),
+          cfg: { style: "islands", capsules: "none", capsuleFill: "dark", shape: "round", bodyOpacity: 1.0, iconColors: "mono", separators: false, labels: "hover" } },
+        { name: I18n.tr("Компакт"), desc: I18n.tr("Короткая полоса по центру — по ширине модулей"),
+          cfg: { style: "compact", capsules: "none", capsuleFill: "dark", shape: "round", bodyOpacity: 1.0, iconColors: "mono", separators: true, labels: "hover" } },
+        { name: I18n.tr("Линия"), desc: I18n.tr("Без фона: модули над обоями и светящаяся черта"),
+          cfg: { style: "line", capsules: "none", capsuleFill: "dark", shape: "round", bodyOpacity: 1.0, iconColors: "accent", separators: true, labels: "hover" } },
         { name: I18n.tr("Классика"), desc: I18n.tr("Сплошная панель у края экрана"),
           cfg: { style: "docked", capsules: "none", capsuleFill: "dark", shape: "soft", bodyOpacity: 1.0, iconColors: "mono", separators: false, labels: "hover" } }
     ]

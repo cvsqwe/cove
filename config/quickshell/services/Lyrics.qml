@@ -11,7 +11,9 @@ import qs.config
 Singleton {
     id: root
 
-    readonly property bool enabled: Settings.island.lyrics
+    // текст нужен острову или виджету плеера (виджет записывается в users)
+    property int users: 0
+    readonly property bool enabled: Settings.island.lyrics || users > 0
     property var lines: []           // [[секунда, строка], …]
     property string plain: ""
     property bool loading: false

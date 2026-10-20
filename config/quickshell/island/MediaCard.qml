@@ -138,7 +138,7 @@ Card {
         // текст песни: звучащая строка и следующая — на месте спектра
         ColumnLayout {
             Layout.fillWidth: true
-            visible: Lyrics.has
+            visible: Settings.island.lyrics && Lyrics.has
             spacing: 1
             StyledText {
                 id: curLine
@@ -165,7 +165,7 @@ Card {
         // спектр: место держим всегда, на паузе гаснет — карточка не прыгает
         Visualizer {
             Layout.alignment: Qt.AlignHCenter
-            visible: Settings.island.visualizer && !Lyrics.has
+            visible: Settings.island.visualizer && !(Settings.island.lyrics && Lyrics.has)
             bands: 28
             barWidth: 4
             spacing: 4

@@ -39,15 +39,34 @@ Singleton {
     readonly property bool useCover: a.coverAccent && coverRanked.length > 0
     readonly property color custom: a.customAccent
 
+    // wallpaper / custom / cover — палитра считается из одного цвета (dynamic);
+    // preset — готовая палитра из Palettes (Catppuccin, Gruvbox, Nord…)
     readonly property string mode: useCover ? "cover"
         : a.palette === "wallpaper" && wallRanked.length > 0 ? "wallpaper"
         : a.palette === "custom" ? "custom"
-        : "catppuccin"
-    readonly property bool dynamic: mode !== "catppuccin"
+        : "preset"
+    readonly property bool dynamic: mode !== "preset"
+    readonly property var preset: (Palettes.sets[a.palette] ?? Palettes.sets.catppuccin)[light ? "light" : "dark"]
+    // смысловые цвета (красный, зелёный…) у dynamic — из Catppuccin
+    readonly property var basePreset: Palettes.sets.catppuccin[light ? "light" : "dark"]
+
+    // ---- схема (только для dynamic): как из одного цвета получаются остальные ----
+    //   tonal — поверхности слегка в цвет акцента (как было), vibrant — насыщенно, muted — приглушённо,
+    //   neutral — серые поверхности, contrast — глубже фон и ярче текст, expressive — второй акцент на треть круга
+    readonly property string scheme: a.scheme ?? "tonal"
+    readonly property var sp: ({
+        tonal:      { surf: 1.0, acc: 1.0,  hue2: 0,    contrast: 0 },
+        vibrant:    { surf: 1.9, acc: 1.15, hue2: 0,    contrast: 0 },
+        muted:      { surf: 0.5, acc: 0.6,  hue2: 0,    contrast: 0 },
+        neutral:    { surf: 0.0, acc: 1.0,  hue2: 0,    contrast: 0 },
+        contrast:   { surf: 0.8, acc: 1.05, hue2: 0,    contrast: 1 },
+        expressive: { surf: 1.2, acc: 1.1,  hue2: 0.33, contrast: 0 }
+    })[scheme] ?? ({ surf: 1, acc: 1, hue2: 0, contrast: 0 })
 
     readonly property var src: mode === "cover" ? coverRanked : wallRanked
     readonly property real hue: mode === "custom" ? Math.max(0, custom.hslHue) : (src[0]?.hslHue ?? 0.75)
     readonly property real hue2: {
+        if (sp.hue2 > 0) return (hue + sp.hue2) % 1;
         if (mode === "custom") return (hue + 0.09) % 1;
         for (const c of src.slice(1)) {
             const d = Math.min(Math.abs(c.hslHue - hue), 1 - Math.abs(c.hslHue - hue));
@@ -57,54 +76,94 @@ Singleton {
     }
     readonly property real sat: {
         const base = mode === "custom" ? custom.hslSaturation : (src[0]?.hslSaturation ?? 0.7);
-        return Math.max(0.15, Math.min(0.95, Math.max(0.55, Math.min(0.85, base)) * a.saturation));
+        return Math.max(0.15, Math.min(0.95, Math.max(0.55, Math.min(0.85, base)) * a.saturation * sp.acc));
     }
 
-    // l — «тёмная» яркость; в светлой теме зеркалим
+    // l — «тёмная» яркость; в светлой теме зеркалим. Контрастная схема раздвигает фон и текст.
     function tone(s: real, l: real): color {
-        const ll = light ? 1 - l * 0.92 : l;
-        return Qt.hsla(hue, Math.min(1, s * a.tint), ll, 1);
+        let ll = l;
+        if (sp.contrast) ll = l < 0.4 ? l * 0.6 : l + (1 - l) * 0.55;
+        ll = light ? 1 - ll * 0.92 : ll;
+        return Qt.hsla(hue, Math.min(1, s * a.tint * sp.surf), ll, 1);
     }
     function pick(dark: string, latte: string): color { return light ? latte : dark; }
 
+    // свои цвета поверх палитры: Settings.appearance.overrides = { accent: "#…", base: "#…" }
+    readonly property var ov: a.overrides ?? ({})
+    function o(key: string, c: color): color { return ov[key] ? ov[key] : c; }
+    function pr(key: string): color { return preset[key]; }
+
+    // смысловой цвет; «гармонизация» чуть поворачивает его оттенок к акценту
+    function sem(key: string): color {
+        const c = Qt.color(dynamic ? basePreset[key] : preset[key]);
+        if (!dynamic || !a.harmonize) return c;
+        let d = hue - c.hslHue;
+        if (d > 0.5) d -= 1;
+        if (d < -0.5) d += 1;
+        const shift = Math.max(-0.045, Math.min(0.045, d * 0.35));
+        return Qt.hsla((c.hslHue + shift + 1) % 1, c.hslSaturation, c.hslLightness, 1);
+    }
+
     // поверхности
-    readonly property color crust: dynamic ? tone(0.25, 0.06) : pick("#11111b", "#dce0e8")
-    readonly property color mantle: dynamic ? tone(0.22, 0.08) : pick("#181825", "#e6e9ef")
-    readonly property color base: dynamic ? tone(0.20, 0.105) : pick("#1e1e2e", "#eff1f5")
-    readonly property color surface0: dynamic ? tone(0.17, 0.18) : pick("#313244", "#ccd0da")
-    readonly property color surface1: dynamic ? tone(0.15, 0.25) : pick("#45475a", "#bcc0cc")
-    readonly property color surface2: dynamic ? tone(0.13, 0.32) : pick("#585b70", "#acb0be")
-    readonly property color overlay0: dynamic ? tone(0.12, 0.44) : pick("#6c7086", "#9ca0b0")
-    readonly property color overlay1: dynamic ? tone(0.12, 0.52) : pick("#7f849c", "#8c8fa1")
-    readonly property color subtext0: dynamic ? tone(0.20, 0.72) : pick("#a6adc8", "#6c6f85")
-    readonly property color subtext1: dynamic ? tone(0.25, 0.80) : pick("#bac2de", "#5c5f77")
-    readonly property color text: dynamic ? tone(0.35, 0.90) : pick("#cdd6f4", "#4c4f69")
+    readonly property color crust: o("crust", dynamic ? tone(0.25, 0.06) : pr("crust"))
+    readonly property color mantle: o("mantle", dynamic ? tone(0.22, 0.08) : pr("mantle"))
+    readonly property color base: o("base", dynamic ? tone(0.20, 0.105) : pr("base"))
+    readonly property color surface0: o("surface0", dynamic ? tone(0.17, 0.18) : pr("surface0"))
+    readonly property color surface1: o("surface1", dynamic ? tone(0.15, 0.25) : pr("surface1"))
+    readonly property color surface2: o("surface2", dynamic ? tone(0.13, 0.32) : pr("surface2"))
+    readonly property color overlay0: o("overlay0", dynamic ? tone(0.12, 0.44) : pr("overlay0"))
+    readonly property color overlay1: o("overlay1", dynamic ? tone(0.12, 0.52) : pr("overlay1"))
+    readonly property color subtext0: o("subtext0", dynamic ? tone(0.20, 0.72) : pr("subtext0"))
+    readonly property color subtext1: o("subtext1", dynamic ? tone(0.25, 0.80) : pr("subtext1"))
+    readonly property color text: o("text", dynamic ? tone(0.35, 0.90) : pr("text"))
 
     // акценты
     readonly property real accentL: light ? 0.46 : 0.78
-    readonly property color accent: dynamic ? Qt.hsla(hue, sat, accentL, 1) : pick("#cba6f7", "#8839ef")
-    readonly property color accent2: dynamic ? Qt.hsla(hue2, sat, accentL - 0.02, 1) : pick("#89b4fa", "#1e66f5")
-    readonly property color lavender: dynamic ? Qt.hsla(hue, sat * 0.6, light ? 0.5 : 0.84, 1) : pick("#b4befe", "#7287fd")
+    readonly property color accent: o("accent", dynamic ? Qt.hsla(hue, sat, accentL, 1) : pr("accent"))
+    readonly property color accent2: o("accent2", dynamic ? Qt.hsla(hue2, sat, accentL - 0.02, 1) : pr("accent2"))
+    readonly property color lavender: dynamic ? Qt.hsla(hue, sat * 0.6, light ? 0.5 : 0.84, 1) : pr("lavender")
     readonly property color blue: accent2
 
     // смысловые цвета
-    readonly property color sapphire: pick("#74c7ec", "#209fb5")
-    readonly property color teal: pick("#94e2d5", "#179299")
-    readonly property color green: pick("#a6e3a1", "#40a02b")
-    readonly property color yellow: pick("#f9e2af", "#df8e1d")
-    readonly property color peach: pick("#fab387", "#fe640b")
-    readonly property color red: pick("#f38ba8", "#d20f39")
-    readonly property color pink: pick("#f5c2e7", "#ea76cb")
+    readonly property color sapphire: sem("sapphire")
+    readonly property color teal: sem("teal")
+    readonly property color green: o("green", sem("green"))
+    readonly property color yellow: o("yellow", sem("yellow"))
+    readonly property color peach: sem("peach")
+    readonly property color red: o("red", sem("red"))
+    readonly property color pink: sem("pink")
     readonly property color mauve: accent
 
-    readonly property color panel: alpha(base, a.panelOpacity)
+    // ---- материал поверхностей (Settings.appearance.material) ----
+    //   solid — сплошной, glass — прозрачное стекло с размытием обоев, frosted — матовое (почти непрозрачное,
+    //   светлее, с бликом), acrylic — стекло с зерном и бликом. Размытие под слоями — правила в HyprConfig.
+    readonly property string material: a.material ?? "solid"
+    readonly property bool glassy: material !== "solid"
+    readonly property real panelAlpha: a.panelOpacity * (({ solid: 1, glass: 0.6, frosted: 0.86, acrylic: 0.72 })[material] ?? 1)
+    readonly property bool noise: material === "acrylic"
+    readonly property bool sheen: material === "acrylic" || material === "frosted"
+    readonly property color panel: material === "frosted"
+        ? alpha(Qt.tint(base, alpha(light ? "#ffffff" : text, light ? 0.35 : 0.06)), panelAlpha)
+        : alpha(base, panelAlpha)
+    // обводка поверхностей: у стекла — светлая кромка, иначе — как раньше
+    readonly property int borderWidth: a.borderWidth ?? 1
+    readonly property color edge: glassy ? alpha(light ? "#ffffff" : text, light ? 0.55 : 0.13) : surface0
+    // сила теней (0 — без теней); множитель к альфе RectangularShadow
+    readonly property real shadow: a.shadow ?? 1
     readonly property color island: crust
-    readonly property color onAccent: light ? "#ffffff" : crust
+    // текст на акцентной заливке: на светлом акценте — тёмный, на тёмном — белый
+    readonly property color onAccent: accent.hslLightness > 0.55 ? (light ? text : crust) : "#ffffff"
 
     function alpha(c: color, v: real): color { return Qt.rgba(c.r, c.g, c.b, v); }
 
     // шрифт
     readonly property string font: a.font
+    readonly property string fontHeading: a.fontHeading || a.font
+    // плотность: множитель высоты строк настроек, плиток ЦУ и отступов капсул
+    readonly property real density: ({ compact: 0.84, normal: 1, comfy: 1.16 })[a.density ?? "normal"] ?? 1
+    // значки
+    readonly property bool iconFill: !!a.iconFill
+    readonly property int iconWeight: a.iconWeight ?? 400
     readonly property int fontSize: a.fontSize
     readonly property int fontSizeSmall: Math.round(a.fontSize * 0.85)
     readonly property int fontSizeLarge: Math.round(a.fontSize * 1.23)
@@ -116,7 +175,13 @@ Singleton {
     readonly property int radius: a.radius
     readonly property int radiusSmall: Math.max(2, Math.round(a.radius * 0.57))
     // плавающая панель: отступ от краёв = внешний зазор окон; рамки экрана в этом стиле нет
-    readonly property bool barFloating: Settings.bar.style === "floating"
+    // плавающие стили: полоса с отступом от краёв; остров вырастает из капсулы.
+    //   islands — у каждой стороны своя таблетка, полосы нет; compact — полоса по ширине содержимого;
+    //   line — без фона, только светящаяся линия по низу
+    readonly property bool barIslands: Settings.bar.style === "islands"
+    readonly property bool barCompact: Settings.bar.style === "compact"
+    readonly property bool barLine: Settings.bar.style === "line"
+    readonly property bool barFloating: Settings.bar.style === "floating" || barIslands || barCompact || barLine
     readonly property int barMargin: barFloating ? Math.max(6, gap) : 0
     readonly property int barTop: barMargin                     // верх тела панели
     readonly property int barBottom: barTop + barHeight         // отсюда выпадают остров и ящики
@@ -141,8 +206,10 @@ Singleton {
     // Всё, что рисует панель и остров, берёт цвета и формы только отсюда.
     readonly property var bs: Settings.bar
     readonly property bool barRound: bs.shape !== "soft"
-    readonly property bool barless: barFloating && bs.bodyOpacity < 0.02   // без полосы — одни капсулы
-    readonly property color barBody: barDrops || barNotch ? "transparent" : alpha(base, a.panelOpacity * bs.bodyOpacity)
+    readonly property bool barless: (barFloating && bs.bodyOpacity < 0.02) || barIslands || barLine   // без полосы — одни капсулы
+    readonly property color barBody: barDrops || barNotch || barIslands || barLine ? "transparent" : alpha(panel, panelAlpha * bs.bodyOpacity)
+    // таблетка стороны в «Островах»
+    readonly property color barPill: alpha(panel, Math.max(0.35, panelAlpha * bs.bodyOpacity))
     readonly property int capsuleHeight: barHeight - 8
     readonly property int capsuleRadius: barRound ? capsuleHeight / 2 : radiusSmall
     readonly property color capsule: bs.capsuleFill === "light" ? surface0 : bs.capsuleFill === "outline" ? "transparent" : mantle

@@ -26,6 +26,8 @@ Singleton {
 
     readonly property int barCount: 48
     property var bars: new Array(barCount).fill(0)
+    // спектр нужен не только острову: виджеты рабочего стола записываются сюда (want/unwant)
+    property int spectrumUsers: 0
 
     // позиция трека не обновляется сама — пинаем раз в секунду
     Timer {
@@ -36,7 +38,7 @@ Singleton {
     }
 
     Process {
-        running: root.playing && Settings.island.visualizer
+        running: root.playing && (Settings.island.visualizer || root.spectrumUsers > 0)
         command: ["cava", "-p", Quickshell.shellPath("assets/cava.conf")]
         stdout: SplitParser {
             onRead: line => {

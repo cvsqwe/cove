@@ -277,16 +277,16 @@ fi
 
 # ---------------------------------------------------------------- шрифт значков
 if want fonts; then
-    step "Шрифт значков (Material Symbols Rounded)"
-    f="$HOME/.local/share/fonts/MaterialSymbolsRounded.ttf"
-    if fc-list 2>/dev/null | grep -q "Material Symbols Rounded"; then ok "уже есть"
-    else
-        mkdir -p "$(dirname "$f")"
+    step "Шрифты значков (Material Symbols: Rounded, Outlined, Sharp)"
+    mkdir -p "$HOME/.local/share/fonts"
+    for v in Rounded Outlined Sharp; do
+        f="$HOME/.local/share/fonts/MaterialSymbols$v.ttf"
+        if fc-list 2>/dev/null | grep -q "Material Symbols $v"; then ok "$v — уже есть"; continue; fi
         curl -fL --progress-bar -o "$f" \
-            "https://raw.githubusercontent.com/google/material-design-icons/master/variablefont/MaterialSymbolsRounded%5BFILL%2CGRAD%2Copsz%2Cwght%5D.ttf"
-        fc-cache -f >/dev/null 2>&1 || true
-        ok "установлен (Apache-2.0, Google)"
-    fi
+            "https://raw.githubusercontent.com/google/material-design-icons/master/variablefont/MaterialSymbols$v%5BFILL%2CGRAD%2Copsz%2Cwght%5D.ttf"
+        ok "$v установлен (Apache-2.0, Google)"
+    done
+    fc-cache -f >/dev/null 2>&1 || true
 fi
 
 # ---------------------------------------------------------------- конфиги

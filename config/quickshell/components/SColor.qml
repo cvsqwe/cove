@@ -9,6 +9,7 @@ Row {
     id: root
 
     property color value: "#cba6f7"
+    property bool compact: false   // только кружок текущего цвета, клик — выбор своего
     signal picked(color value)
 
     readonly property var presets: ["#cba6f7", "#f5c2e7", "#f38ba8", "#fab387", "#f9e2af", "#a6e3a1",
@@ -17,7 +18,7 @@ Row {
     spacing: 6
 
     Repeater {
-        model: root.presets
+        model: root.compact ? [] : root.presets
         Rectangle {
             required property string modelData
             width: 26
@@ -37,14 +38,19 @@ Row {
         width: 26
         height: 26
         radius: 13
-        gradient: Gradient {
+        color: root.value
+        border.width: root.compact ? 2 : 0
+        border.color: Theme.surface2
+        gradient: root.compact ? null : rainbow
+        Gradient {
+            id: rainbow
             orientation: Gradient.Horizontal
             GradientStop { position: 0; color: "#ff5555" }
             GradientStop { position: 0.33; color: "#55ff55" }
             GradientStop { position: 0.66; color: "#5555ff" }
             GradientStop { position: 1; color: "#ff55ff" }
         }
-        StyledText { anchors.centerIn: parent; text: "+"; color: "white"; font.bold: true }
+        StyledText { visible: !root.compact; anchors.centerIn: parent; text: "+"; color: "white"; font.bold: true }
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: pop.open() }
 
         Popup {

@@ -7,7 +7,8 @@ import Quickshell
 // Ключ — код глифа (hex), значение — имя значка Material Symbols. Логотипы брендов (Arch, Git…)
 // в таблицу не входят и рисуются как есть. Значок можно задавать и сразу именем: "wifi".
 Singleton {
-    readonly property string family: "Material Symbols Rounded"
+    // набор значков: Оформление → Значки (шрифты ставит install.sh)
+    readonly property string family: "Material Symbols " + (({ outlined: "Outlined", sharp: "Sharp" })[Settings.appearance.iconStyle] ?? "Rounded")
     readonly property var map: ({
         "F013": "settings",
         "F2D2": "filter_none",

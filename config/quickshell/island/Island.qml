@@ -63,11 +63,11 @@ PanelWindow {
         : "idle"
 
     readonly property real bodyWidth: mode === "dashboard" ? dashboard.implicitWidth + 32
-        : mode === "notif" ? 460
+        : mode === "notif" ? ({ compact: 400, rich: 520 })[Settings.appearance.notifStyle] ?? 460
         : mode === "shelf" ? shelf.implicitWidth + 36
         : mode === "shot" ? shot.implicitWidth + 36
         : mode === "picker" ? picker.implicitWidth + 36
-        : mode === "osd" ? 360
+        : mode === "osd" ? osd.bodyW
         : mode === "peek" ? peek.implicitWidth + 40
         : 0
     readonly property real bodyHeight: mode === "dashboard" ? dashboard.implicitHeight + 28
@@ -75,7 +75,7 @@ PanelWindow {
         : mode === "shelf" ? shelf.implicitHeight + 26
         : mode === "shot" ? shot.implicitHeight + 28
         : mode === "picker" ? picker.implicitHeight + 28
-        : mode === "osd" ? 46
+        : mode === "osd" ? osd.bodyH
         : mode === "peek" ? peek.implicitHeight + 24
         : 0
 
@@ -221,11 +221,11 @@ PanelWindow {
     // мягкая тень под чёлкой: отделяет её от окон и обоев
     RectangularShadow {
         anchors.fill: island
-        visible: Theme.barNotch || (island.morph && win.bodyHeight > 0)
+        visible: (Theme.barNotch || (island.morph && win.bodyHeight > 0)) && Theme.shadow > 0
         radius: island.bottomLeftRadius
         offset.y: 4
         blur: 20
-        color: Qt.rgba(0, 0, 0, 0.38)
+        color: Qt.rgba(0, 0, 0, 0.38 * Theme.shadow)
     }
 
     Rectangle {
@@ -247,8 +247,8 @@ PanelWindow {
         color: morph ? (open ? Theme.panel : Theme.capsule)
              : open || Theme.islandHanging ? Theme.islandColor : "transparent"
         Behavior on color { ColorAnimation { duration: Theme.animFast } }
-        border.width: morph ? 1 : 0
-        border.color: Theme.capsuleBorder
+        border.width: morph ? (open ? Theme.borderWidth : 1) : 0
+        border.color: open && Theme.glassy ? Theme.edge : Theme.capsuleBorder
         readonly property real openRadius: Theme.radius + 6
         bottomLeftRadius: morph ? (open ? openRadius : Theme.capsuleRadius)
                         : open ? openRadius : Theme.islandHanging ? Theme.capsuleRadius + 2 : 0
@@ -261,6 +261,8 @@ PanelWindow {
 
         Behavior on width { SpringAnimation { spring: Theme.springSpring; damping: Theme.springDamping; epsilon: 0.5 } }
         Behavior on height { SpringAnimation { spring: Theme.springSpring; damping: Theme.springDamping; epsilon: 0.5 } }
+
+        MaterialFx { visible: island.open && (Theme.noise || Theme.sheen); radius: island.bottomLeftRadius }
 
         HoverHandler { id: hover }
 
@@ -355,8 +357,10 @@ PanelWindow {
             width: island.width - 32
 
             OsdBody {
+                id: osd
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: 320
+                width: bodyW - 40
+                height: implicitHeight
                 kind: win.osdKind
                 shown: win.mode === "osd"
             }

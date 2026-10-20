@@ -8,11 +8,14 @@ ClippingRectangle {
     id: root
 
     property var cfg: ({})
-    readonly property bool floating: cfg.style === "floating"
+    readonly property bool islands: cfg.style === "islands"
+    readonly property bool compact: cfg.style === "compact"
+    readonly property bool line: cfg.style === "line"
+    readonly property bool floating: cfg.style === "floating" || islands || compact || line
     readonly property bool drops: cfg.style === "drops"
     readonly property bool notch: cfg.style === "notch"
     readonly property bool round: cfg.shape !== "soft"
-    readonly property bool bare: cfg.capsules === "none"
+    readonly property bool bare: cfg.capsules === "none" || islands
     readonly property int m: floating ? 6 : 0
     readonly property int capH: 14
     readonly property color capFill: notch ? "transparent" : drops ? Theme.base : bare ? "transparent"
@@ -43,13 +46,13 @@ ClippingRectangle {
     Rectangle {
         id: bar
         visible: !root.drops && !root.notch
-        x: root.m
+        x: root.compact ? 34 : root.m
         y: root.m
-        width: root.width - 2 * root.m
+        width: root.width - 2 * x
         height: 20
         radius: root.floating ? (root.round ? 10 : Theme.radiusSmall) : 0
-        color: Theme.alpha(Theme.base, root.cfg.bodyOpacity ?? 1)
-        border.width: root.floating && (root.cfg.bodyOpacity ?? 1) > 0.02 ? 1 : 0
+        color: root.islands || root.line ? "transparent" : Theme.alpha(Theme.base, root.cfg.bodyOpacity ?? 1)
+        border.width: root.floating && !root.islands && !root.line && (root.cfg.bodyOpacity ?? 1) > 0.02 ? 1 : 0
         border.color: Theme.surface0
     }
 
@@ -129,6 +132,21 @@ ClippingRectangle {
 
     Rectangle { visible: root.notch; x: 4; y: 3; width: lseg.width + 10; height: root.capH + 2; radius: height / 2; color: Theme.alpha(Theme.base, 0.8) }
     Rectangle { visible: root.notch; x: rseg.x - 5; y: 3; width: rseg.width + 10; height: root.capH + 2; radius: height / 2; color: Theme.alpha(Theme.base, 0.8) }
+    // «Таблетки»: у каждой стороны своя
+    Rectangle { visible: root.islands; x: lseg.x - 5; y: bar.y; width: lseg.width + 10; height: bar.height; radius: root.round ? 10 : Theme.radiusSmall; color: Theme.base; border.width: 1; border.color: Theme.surface0 }
+    Rectangle { visible: root.islands; x: rseg.x - 5; y: bar.y; width: rseg.width + 10; height: bar.height; radius: root.round ? 10 : Theme.radiusSmall; color: Theme.base; border.width: 1; border.color: Theme.surface0 }
+    // «Линия»
+    Rectangle {
+        visible: root.line
+        x: bar.x; y: bar.y + bar.height - 1
+        width: bar.width; height: 1.5
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "transparent" }
+            GradientStop { position: 0.5; color: Theme.accent }
+            GradientStop { position: 1.0; color: "transparent" }
+        }
+    }
     Segments {
         id: lseg
         model: root.leftSegs

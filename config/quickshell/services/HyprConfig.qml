@@ -128,8 +128,14 @@ Singleton {
         L.push(`hl.layer_rule({ name = "qs-launcher-blur", match = { namespace = "^qs-launcher$" }, blur = true, ignore_alpha = 0.3 })`);
         // стеклянные виджеты рабочего стола; тени и затемнение редактора (альфа < 0.4) не размываем
         L.push(`hl.layer_rule({ name = "qs-desktop-blur", match = { namespace = "^qs-desktop$" }, blur = true, ignore_alpha = 0.4 })`);
+        // материал «стекло/матовое/акрил»: размытие под ящиками, островом и меню шелла.
+        // ignore_alpha ниже альфы фона, но выше альфы теней (0.38 × сила) — тени не размываются
+        if (Theme.glassy) {
+            const ia = Math.max(0.1, Math.min(0.42, Theme.panelAlpha - 0.08)).toFixed(2);
+            L.push(`hl.layer_rule({ name = "qs-material-blur", match = { namespace = "^qs-(drawer|island|session|overview|cheatsheet|polkit|welcome|translate)$" }, blur = true, ignore_alpha = ${ia} })`);
+        }
         // размытие обоев под полупрозрачной панелью; ignore_alpha — чтобы не размывать тени
-        if (Settings.bar.bodyOpacity < 0.98 || Settings.bar.style === "notch")
+        if (Settings.bar.bodyOpacity < 0.98 || Settings.bar.style === "notch" || Settings.bar.style === "islands" || Theme.glassy)
             L.push(`hl.layer_rule({ name = "qs-bar-blur", match = { namespace = "^qs-bar$" }, blur = true, ignore_alpha = ${Settings.bar.style === "notch" ? "0.3" : Settings.bar.bodyOpacity > 0.02 ? Math.min(0.3, Settings.bar.bodyOpacity * 0.5).toFixed(2) : "0.4"} })`);
         L.push('hl.window_rule({ name = "qs-settings", match = { title = "^(Настройки Quickshell|Quickshell Settings)$" }, float = true, size = "1180 760", center = true })');
         L.push("");
@@ -187,6 +193,13 @@ Singleton {
 
     Timer { id: debounce; interval: 500; onTriggered: root.apply() }
 
+    IpcHandler {
+        target: "hyprconfig"
+        // qs ipc call hyprconfig status — последняя ошибка и совпадает ли файл с тем, что сгенерировал бы шелл
+        function status(): string { return JSON.stringify({ error: root.lastError, upToDate: root.generate() === genFile.text(), material: Theme.material }); }
+        function apply(): void { root.apply(); }
+    }
+
     // курсор: env в generated.lua видят только новые процессы — применяем сразу
     // самому Hyprland (setcursor) и GTK-приложениям (gsettings)
     // при старте не трогаем: тему уже задал env.
@@ -222,7 +235,7 @@ Singleton {
         Settings.input.tapToClick, Settings.input.tpNatural, Settings.input.tpTyping, Settings.input.tpClickfinger, Settings.input.tpScroll, Settings.input.gestures,
         Settings.nightLight.antiFlash,
         Settings.appearance.animations, Settings.appearance.animSpeed, Settings.appearance.cursorTheme, Settings.appearance.cursorSize, Settings.appearance.iconTheme,
-        Settings.bar.bodyOpacity, Settings.bar.style, JSON.stringify(Settings.displays.monitors),
+        Settings.bar.bodyOpacity, Settings.bar.style, JSON.stringify(Settings.displays.monitors), Theme.material, Theme.panelAlpha,
         Settings.general.terminal, Settings.general.browser, Settings.general.fileManager, Settings.general.editor,
         Theme.accent, Theme.accent2, Theme.surface0, AppThemes.active("qt")
     ]

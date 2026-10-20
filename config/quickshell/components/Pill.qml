@@ -17,7 +17,7 @@ Rectangle {
     signal clicked(var mouse)
     signal wheel(var wheel)
 
-    implicitWidth: Math.max(implicitHeight, row.implicitWidth + 16)
+    implicitWidth: Math.max(implicitHeight, row.implicitWidth + Math.round(16 * Theme.density))
     Behavior on implicitWidth { NumberAnimation { duration: Theme.anim; easing.type: Easing.OutCubic } }
     implicitHeight: Theme.capsuleHeight - 2
     radius: Theme.barRound ? height / 2 : Math.max(2, Theme.capsuleRadius - 2)

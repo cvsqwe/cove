@@ -27,19 +27,53 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
     visible: Settings.desktop.enabled && !GameMode.active
-    WlrLayershell.layer: editing ? WlrLayer.Overlay : WlrLayer.Bottom
+    // меню поднимает слой наверх: иначе его закрывали бы окна, а клик мимо меню не долетал бы до нас
+    WlrLayershell.layer: editing || menuOpen ? WlrLayer.Overlay : WlrLayer.Bottom
     WlrLayershell.namespace: "qs-desktop"
     WlrLayershell.keyboardFocus: editing ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-    // вне редактора клики проходят сквозь всё, кроме интерактивных виджетов (плеер, задачи, таймер…)
-    mask: Region { item: win.editing ? fullArea : null; regions: win.editing ? [] : win.hot }
-    property list<Region> hot: {
-        void rep.count;
+    // слой лежит под окнами, так что ввод забирает только там, где окон нет: пустой стол и виджеты
+    // (ПКМ — контекстное меню, ЛКМ по интерактивным виджетам — плеер, задачи, таймер…)
+    mask: Region { item: fullArea }
+
+    // ---------- контекстное меню ----------
+    property bool menuOpen: false
+    property string menuFor: ""      // id виджета; "" — пустой рабочий стол
+    property point menuAt: Qt.point(0, 0)
+    function openMenu(id: string, x: real, y: real): void {
+        menuFor = id;
+        menuAt = Qt.point(x, y);
+        menuOpen = true;
+    }
+    function menuItems(id: string, l): var {
         const out = [];
-        for (let i = 0; i < rep.count; i++) { const it = rep.itemAt(i); if (it) out.push(it.region); }
+        const e = id ? l.find((x, i) => wid(x, i) === id) : null;
+        if (e) {
+            const c = Catalog.types[e.type] ?? {};
+            const o = Object.assign({}, c.opts ?? {}, e.opts ?? {});
+            const schema = (c.schema ?? []).filter(f => f.kind === "seg" || f.kind === "bool");
+            out.push({ kind: "header", icon: c.icon, label: c.label ?? e.type });
+            for (const f of schema) {
+                if (f.kind === "seg")
+                    out.push({ kind: "seg", label: f.label, options: f.options, current: o[f.key], pick: v => setOpt(id, f.key, v) });
+                else
+                    out.push({ label: f.label, checked: !!o[f.key], keep: true, run: () => setOpt(id, f.key, !o[f.key]) });
+            }
+            if (schema.length) out.push({ kind: "sep" });
+            out.push({ icon: "tune", label: I18n.tr("Настроить…"), run: () => { editing = true; selected = id; } });
+            out.push({ icon: "content_copy", label: I18n.tr("Дублировать"), run: () => duplicate(id) });
+            out.push({ icon: "delete", label: I18n.tr("Удалить"), danger: true, run: () => remove(id) });
+            out.push({ kind: "sep" });
+        }
+        out.push({ icon: "add", label: I18n.tr("Добавить виджет"), run: () => { editing = true; adding = true; } });
+        if (!editing) out.push({ icon: "edit", label: I18n.tr("Редактор виджетов"), run: () => editing = true });
+        out.push({ icon: "wallpaper", label: I18n.tr("Сменить обои"), run: () => Panels.toggle("wallpaper") });
+        out.push({ icon: "skip_next", label: I18n.tr("Следующие обои"), run: () => Wallpapers.next() });
+        out.push({ icon: "settings", label: I18n.tr("Настройки рабочего стола"), run: () => Panels.openSettings("desktop") });
         return out;
     }
 
     onEditingChanged: {
+        menuOpen = false;
         if (editing) keys.forceActiveFocus();
         else { selected = ""; adding = false; }
     }
@@ -52,6 +86,12 @@ PanelWindow {
         function add(type: string): void { if (Catalog.types[type]) { win.editing = true; win.add(type); } }
         function select(id: string): void { win.editing = true; win.selected = id; }
         function gallery(): void { win.editing = true; win.adding = true; }
+        // контекстное меню посреди экрана (или у виджета id) — как по ПКМ
+        function menu(id: string): void {
+            const e = win.list.find((x, i) => win.wid(x, i) === id);
+            win.openMenu(e ? id : "", e ? e.x + 40 : win.width / 2, e ? e.y + 40 : win.height / 2);
+        }
+        function closeMenu(): void { win.menuOpen = false; }
     }
 
     // ---------- данные ----------
@@ -93,6 +133,24 @@ PanelWindow {
     readonly property var selEntry: list.find((e, i) => wid(e, i) === selected) ?? null
 
     // ---------- фон редактора ----------
+    // в редакторе — только рабочий стол: окна закрыты картинкой обоев (слой редактора — Overlay)
+    Image {
+        anchors.fill: parent
+        visible: win.editing
+        source: win.editing && Store.still ? "file://" + Store.still : ""
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        cache: true
+        opacity: status === Image.Ready ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.anim } }
+    }
+    // ПКМ по пустому столу вне редактора
+    MouseArea {
+        anchors.fill: parent
+        enabled: !win.editing
+        acceptedButtons: Qt.RightButton
+        onClicked: m => win.openMenu("", m.x, m.y)
+    }
     Rectangle {
         anchors.fill: parent
         visible: win.editing
@@ -118,7 +176,14 @@ PanelWindow {
             }
         }
         // клик по пустому месту — снять выделение
-        MouseArea { anchors.fill: parent; onClicked: { win.selected = ""; win.adding = false; keys.forceActiveFocus(); } }
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: m => {
+                if (m.button === Qt.RightButton) { win.openMenu("", m.x, m.y); return; }
+                win.selected = ""; win.adding = false; keys.forceActiveFocus();
+            }
+        }
     }
 
     Item {
@@ -127,7 +192,8 @@ PanelWindow {
         Keys.onPressed: e => {
             const ctrl = e.modifiers & Qt.ControlModifier, step = e.modifiers & Qt.ShiftModifier ? 10 : 1;
             if (e.key === Qt.Key_Escape) {
-                if (win.adding) win.adding = false;
+                if (win.menuOpen) win.menuOpen = false;
+                else if (win.adding) win.adding = false;
                 else if (win.selected) win.selected = "";
                 else win.editing = false;
             } else if (!win.selected) {
@@ -161,10 +227,6 @@ PanelWindow {
             property real liveScale: 0
             readonly property real s: liveScale > 0 ? liveScale : (e.scale ?? 1)
             readonly property bool shownW: loader.item?.shown ?? true
-            readonly property alias region: reg
-
-            // зона кликов вне редактора — только у видимых интерактивных
-            Region { id: reg; item: !win.editing && w.visible && !!w.cat?.interactive ? w : null }
 
             visible: !!cat && e.enabled !== false && (shownW || win.editing)
             opacity: shownW ? 1 : 0.45
@@ -213,6 +275,14 @@ PanelWindow {
                     ignoreUnknownSignals: true
                     function onSetOpt(k, v) { win.setOpt(w.wid, k, v); }
                 }
+            }
+
+            // ПКМ — меню виджета (только правая кнопка: левые клики уходят к кнопкам внутри)
+            MouseArea {
+                anchors.fill: parent
+                z: 10
+                acceptedButtons: Qt.RightButton
+                onClicked: m => { const p = mapToItem(null, m.x, m.y); if (win.editing) win.selected = w.wid; win.openMenu(w.wid, p.x, p.y); }
             }
 
             // ---- рамка и ручки редактора ----
@@ -345,5 +415,23 @@ PanelWindow {
             }
             SButton { icon: "󰄬"; text: I18n.tr("Готово"); primary: true; onClicked: win.editing = false }
         }
+    }
+
+    // клик мимо меню (любой кнопкой) закрывает его
+    MouseArea {
+        anchors.fill: parent
+        visible: win.menuOpen
+        z: 2900
+        acceptedButtons: Qt.AllButtons
+        onPressed: win.menuOpen = false
+    }
+    WidgetMenu {
+        id: menu
+        visible: win.menuOpen
+        z: 3000
+        items: win.menuOpen ? win.menuItems(win.menuFor, win.list) : []
+        x: Math.max(8, Math.min(win.menuAt.x, win.width - width - 8))
+        y: Math.max(8, Math.min(win.menuAt.y, win.height - height - 8))
+        onClose: win.menuOpen = false
     }
 }

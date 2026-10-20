@@ -17,7 +17,7 @@ Text {
     color: Theme.text
     font.family: ms ? Icons.family : Theme.font
     font.pixelSize: ms ? Math.round(size * 1.15) : size
-    font.variableAxes: ms ? { "FILL": fill ? 1 : 0, "wght": 400, "GRAD": 0, "opsz": 24 } : {}
+    font.variableAxes: ms ? { "FILL": fill || Theme.iconFill ? 1 : 0, "wght": Theme.iconWeight, "GRAD": 0, "opsz": 24 } : {}
     horizontalAlignment: Text.AlignHCenter
     verticalAlignment: Text.AlignVCenter
     // NativeRendering: у QtRendering (поле расстояний) артефакты на осях вариативного шрифта (FILL)
