@@ -32,7 +32,9 @@ Item {
 
             Rectangle {
                 required property int index
+                // скрытый спектр (свёрнутая карточка, выключенный виджет) не пересчитывается и не анимируется
                 readonly property real v: {
+                    if (!root.visible) return 0;
                     if (root.bands <= 0) return Media.bars[index * root.step] ?? 0;
                     const from = Math.floor(index * Media.barCount / root.bands);
                     const to = Math.max(from + 1, Math.floor((index + 1) * Media.barCount / root.bands));
@@ -46,7 +48,7 @@ Item {
                 radius: width / 2
                 color: root.color
                 opacity: root.fade ? 0.22 + 0.78 * Math.min(1, v * 2.5) : 1
-                Behavior on height { NumberAnimation { duration: 80; easing.type: Easing.OutQuad } }
+                Behavior on height { enabled: root.visible; NumberAnimation { duration: 80; easing.type: Easing.OutQuad } }
             }
         }
     }

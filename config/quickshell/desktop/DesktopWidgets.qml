@@ -363,28 +363,33 @@ PanelWindow {
     }
 
     // ---------- панели редактора ----------
-    Inspector {
-        visible: win.editing && !!win.selEntry && !win.adding
-        entry: win.selEntry ?? ({})
-        cat: Catalog.types[win.selEntry?.type] ?? ({})
+    // панели редактора создаются только в режиме редактирования: галерея держит превью всех виджетов
+    Loader {
+        active: win.editing && !!win.selEntry && !win.adding
         z: 2000
         // напротив выделенного виджета
         x: (win.selEntry?.x ?? 0) > win.width / 2 ? 24 : win.width - width - 24
         y: Theme.barBottom + 24
-        onPatch: p => win.update(win.selected, p)
-        onOpt: (k, v) => win.setOpt(win.selected, k, v)
-        onDuplicate: win.duplicate(win.selected)
-        onRemove: win.remove(win.selected)
-        onRaise: win.raise(win.selected)
-        onClose: win.selected = ""
+        sourceComponent: Inspector {
+            entry: win.selEntry ?? ({})
+            cat: Catalog.types[win.selEntry?.type] ?? ({})
+            onPatch: p => win.update(win.selected, p)
+            onOpt: (k, v) => win.setOpt(win.selected, k, v)
+            onDuplicate: win.duplicate(win.selected)
+            onRemove: win.remove(win.selected)
+            onRaise: win.raise(win.selected)
+            onClose: win.selected = ""
+        }
     }
 
-    AddGallery {
-        visible: win.editing && win.adding
+    Loader {
+        active: win.editing && win.adding
         z: 2000
         anchors.centerIn: parent
-        onPicked: t => win.add(t)
-        onClose: win.adding = false
+        sourceComponent: AddGallery {
+            onPicked: t => win.add(t)
+            onClose: win.adding = false
+        }
     }
 
     Rectangle {

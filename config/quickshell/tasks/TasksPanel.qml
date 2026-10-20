@@ -55,14 +55,14 @@ Drawer {
             MIcon { icon: "monitoring"; color: Theme.accent; size: 22 }
             StyledText { text: I18n.tr("Процессы"); font.bold: true; font.pixelSize: Theme.fontSizeLarge }
             Item { Layout.fillWidth: true }
+            // модель постоянная, живые значения — внутри плитки: иначе каждый замер Sysmon
+            // пересоздавал плитки с графиками, даже при закрытом окне
             Repeater {
-                model: [
-                    { label: I18n.tr("ЦП"), value: Math.round(Sysmon.cpu * 100) + "%", hist: Sysmon.cpuHistory, color: Theme.accent },
-                    { label: I18n.tr("Память"), value: `${Sysmon.ramUsedGb.toFixed(1)} / ${Sysmon.ramTotalGb.toFixed(0)} ${I18n.tr("ГБ")}`, hist: Sysmon.ramHistory, color: Theme.accent2 },
-                    { label: "GPU", value: Math.round(Sysmon.gpu * 100) + "%", hist: Sysmon.gpuHistory, color: Theme.peach }
-                ]
+                model: ["cpu", "ram", "gpu"]
                 Rectangle {
-                    required property var modelData
+                    id: tile
+                    required property string modelData
+                    readonly property bool live: root.open
                     implicitWidth: 150
                     implicitHeight: 46
                     radius: Theme.radiusSmall
@@ -73,14 +73,24 @@ Drawer {
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
                         height: 26
-                        values: parent.modelData.hist
-                        color: parent.modelData.color
+                        values: !tile.live ? [] : tile.modelData === "cpu" ? Sysmon.cpuHistory : tile.modelData === "ram" ? Sysmon.ramHistory : Sysmon.gpuHistory
+                        color: tile.modelData === "cpu" ? Theme.accent : tile.modelData === "ram" ? Theme.accent2 : Theme.peach
                         opacity: 0.55
                     }
                     Column {
                         x: 10; y: 6
-                        StyledText { text: parent.parent.modelData.label; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall - 1 }
-                        StyledText { text: parent.parent.modelData.value; font.bold: true; font.pixelSize: Theme.fontSizeSmall + 1 }
+                        StyledText {
+                            text: tile.modelData === "cpu" ? I18n.tr("ЦП") : tile.modelData === "ram" ? I18n.tr("Память") : "GPU"
+                            color: Theme.overlay1
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                        }
+                        StyledText {
+                            text: !tile.live ? "" : tile.modelData === "cpu" ? Math.round(Sysmon.cpu * 100) + "%"
+                                : tile.modelData === "ram" ? `${Sysmon.ramUsedGb.toFixed(1)} / ${Sysmon.ramTotalGb.toFixed(0)} ${I18n.tr("ГБ")}`
+                                : Math.round(Sysmon.gpu * 100) + "%"
+                            font.bold: true
+                            font.pixelSize: Theme.fontSizeSmall + 1
+                        }
                     }
                 }
             }

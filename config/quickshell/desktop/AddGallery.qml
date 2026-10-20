@@ -12,7 +12,8 @@ Rectangle {
     width: 4 * 210 + 3 * 10 + 40
     height: grid.implicitHeight + 90
     radius: Theme.radius + 6
-    color: Theme.panel
+    // почти непрозрачно: панель лежит в одном слое с виджетами, размытия под ней нет — они бы просвечивали
+    color: Theme.alpha(Theme.base, 0.97)
     border.width: 1
     border.color: Theme.surface0
 

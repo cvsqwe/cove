@@ -19,9 +19,10 @@ Rectangle {
     signal close()
 
     width: 340
-    height: Math.min(col.implicitHeight + 32, parent.height - Theme.barBottom - 140)
+    height: Math.min(col.implicitHeight + 32, Window.height - Theme.barBottom - 140)   // от окна: внутри Loader parent — сам Loader
     radius: Theme.radius + 6
-    color: Theme.panel
+    // почти непрозрачно: панель лежит в одном слое с виджетами, размытия под ней нет — они бы просвечивали
+    color: Theme.alpha(Theme.base, 0.97)
     border.width: 1
     border.color: Theme.surface0
 

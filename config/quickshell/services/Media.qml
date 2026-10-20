@@ -41,9 +41,17 @@ Singleton {
         running: root.playing && (Settings.island.visualizer || root.spectrumUsers > 0)
         command: ["cava", "-p", Quickshell.shellPath("assets/cava.conf")]
         stdout: SplitParser {
+            // один проход без промежуточных массивов: строка приходит 30 раз в секунду
             onRead: line => {
-                const v = line.split(";").filter(s => s !== "").map(s => Math.min(1, parseInt(s) / 1000));
-                if (v.length === root.barCount) root.bars = v;
+                const v = new Array(root.barCount);
+                let n = 0, acc = 0, num = false;
+                for (let i = 0; i < line.length; i++) {
+                    const c = line.charCodeAt(i);
+                    if (c >= 48 && c <= 57) { acc = acc * 10 + c - 48; num = true; }
+                    else if (num) { if (n < root.barCount) v[n] = Math.min(1, acc / 1000); n++; acc = 0; num = false; }
+                }
+                if (num) { if (n < root.barCount) v[n] = Math.min(1, acc / 1000); n++; }
+                if (n === root.barCount) root.bars = v;
             }
         }
         onRunningChanged: if (!running) root.bars = new Array(root.barCount).fill(0)

@@ -194,400 +194,414 @@ Scope {
         target: root.legacy ? null : Profile
         function onAchieved(a): void {
             if (!root.shown) return;
-            toast.show("military_tech", ["", "#cd8a5a", "#b9c3cf", Theme.yellow][a.tier], I18n.tr("Достижение: ") + a.name, a.desc + " · +" + Profile.tierXp[a.tier] + I18n.tr(" опыта"));
-            fx.sound("win");
+            win.item?.toast.show("military_tech", ["", "#cd8a5a", "#b9c3cf", Theme.yellow][a.tier], I18n.tr("Достижение: ") + a.name, a.desc + " · +" + Profile.tierXp[a.tier] + I18n.tr(" опыта"));
+            win.item?.fx.sound("win");
         }
         function onLevelUp(l: int): void {
             if (!root.shown) return;
             const r = Profile.rewards.filter(x => x.level === l).map(x => x.name);
-            toast.show("upgrade", Profile.frameOf(l), I18n.tr("Уровень ") + l + " · " + Profile.titleOf(l), r.length ? I18n.tr("Открыто: ") + r.join(", ") : I18n.tr("Так держать!"));
-            fx.sound("record");
-            fx.confetti();
+            win.item?.toast.show("upgrade", Profile.frameOf(l), I18n.tr("Уровень ") + l + " · " + Profile.titleOf(l), r.length ? I18n.tr("Открыто: ") + r.join(", ") : I18n.tr("Так держать!"));
+            win.item?.fx.sound("record");
+            win.item?.fx.confetti();
         }
         function onXpGained(n: int, why: string): void {
-            if (root.shown && root.current !== "") fx.floatText(fx.width / 2, 40, "+" + n + I18n.tr(" опыта"), Theme.accent);
+            const fx = win.item?.fx;
+            if (fx && root.shown && root.current !== "") fx.floatText(fx.width / 2, 40, "+" + n + I18n.tr(" опыта"), Theme.accent);
         }
     }
 
-    FloatingWindow {
+    // Окно со всеми страницами и пулом звуков создаётся при первом открытии, а не при старте шелла
+    // (~60 МБ на окно). После закрытия живёт ещё 3 минуты — начатая партия не теряется.
+    property bool alive: false
+    onShownChanged: if (shown) { alive = true; dropTimer.stop(); } else dropTimer.restart()
+    Timer { id: dropTimer; interval: 180000; onTriggered: root.alive = false }
+
+    LazyLoader {
         id: win
-        visible: root.shown
-        title: root.legacy ? I18n.tr("Игры Legacy") : I18n.tr("Игры Cove")
-        implicitWidth: 1060
-        implicitHeight: 760
-        minimumSize: Qt.size(820, 620)
-        color: Theme.base
-        onVisibleChanged: if (!visible) root.shown = false
+        active: root.alive
+        FloatingWindow {
+            id: window
+            // для уведомлений профиля снаружи окна
+            readonly property alias fx: fx
+            readonly property alias toast: toast
+            visible: root.shown
+            title: root.legacy ? I18n.tr("Игры Legacy") : I18n.tr("Игры Cove")
+            implicitWidth: 1060
+            implicitHeight: 760
+            minimumSize: Qt.size(820, 620)
+            color: Theme.base
+            onVisibleChanged: if (!visible) root.shown = false
 
-        // Esc: из игры — на витрину, со страницы — на витрину, с витрины — закрыть
-        Shortcut {
-            sequence: "Escape"
-            onActivated: root.current !== "" ? (root.current = "") : root.page !== "" ? (root.page = "") : (root.shown = false)
-        }
-
-        // ---------- витрина ----------
-        Item {
-            id: hub
-            anchors.fill: parent
-            visible: root.current === "" && root.page === ""
-            focus: visible
-            onVisibleChanged: if (visible) forceActiveFocus()
-
-            // код Konami: ↑ ↑ ↓ ↓ ← → ← → B A — открывает «Секреты» (не в Legacy)
-            property var seq: []
-            Keys.onPressed: e => {
-                if (root.legacy) return;
-                const t = e.key === Qt.Key_Up ? "U" : e.key === Qt.Key_Down ? "D" : e.key === Qt.Key_Left ? "L" : e.key === Qt.Key_Right ? "R" : K.letter(e);
-                if (!t) return;
-                seq = seq.concat([t]).slice(-10);
-                if (seq.join("") === "UUDDLRLRba") {
-                    seq = [];
-                    Store.gameSecrets = true;
-                    root.page = "secrets";
-                    fx.sound("cheat");
-                    Profile.check("konami", {});
-                }
+            // Esc: из игры — на витрину, со страницы — на витрину, с витрины — закрыть
+            Shortcut {
+                sequence: "Escape"
+                onActivated: root.current !== "" ? (root.current = "") : root.page !== "" ? (root.page = "") : (root.shown = false)
             }
 
-            ColumnLayout {
+            // ---------- витрина ----------
+            Item {
+                id: hub
                 anchors.fill: parent
-                anchors.margins: 32
-                spacing: 6
+                visible: root.current === "" && root.page === ""
+                focus: visible
+                onVisibleChanged: if (visible) forceActiveFocus()
 
-                RowLayout {
-                    spacing: 14
-                    MIcon { icon: root.legacy ? "history" : "sports_esports"; size: 34; color: root.legacy ? Theme.subtext0 : Theme.accent }
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-                        StyledText { text: root.legacy ? I18n.tr("Игры Legacy") : I18n.tr("Игры"); font.pixelSize: 28; font.bold: true }
-                        StyledText {
-                            text: root.legacy ? I18n.tr("Без прокачки, достижений и читов — свои рекорды") : I18n.tr("Пока что-то собирается или грузится")
-                            color: Theme.overlay1
-                        }
-                    }
-                    ProfileBadge { visible: !root.legacy }
-                }
-
-                // страницы профиля
-                RowLayout {
-                    visible: !root.legacy
-                    Layout.topMargin: 14
-                    spacing: 8
-                    SButton { icon: "emoji_events"; text: I18n.tr("Достижения ") + Profile.gotCount + "/" + Profile.achievements.length; onClicked: root.page = "ach" }
-                    SButton { icon: "upgrade"; text: I18n.tr("Прокачка"); onClicked: root.page = "prog" }
-                    SButton {
-                        visible: Store.gameSecrets
-                        icon: "key"
-                        text: I18n.tr("Секреты ") + (Store.gameCheats ?? []).length + "/" + root.cheatList.length
-                        onClicked: root.page = "secrets"
-                    }
-                    Item { Layout.fillWidth: true }
-                    // надетые перки
-                    Repeater {
-                        model: Profile.perks.filter(x => Profile.has(x))
-                        Rectangle {
-                            required property string modelData
-                            implicitWidth: pr.implicitWidth + 16
-                            implicitHeight: 26
-                            radius: 13
-                            color: Theme.alpha(Theme.accent, 0.14)
-                            Row {
-                                id: pr
-                                anchors.centerIn: parent
-                                spacing: 4
-                                MIcon { icon: "bolt"; fill: true; size: 13; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                                StyledText { anchors.verticalCenter: parent.verticalCenter; text: (Profile.rewards.find(r => r.id === modelData)?.name ?? "").split(": ").slice(-1)[0]; font.pixelSize: Theme.fontSizeSmall - 1; color: Theme.accent }
-                            }
-                        }
-                    }
-                }
-
-                GridLayout {
-                    Layout.topMargin: 16
-                    Layout.fillWidth: true
-                    columns: 4
-                    rowSpacing: 12
-                    columnSpacing: 12
-
-                    Repeater {
-                        model: root.games
-                        Rectangle {
-                            id: card
-                            required property var modelData
-                            readonly property var rec: root.best(modelData.id)
-                            Layout.fillWidth: true
-                            implicitHeight: 140
-                            radius: Theme.radius + 4
-                            color: cm.containsMouse ? Theme.surface0 : Theme.mantle
-                            border.width: 1
-                            border.color: cm.containsMouse ? card.modelData.color : Theme.surface0
-                            scale: cm.pressed ? 0.98 : 1
-                            Behavior on scale { NumberAnimation { duration: 90 } }
-                            Behavior on color { ColorAnimation { duration: Theme.animFast } }
-
-                            Rectangle {
-                                x: 18; y: 18
-                                width: 52; height: 52
-                                radius: 16
-                                color: Theme.alpha(root.legacy ? Theme.overlay1 : card.modelData.color, 0.16)
-                                MIcon { anchors.centerIn: parent; icon: card.modelData.icon; size: 28; color: root.legacy ? Theme.subtext0 : card.modelData.color; fill: true }
-                            }
-                            ColumnLayout {
-                                x: 18
-                                y: 80
-                                width: parent.width - 36
-                                spacing: 2
-                                StyledText { text: card.modelData.name; font.bold: true; font.pixelSize: Theme.fontSizeLarge }
-                                StyledText { Layout.fillWidth: true; text: card.modelData.desc; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall; elide: Text.ElideRight }
-                            }
-                            // значки: открытый чит, достижения игры
-                            Row {
-                                anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.margins: 14
-                                spacing: 6
-                                visible: !root.legacy
-                                MIcon {
-                                    visible: root.cheatList.some(c => c.game === card.modelData.id && root.unlocked(c.id))
-                                    icon: "key"; fill: true; size: 16; color: Theme.yellow
-                                }
-                                StyledText {
-                                    readonly property var all: Profile.achievements.filter(a => a.game === card.modelData.id)
-                                    text: all.filter(a => Profile.got[a.id]).length + "/" + all.length
-                                    color: Theme.overlay1
-                                    font.pixelSize: Theme.fontSizeSmall
-                                }
-                                MIcon { icon: "military_tech"; size: 15; color: Theme.overlay1 }
-                            }
-                            MouseArea { id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.current = card.modelData.id }
-                        }
-                    }
-                }
-                Item { Layout.fillHeight: true }
-                StyledText {
-                    text: root.legacy ? I18n.tr("Esc — назад к играм · рекорды Legacy хранятся отдельно") : I18n.tr("Esc — назад к играм · рекорды сохраняются")
-                    color: Theme.overlay0
-                    font.pixelSize: Theme.fontSizeSmall
-                }
-            }
-        }
-
-        // ---------- страницы профиля ----------
-        SecretsPage {
-            anchors.fill: parent
-            visible: root.current === "" && root.page === "secrets"
-            games: root.games
-            cheats: root.cheatList
-            tierColors: root.tierColors
-            chargeText: root.chargeText
-            onBack: root.page = ""
-        }
-        AchievementsPage {
-            anchors.fill: parent
-            visible: root.current === "" && root.page === "ach"
-            games: root.games
-            onBack: root.page = ""
-        }
-        ProgressPage {
-            anchors.fill: parent
-            visible: root.current === "" && root.page === "prog"
-            games: root.games
-            onBack: root.page = ""
-        }
-
-        // ---------- игра ----------
-        Item {
-            id: gameView
-            anchors.fill: parent
-            visible: root.current !== ""
-
-            property bool newRecord: false
-            Timer { id: recTimer; interval: 2600; onTriggered: gameView.newRecord = false }
-
-            // шапка
-            Rectangle {
-                id: head
-                width: parent.width
-                height: 60
-                color: Theme.mantle
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 14
-                    anchors.rightMargin: 14
-                    spacing: 12
-                    IconButton { icon: "arrow_back"; onClicked: root.current = "" }
-                    MIcon { icon: root.game?.icon ?? ""; color: root.game?.color ?? Theme.accent; size: 22; fill: true }
-                    StyledText { text: root.game?.name ?? ""; font.bold: true; font.pixelSize: Theme.fontSizeLarge }
-                    StyledText {
-                        Layout.leftMargin: 10
-                        text: loader.item?.status ?? ""
-                        color: Theme.subtext1
-                    }
-                    // открытые читы этой игры: слово и перезарядка
-                    Row {
-                        Layout.leftMargin: 6
-                        spacing: 6
-                        Repeater {
-                            model: root.legacy ? [] : root.cheatList.filter(c => c.game === root.current && root.unlocked(c.id))
-                            Rectangle {
-                                id: chip
-                                required property var modelData
-                                readonly property var st: root.cheatCd[modelData.id]
-                                readonly property color tint: root.tierColors[modelData.tier]
-                                implicitWidth: chipT.implicitWidth + 16
-                                implicitHeight: 24
-                                radius: 12
-                                clip: true
-                                color: st ? Theme.surface0 : Theme.alpha(tint, 0.16)
-                                border.width: 1
-                                border.color: st ? Theme.surface1 : tint
-                                Rectangle {
-                                    visible: !!chip.st
-                                    width: chip.st ? parent.width * (1 - chip.st.left / chip.st.total) : 0
-                                    height: parent.height
-                                    color: Theme.alpha(chip.tint, 0.22)
-                                    Behavior on width { NumberAnimation { duration: 240 } }
-                                }
-                                StyledText {
-                                    id: chipT
-                                    anchors.centerIn: parent
-                                    text: chip.modelData.code.toUpperCase() + (chip.st ? "  " + root.cdText(chip.modelData.id) : "")
-                                    font.family: "JetBrainsMono Nerd Font"
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    font.bold: true
-                                    color: chip.st ? Theme.overlay1 : chip.tint
-                                }
-                            }
-                        }
-                    }
-                    Item { Layout.fillWidth: true }
-                    // «Новый рекорд!»
-                    Rectangle {
-                        visible: opacity > 0
-                        opacity: gameView.newRecord ? 1 : 0
-                        Behavior on opacity { NumberAnimation { duration: Theme.anim } }
-                        implicitWidth: nr.implicitWidth + 24
-                        implicitHeight: 30
-                        radius: 15
-                        color: Theme.yellow
-                        Row {
-                            id: nr
-                            anchors.centerIn: parent
-                            spacing: 6
-                            MIcon { icon: "emoji_events"; fill: true; color: Theme.crust; size: 15; anchors.verticalCenter: parent.verticalCenter }
-                            StyledText { text: I18n.tr("Новый рекорд!"); color: Theme.crust; font.bold: true; anchors.verticalCenter: parent.verticalCenter }
-                        }
-                    }
-                    Row {
-                        spacing: 6
-                        readonly property var b: loader.item ? root.best(loader.item.bestKey) : undefined
-                        visible: b !== undefined
-                        MIcon { icon: "emoji_events"; color: Theme.yellow; size: 16; anchors.verticalCenter: parent.verticalCenter }
-                        StyledText {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: parent.b === undefined ? "" : loader.item.bestText ? loader.item.bestText(parent.b) : String(parent.b)
-                            color: Theme.subtext0
-                        }
-                    }
-                    // уровень игрока
-                    Rectangle {
-                        visible: !root.legacy
-                        implicitWidth: 30; implicitHeight: 30; radius: 15
-                        color: "transparent"
-                        border.width: 2
-                        border.color: Profile.frameOf(Profile.level)
-                        StyledText { anchors.centerIn: parent; text: Profile.level; font.bold: true; font.pixelSize: Theme.fontSizeSmall; color: Profile.frameOf(Profile.level) }
-                    }
-                    IconButton {
-                        icon: Store.gameSound ? "volume_up" : "volume_off"
-                        iconColor: Store.gameSound ? Theme.text : Theme.overlay1
-                        onClicked: { Store.gameSound = !Store.gameSound; loader.item?.forceActiveFocus(); }
-                    }
-                    IconButton { icon: "refresh"; onClicked: { loader.item?.restart(); loader.item?.forceActiveFocus(); } }
-                }
-            }
-
-            Loader {
-                id: loader
-                anchors.top: head.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                active: root.current !== ""
-                source: root.game ? Qt.resolvedUrl(root.game.file + ".qml") : ""
-                focus: true
-                onLoaded: { item.forceActiveFocus(); fx.sound("start"); root.segStart = Date.now(); root.cheatCd = ({}); }
-                transform: Translate { x: fx.dx }
-            }
-            Toast {
-                id: toast
-                z: 20
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: head.height + 16
-            }
-            GameFx {
-                id: fx
-                anchors.fill: loader
-                z: 10
-                muted: !Store.gameSound
-                volume: 0.25 + 0.6 * Settings.general.soundVolume   // игры тише интерфейса: звуков много и они частые
-            }
-            Binding { target: loader.item; property: "active"; value: win.visible && root.current !== ""; when: loader.status === Loader.Ready }
-            Binding { target: loader.item; property: "legacy"; value: root.legacy; when: loader.status === Loader.Ready }
-            Binding { target: loader.item; property: "cheats"; value: root.legacy ? [] : (Store.gameCheats ?? []).filter(id => !root.cheatCd[id]); when: loader.status === Loader.Ready }
-            Binding { target: loader.item; property: "perks"; value: root.legacy ? [] : Profile.perks.filter(x => Profile.has(x)); when: loader.status === Loader.Ready }
-            Binding { target: loader.item; property: "skin"; value: root.legacy ? "" : Profile.skinOf(root.current); when: loader.status === Loader.Ready }
-            Binding { target: loader.item; property: "modes"; value: root.legacy ? [] : Profile.modesFor(root.current).map(m => m.id); when: loader.status === Loader.Ready }
-            Connections {
-                target: loader.item
-                ignoreUnknownSignals: true
-                function onRecord(v: real): void {
-                    if (root.report(loader.item.bestKey, v, loader.item.lowerBetter)) {
-                        gameView.newRecord = true;
-                        recTimer.restart();
-                        fx.sound("record");
-                        fx.confetti();
-                        if (!root.legacy) Profile.event(root.current, "record", { value: v });
-                    }
-                }
-                function onEvent(name: string, data): void {
+                // код Konami: ↑ ↑ ↓ ↓ ← → ← → B A — открывает «Секреты» (не в Legacy)
+                property var seq: []
+                Keys.onPressed: e => {
                     if (root.legacy) return;
-                    const d = Object.assign({}, data ?? {});
-                    if (name === "end") root.cheatCd = ({});   // новая партия — все читы снова готовы
-                    else root.cdAdvance(ch => ch.ev === name ? (ch.field ? Number(d[ch.field] ?? 0) : 1) : 0);
-                    if (name === "end") {
-                        d.seconds = Math.min(3600, (Date.now() - root.segStart) / 1000);
-                        d.xp = root.xpFor(root.current, d);
-                        root.segStart = Date.now();
+                    const t = e.key === Qt.Key_Up ? "U" : e.key === Qt.Key_Down ? "D" : e.key === Qt.Key_Left ? "L" : e.key === Qt.Key_Right ? "R" : K.letter(e);
+                    if (!t) return;
+                    seq = seq.concat([t]).slice(-10);
+                    if (seq.join("") === "UUDDLRLRba") {
+                        seq = [];
+                        Store.gameSecrets = true;
+                        root.page = "secrets";
+                        fx.sound("cheat");
+                        Profile.check("konami", {});
                     }
-                    Profile.event(root.current, name, d);
                 }
-                function onSfx(name: string): void { fx.sound(name); }
-                function onUnlock(id: string): void {
-                    if (root.legacy || root.unlocked(id) || !root.cheat(id)) return;
-                    Store.gameCheats = (Store.gameCheats ?? []).concat([id]);
-                    const c = root.cheat(id);
-                    toast.show("key", Theme.yellow, I18n.tr("Открыт секрет: ") + c.name,
-                        I18n.tr("Набери ") + c.code.toUpperCase() + I18n.tr(" во время игры — ") + c.desc.charAt(0).toLowerCase() + c.desc.slice(1));
-                    fx.sound("cheat");
-                    fx.confetti();
-                    Profile.check("cheatUnlocked", { total: root.cheatList.length });
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 32
+                    spacing: 6
+
+                    RowLayout {
+                        spacing: 14
+                        MIcon { icon: root.legacy ? "history" : "sports_esports"; size: 34; color: root.legacy ? Theme.subtext0 : Theme.accent }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 0
+                            StyledText { text: root.legacy ? I18n.tr("Игры Legacy") : I18n.tr("Игры"); font.pixelSize: 28; font.bold: true }
+                            StyledText {
+                                text: root.legacy ? I18n.tr("Без прокачки, достижений и читов — свои рекорды") : I18n.tr("Пока что-то собирается или грузится")
+                                color: Theme.overlay1
+                            }
+                        }
+                        ProfileBadge { visible: !root.legacy }
+                    }
+
+                    // страницы профиля
+                    RowLayout {
+                        visible: !root.legacy
+                        Layout.topMargin: 14
+                        spacing: 8
+                        SButton { icon: "emoji_events"; text: I18n.tr("Достижения ") + Profile.gotCount + "/" + Profile.achievements.length; onClicked: root.page = "ach" }
+                        SButton { icon: "upgrade"; text: I18n.tr("Прокачка"); onClicked: root.page = "prog" }
+                        SButton {
+                            visible: Store.gameSecrets
+                            icon: "key"
+                            text: I18n.tr("Секреты ") + (Store.gameCheats ?? []).length + "/" + root.cheatList.length
+                            onClicked: root.page = "secrets"
+                        }
+                        Item { Layout.fillWidth: true }
+                        // надетые перки
+                        Repeater {
+                            model: Profile.perks.filter(x => Profile.has(x))
+                            Rectangle {
+                                required property string modelData
+                                implicitWidth: pr.implicitWidth + 16
+                                implicitHeight: 26
+                                radius: 13
+                                color: Theme.alpha(Theme.accent, 0.14)
+                                Row {
+                                    id: pr
+                                    anchors.centerIn: parent
+                                    spacing: 4
+                                    MIcon { icon: "bolt"; fill: true; size: 13; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                                    StyledText { anchors.verticalCenter: parent.verticalCenter; text: (Profile.rewards.find(r => r.id === modelData)?.name ?? "").split(": ").slice(-1)[0]; font.pixelSize: Theme.fontSizeSmall - 1; color: Theme.accent }
+                                }
+                            }
+                        }
+                    }
+
+                    GridLayout {
+                        Layout.topMargin: 16
+                        Layout.fillWidth: true
+                        columns: 4
+                        rowSpacing: 12
+                        columnSpacing: 12
+
+                        Repeater {
+                            model: root.games
+                            Rectangle {
+                                id: card
+                                required property var modelData
+                                readonly property var rec: root.best(modelData.id)
+                                Layout.fillWidth: true
+                                implicitHeight: 140
+                                radius: Theme.radius + 4
+                                color: cm.containsMouse ? Theme.surface0 : Theme.mantle
+                                border.width: 1
+                                border.color: cm.containsMouse ? card.modelData.color : Theme.surface0
+                                scale: cm.pressed ? 0.98 : 1
+                                Behavior on scale { NumberAnimation { duration: 90 } }
+                                Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                Rectangle {
+                                    x: 18; y: 18
+                                    width: 52; height: 52
+                                    radius: 16
+                                    color: Theme.alpha(root.legacy ? Theme.overlay1 : card.modelData.color, 0.16)
+                                    MIcon { anchors.centerIn: parent; icon: card.modelData.icon; size: 28; color: root.legacy ? Theme.subtext0 : card.modelData.color; fill: true }
+                                }
+                                ColumnLayout {
+                                    x: 18
+                                    y: 80
+                                    width: parent.width - 36
+                                    spacing: 2
+                                    StyledText { text: card.modelData.name; font.bold: true; font.pixelSize: Theme.fontSizeLarge }
+                                    StyledText { Layout.fillWidth: true; text: card.modelData.desc; color: Theme.overlay1; font.pixelSize: Theme.fontSizeSmall; elide: Text.ElideRight }
+                                }
+                                // значки: открытый чит, достижения игры
+                                Row {
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    anchors.margins: 14
+                                    spacing: 6
+                                    visible: !root.legacy
+                                    MIcon {
+                                        visible: root.cheatList.some(c => c.game === card.modelData.id && root.unlocked(c.id))
+                                        icon: "key"; fill: true; size: 16; color: Theme.yellow
+                                    }
+                                    StyledText {
+                                        readonly property var all: Profile.achievements.filter(a => a.game === card.modelData.id)
+                                        text: all.filter(a => Profile.got[a.id]).length + "/" + all.length
+                                        color: Theme.overlay1
+                                        font.pixelSize: Theme.fontSizeSmall
+                                    }
+                                    MIcon { icon: "military_tech"; size: 15; color: Theme.overlay1 }
+                                }
+                                MouseArea { id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.current = card.modelData.id }
+                            }
+                        }
+                    }
+                    Item { Layout.fillHeight: true }
+                    StyledText {
+                        text: root.legacy ? I18n.tr("Esc — назад к играм · рекорды Legacy хранятся отдельно") : I18n.tr("Esc — назад к играм · рекорды сохраняются")
+                        color: Theme.overlay0
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
                 }
-                function onCheatUsed(id: string): void {
-                    const c = root.cheat(id);
-                    root.cdStart(id);
-                    fx.sound("cheat");
-                    fx.flash(Theme.accent);
-                    fx.floatText(fx.width / 2, fx.height / 2, "✦ " + (c?.name ?? id), Theme.accent);
+            }
+
+            // ---------- страницы профиля ----------
+            SecretsPage {
+                anchors.fill: parent
+                visible: root.current === "" && root.page === "secrets"
+                games: root.games
+                cheats: root.cheatList
+                tierColors: root.tierColors
+                chargeText: root.chargeText
+                onBack: root.page = ""
+            }
+            AchievementsPage {
+                anchors.fill: parent
+                visible: root.current === "" && root.page === "ach"
+                games: root.games
+                onBack: root.page = ""
+            }
+            ProgressPage {
+                anchors.fill: parent
+                visible: root.current === "" && root.page === "prog"
+                games: root.games
+                onBack: root.page = ""
+            }
+
+            // ---------- игра ----------
+            Item {
+                id: gameView
+                anchors.fill: parent
+                visible: root.current !== ""
+
+                property bool newRecord: false
+                Timer { id: recTimer; interval: 2600; onTriggered: gameView.newRecord = false }
+
+                // шапка
+                Rectangle {
+                    id: head
+                    width: parent.width
+                    height: 60
+                    color: Theme.mantle
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 14
+                        anchors.rightMargin: 14
+                        spacing: 12
+                        IconButton { icon: "arrow_back"; onClicked: root.current = "" }
+                        MIcon { icon: root.game?.icon ?? ""; color: root.game?.color ?? Theme.accent; size: 22; fill: true }
+                        StyledText { text: root.game?.name ?? ""; font.bold: true; font.pixelSize: Theme.fontSizeLarge }
+                        StyledText {
+                            Layout.leftMargin: 10
+                            text: loader.item?.status ?? ""
+                            color: Theme.subtext1
+                        }
+                        // открытые читы этой игры: слово и перезарядка
+                        Row {
+                            Layout.leftMargin: 6
+                            spacing: 6
+                            Repeater {
+                                model: root.legacy ? [] : root.cheatList.filter(c => c.game === root.current && root.unlocked(c.id))
+                                Rectangle {
+                                    id: chip
+                                    required property var modelData
+                                    readonly property var st: root.cheatCd[modelData.id]
+                                    readonly property color tint: root.tierColors[modelData.tier]
+                                    implicitWidth: chipT.implicitWidth + 16
+                                    implicitHeight: 24
+                                    radius: 12
+                                    clip: true
+                                    color: st ? Theme.surface0 : Theme.alpha(tint, 0.16)
+                                    border.width: 1
+                                    border.color: st ? Theme.surface1 : tint
+                                    Rectangle {
+                                        visible: !!chip.st
+                                        width: chip.st ? parent.width * (1 - chip.st.left / chip.st.total) : 0
+                                        height: parent.height
+                                        color: Theme.alpha(chip.tint, 0.22)
+                                        Behavior on width { NumberAnimation { duration: 240 } }
+                                    }
+                                    StyledText {
+                                        id: chipT
+                                        anchors.centerIn: parent
+                                        text: chip.modelData.code.toUpperCase() + (chip.st ? "  " + root.cdText(chip.modelData.id) : "")
+                                        font.family: "JetBrainsMono Nerd Font"
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.bold: true
+                                        color: chip.st ? Theme.overlay1 : chip.tint
+                                    }
+                                }
+                            }
+                        }
+                        Item { Layout.fillWidth: true }
+                        // «Новый рекорд!»
+                        Rectangle {
+                            visible: opacity > 0
+                            opacity: gameView.newRecord ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: Theme.anim } }
+                            implicitWidth: nr.implicitWidth + 24
+                            implicitHeight: 30
+                            radius: 15
+                            color: Theme.yellow
+                            Row {
+                                id: nr
+                                anchors.centerIn: parent
+                                spacing: 6
+                                MIcon { icon: "emoji_events"; fill: true; color: Theme.crust; size: 15; anchors.verticalCenter: parent.verticalCenter }
+                                StyledText { text: I18n.tr("Новый рекорд!"); color: Theme.crust; font.bold: true; anchors.verticalCenter: parent.verticalCenter }
+                            }
+                        }
+                        Row {
+                            spacing: 6
+                            readonly property var b: loader.item ? root.best(loader.item.bestKey) : undefined
+                            visible: b !== undefined
+                            MIcon { icon: "emoji_events"; color: Theme.yellow; size: 16; anchors.verticalCenter: parent.verticalCenter }
+                            StyledText {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: parent.b === undefined ? "" : loader.item.bestText ? loader.item.bestText(parent.b) : String(parent.b)
+                                color: Theme.subtext0
+                            }
+                        }
+                        // уровень игрока
+                        Rectangle {
+                            visible: !root.legacy
+                            implicitWidth: 30; implicitHeight: 30; radius: 15
+                            color: "transparent"
+                            border.width: 2
+                            border.color: Profile.frameOf(Profile.level)
+                            StyledText { anchors.centerIn: parent; text: Profile.level; font.bold: true; font.pixelSize: Theme.fontSizeSmall; color: Profile.frameOf(Profile.level) }
+                        }
+                        IconButton {
+                            icon: Store.gameSound ? "volume_up" : "volume_off"
+                            iconColor: Store.gameSound ? Theme.text : Theme.overlay1
+                            onClicked: { Store.gameSound = !Store.gameSound; loader.item?.forceActiveFocus(); }
+                        }
+                        IconButton { icon: "refresh"; onClicked: { loader.item?.restart(); loader.item?.forceActiveFocus(); } }
+                    }
                 }
-                function onFx(kind: string, at: Item, x: real, y: real, text: string, tint: color): void {
-                    const p = at ? at.mapToItem(fx, x, y) : Qt.point(x, y);
-                    if (kind === "float") fx.floatText(p.x, p.y, text, tint);
-                    else if (kind === "burst") fx.burst(p.x, p.y, tint, Number(text) || 18);
-                    else if (kind === "confetti") fx.confetti();
-                    else if (kind === "shake") fx.shake(Number(text) || 8);
-                    else if (kind === "flash") fx.flash(tint);
+
+                Loader {
+                    id: loader
+                    anchors.top: head.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    active: root.current !== ""
+                    source: root.game ? Qt.resolvedUrl(root.game.file + ".qml") : ""
+                    focus: true
+                    onLoaded: { item.forceActiveFocus(); fx.sound("start"); root.segStart = Date.now(); root.cheatCd = ({}); }
+                    transform: Translate { x: fx.dx }
+                }
+                Toast {
+                    id: toast
+                    z: 20
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: head.height + 16
+                }
+                GameFx {
+                    id: fx
+                    anchors.fill: loader
+                    z: 10
+                    muted: !Store.gameSound
+                    volume: 0.25 + 0.6 * Settings.general.soundVolume   // игры тише интерфейса: звуков много и они частые
+                }
+                Binding { target: loader.item; property: "active"; value: window.visible && root.current !== ""; when: loader.status === Loader.Ready }
+                Binding { target: loader.item; property: "legacy"; value: root.legacy; when: loader.status === Loader.Ready }
+                Binding { target: loader.item; property: "cheats"; value: root.legacy ? [] : (Store.gameCheats ?? []).filter(id => !root.cheatCd[id]); when: loader.status === Loader.Ready }
+                Binding { target: loader.item; property: "perks"; value: root.legacy ? [] : Profile.perks.filter(x => Profile.has(x)); when: loader.status === Loader.Ready }
+                Binding { target: loader.item; property: "skin"; value: root.legacy ? "" : Profile.skinOf(root.current); when: loader.status === Loader.Ready }
+                Binding { target: loader.item; property: "modes"; value: root.legacy ? [] : Profile.modesFor(root.current).map(m => m.id); when: loader.status === Loader.Ready }
+                Connections {
+                    target: loader.item
+                    ignoreUnknownSignals: true
+                    function onRecord(v: real): void {
+                        if (root.report(loader.item.bestKey, v, loader.item.lowerBetter)) {
+                            gameView.newRecord = true;
+                            recTimer.restart();
+                            fx.sound("record");
+                            fx.confetti();
+                            if (!root.legacy) Profile.event(root.current, "record", { value: v });
+                        }
+                    }
+                    function onEvent(name: string, data): void {
+                        if (root.legacy) return;
+                        const d = Object.assign({}, data ?? {});
+                        if (name === "end") root.cheatCd = ({});   // новая партия — все читы снова готовы
+                        else root.cdAdvance(ch => ch.ev === name ? (ch.field ? Number(d[ch.field] ?? 0) : 1) : 0);
+                        if (name === "end") {
+                            d.seconds = Math.min(3600, (Date.now() - root.segStart) / 1000);
+                            d.xp = root.xpFor(root.current, d);
+                            root.segStart = Date.now();
+                        }
+                        Profile.event(root.current, name, d);
+                    }
+                    function onSfx(name: string): void { fx.sound(name); }
+                    function onUnlock(id: string): void {
+                        if (root.legacy || root.unlocked(id) || !root.cheat(id)) return;
+                        Store.gameCheats = (Store.gameCheats ?? []).concat([id]);
+                        const c = root.cheat(id);
+                        toast.show("key", Theme.yellow, I18n.tr("Открыт секрет: ") + c.name,
+                            I18n.tr("Набери ") + c.code.toUpperCase() + I18n.tr(" во время игры — ") + c.desc.charAt(0).toLowerCase() + c.desc.slice(1));
+                        fx.sound("cheat");
+                        fx.confetti();
+                        Profile.check("cheatUnlocked", { total: root.cheatList.length });
+                    }
+                    function onCheatUsed(id: string): void {
+                        const c = root.cheat(id);
+                        root.cdStart(id);
+                        fx.sound("cheat");
+                        fx.flash(Theme.accent);
+                        fx.floatText(fx.width / 2, fx.height / 2, "✦ " + (c?.name ?? id), Theme.accent);
+                    }
+                    function onFx(kind: string, at: Item, x: real, y: real, text: string, tint: color): void {
+                        const p = at ? at.mapToItem(fx, x, y) : Qt.point(x, y);
+                        if (kind === "float") fx.floatText(p.x, p.y, text, tint);
+                        else if (kind === "burst") fx.burst(p.x, p.y, tint, Number(text) || 18);
+                        else if (kind === "confetti") fx.confetti();
+                        else if (kind === "shake") fx.shake(Number(text) || 8);
+                        else if (kind === "flash") fx.flash(tint);
+                    }
                 }
             }
         }
