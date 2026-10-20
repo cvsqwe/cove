@@ -38,19 +38,24 @@ RowLayout {
             color: Theme.accent
         }
         Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Theme.alpha(Theme.text, 0.1) }
+        // список строк постоянный, значения — внутри: иначе каждый замер памяти пересоздавал строки
         Repeater {
-            model: [
-                { k: "󰣇", v: root.os },
-                { k: "", v: root.kernel },
-                { k: "", v: "Hyprland + Quickshell" },
-                { k: "󰅐", v: System.uptime },
-                { k: "󰍛", v: Sysmon.ramUsedGb.toFixed(1) + " / " + Sysmon.ramTotalGb.toFixed(1) + " ГБ" }
-            ]
+            model: ["os", "kernel", "wm", "uptime", "ram"]
             RowLayout {
-                required property var modelData
+                id: row
+                required property string modelData
                 spacing: 10
-                MIcon { icon: modelData.k; color: Theme.accent; Layout.preferredWidth: 18 }
-                StyledText { text: modelData.v; color: Theme.subtext1 }
+                MIcon {
+                    icon: ({ os: "󰣇", kernel: "", wm: "", uptime: "󰅐", ram: "󰍛" })[row.modelData]
+                    color: Theme.accent
+                    Layout.preferredWidth: 18
+                }
+                StyledText {
+                    text: row.modelData === "os" ? root.os : row.modelData === "kernel" ? root.kernel
+                        : row.modelData === "wm" ? "Hyprland + Quickshell" : row.modelData === "uptime" ? System.uptime
+                        : Sysmon.ramUsedGb.toFixed(1) + " / " + Sysmon.ramTotalGb.toFixed(1) + " ГБ"
+                    color: Theme.subtext1
+                }
             }
         }
         Row {

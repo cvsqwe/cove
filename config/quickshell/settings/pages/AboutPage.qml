@@ -96,7 +96,7 @@ SPage {
             model: [
                 ["󰻠", I18n.tr("Процессор"), I18n.tr("{0} · {1} потоков", page.info.cpu ?? "", page.info.cores ?? "")],
                 ["󰢮", I18n.tr("Видеокарта"), page.info.gpu ?? ""],
-                ["󰍛", I18n.tr("Память"), I18n.tr("{0} из {1} ГБ", Sysmon.ramUsedGb.toFixed(1), Sysmon.ramTotalGb.toFixed(1))],
+                ["󰍛", I18n.tr("Память"), "ram"],   // живое значение — в строке, иначе карточка пересоздаётся каждые 2 с
                 ["󰋊", I18n.tr("Диск /"), page.info.disk ?? ""],
                 ["󰌽", I18n.tr("Ядро"), page.info.kernel ?? ""],
                 ["󰏗", I18n.tr("Пакетов"), page.info.pkgs ?? ""],
@@ -109,7 +109,11 @@ SPage {
                 icon: modelData[0]
                 title: modelData[1]
                 separator: index < 7
-                StyledText { text: modelData[2]; color: Theme.subtext1; anchors.verticalCenter: parent.verticalCenter }
+                StyledText {
+                    text: modelData[2] === "ram" ? I18n.tr("{0} из {1} ГБ", Sysmon.ramUsedGb.toFixed(1), Sysmon.ramTotalGb.toFixed(1)) : modelData[2]
+                    color: Theme.subtext1
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
         }
     }
