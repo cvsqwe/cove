@@ -138,7 +138,7 @@ Singleton {
         if (Settings.bar.bodyOpacity < 0.98 || Settings.bar.style === "notch" || Settings.bar.style === "islands" || Theme.glassy)
             L.push(`hl.layer_rule({ name = "qs-bar-blur", match = { namespace = "^qs-bar$" }, blur = true, ignore_alpha = ${Settings.bar.style === "notch" ? "0.3" : Settings.bar.bodyOpacity > 0.02 ? Math.min(0.3, Settings.bar.bodyOpacity * 0.5).toFixed(2) : "0.4"} })`);
         L.push('hl.window_rule({ name = "qs-settings", match = { title = "^(Настройки Quickshell|Quickshell Settings)$" }, float = true, size = "1180 760", center = true })');
-        L.push('hl.window_rule({ name = "qs-games", match = { title = "^(Игры Cove|Cove Games)$" }, float = true, size = "1060 760", center = true })');
+        L.push('hl.window_rule({ name = "qs-games", match = { title = "^(Игры Cove|Cove Games|Игры Legacy|Cove Games Legacy)$" }, float = true, size = "1060 760", center = true })');
         L.push("");
 
         // ---- автозапуск ----

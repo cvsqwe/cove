@@ -15,12 +15,73 @@ Item {
     property bool over: false
     property bool paused: false
     property bool started: false
-    readonly property string status: I18n.tr("Счёт: ") + score + I18n.tr(" · линии: ") + lines + I18n.tr(" · уровень ") + level + (paused ? I18n.tr(" · пауза") : "")
-    readonly property string bestKey: "tetris"
-    readonly property bool lowerBetter: false
+    readonly property string status: (sprint ? I18n.tr("Линии: ") + lines + "/40 · " + fmtTime(elapsed) : I18n.tr("Счёт: ") + score + I18n.tr(" · линии: ") + lines + I18n.tr(" · уровень ") + level)
+        + (paused ? I18n.tr(" · пауза") : "") + (slowMo ? I18n.tr(" · замедление") : "")
+    readonly property string bestKey: sprint ? "tetris-sprint" : "tetris"
+    readonly property bool lowerBetter: sprint
+    function fmtTime(sec: real): string { return Math.floor(sec / 60) + ":" + String(Math.floor(sec % 60)).padStart(2, "0") + "." + Math.floor(sec * 10 % 10); }
+    function bestText(v: real): string { return sprint ? fmtTime(v) : String(v); }
+
+    // профиль (GamesWindow)
+    property bool legacy: false
+    property var perks: []
+    property string skin: ""
+    property var modes: []
+    signal event(string name, var data)
+    property string mode: "marathon"          // marathon | sprint (40 линий на время)
+    readonly property bool sprint: mode === "sprint" && modes.includes("tetris.sprint")
+    onSprintChanged: restart()
+    property bool held: false                 // откладывали фигуру в этой партии
+    property int prevClear: 0                 // сколько линий было в прошлый раз (тетрис подряд)
+    property real startedAt: 0
+    property real elapsed: 0
+    Timer {
+        running: root.active && root.sprint && root.started && !root.over && !root.paused
+        interval: 100
+        repeat: true
+        onTriggered: root.elapsed += 0.1
+    }
+    function finish(): void { event("end", { score, lines, held, sprint }); }
+    // перк «задержка фиксации»: фигура, упёршаяся вниз, ждёт полсекунды — можно сдвинуть или повернуть
+    property bool lockPending: false
+    Timer {
+        id: lockTimer
+        interval: 500
+        onTriggered: { root.lockPending = false; if (root.cur && !root.fits(root.cur.m, root.cur.x, root.cur.y + 1)) root.lock(); }
+    }
     signal record(real value)
     signal sfx(string name)
     signal fx(string kind, Item at, real x, real y, string text, color tint)
+
+    // ---- читы: окно проставляет cheats (открытые id); слово набирается во время игры ----
+    property var cheats: []
+    readonly property var cheatCodes: [
+        { id: "tetris.bonk", code: "bonk", run: () => bonk() },
+        { id: "tetris.long", code: "long", run: () => { if (over || queue[0] === "I") return false; queue = ["I"].concat(queue); return true; } },
+        { id: "tetris.slow", code: "yolo", run: () => { if (over) return false; slowMo = true; slowTimer.restart(); return true; } }
+    ]
+    property bool slowMo: false
+    Timer { id: slowTimer; interval: 20000; onTriggered: root.slowMo = false }
+    // стереть четыре нижних ряда, всё сверху опускается
+    function bonk(): bool {
+        if (over) return false;
+        const g = [];
+        for (let r = 0; r < 4; r++) g.push(new Array(cols).fill(""));
+        grid = g.concat(grid.slice(0, rows - 4));
+        flash.restart();
+        fx("burst", well, well.width / 2, well.height - 2 * well.cell, "40", Theme.accent);
+        rev++;
+        return true;
+    }
+    signal unlock(string id)
+    signal cheatUsed(string id)
+    property string typedBuf: ""
+    function feed(L: string): void {
+        if (!L) return;
+        typedBuf = (typedBuf + L).slice(-8);
+        for (const c of cheatCodes)
+            if (typedBuf.endsWith(c.code) && cheats.includes(c.id)) { typedBuf = ""; if (c.run() !== false) cheatUsed(c.id); }
+    }
 
     focus: true
     readonly property int cols: 10
@@ -30,6 +91,7 @@ Item {
         S: [".##", "##.", "..."], Z: ["##.", ".##", "..."], J: ["#..", "###", "..."], L: ["..#", "###", "..."]
     })
     function colorOf(k: string): color {
+        if (skin === "tetris.retro") return ({ I: "#3fd0e0", O: "#f0d040", T: "#b050e0", S: "#50d050", Z: "#e04848", J: "#4870e8", L: "#f09838" })[k] ?? "#ffffff";
         return ({ I: Theme.teal, O: Theme.yellow, T: Theme.accent, S: Theme.green, Z: Theme.red, J: Theme.accent2, L: Theme.peach })[k] ?? Theme.text;
     }
 
@@ -71,17 +133,19 @@ Item {
         }
         const m = matrix(k);
         cur = { k, m, x: Math.floor((cols - m.length) / 2), y: k === "I" ? -1 : 0 };
-        if (!fits(cur.m, cur.x, cur.y)) { over = true; sfx("over"); fx("shake", null, 0, 0, "10", Theme.red); record(score); }
+        if (!fits(cur.m, cur.x, cur.y)) { over = true; sfx("over"); fx("shake", null, 0, 0, "10", Theme.red); if (!sprint) record(score); finish(); }
         rev++;
     }
     function restart(): void {
-        if (score > 0 && !over) record(score);
+        if (score > 0 && !over) { if (!sprint) record(score); finish(); }
+        held = false; prevClear = 0; elapsed = 0; lockPending = false; lockTimer.stop();
         const g = [];
         for (let r = 0; r < rows; r++) g.push(new Array(cols).fill(""));
         grid = g;
         queue = bag().concat(bag());
         hold = ""; holdUsed = false;
         score = 0; lines = 0; over = false; paused = false; started = false;
+        slowMo = false;
         spawn("");
     }
     Component.onCompleted: restart()
@@ -117,18 +181,36 @@ Item {
             const midY = (cur.y + cur.m.length / 2) * well.cell + 4;
             fx("float", well, well.width / 2, midY, cleared >= 4 ? I18n.tr("ТЕТРИС! +") + pts : "+" + pts, cleared >= 4 ? Theme.yellow : Theme.text);
             for (let i = 0; i < 4; i++) fx("burst", well, well.width * (0.15 + i * 0.23), midY, "10", colorOf(cur.k));
-            if (cleared >= 4) fx("shake", null, 0, 0, "9", Theme.yellow);
+            if (cleared >= 4) { fx("shake", null, 0, 0, "9", Theme.yellow); unlock("tetris.bonk"); }
+            if (level >= 3) unlock("tetris.slow");
+            if (lines >= 20) unlock("tetris.long");
             if (level > lvl) { sfx("win"); fx("float", well, well.width / 2, midY - 50, I18n.tr("Уровень ") + level, Theme.accent); }
+            event("clear", { n: cleared, prev: prevClear, level });
+            prevClear = cleared;
+            // спринт: 40 линий — финиш, рекорд по времени
+            if (sprint && lines >= 40) {
+                over = true;
+                sfx("win");
+                fx("confetti", null, 0, 0, "", Theme.accent);
+                record(Math.round(elapsed * 10) / 10);
+                finish();
+                return;
+            }
         } else sfx("pop");
         holdUsed = false;
         spawn("");
     }
-    function tick(): void { if (!shift(0, 1)) lock(); }
+    function tick(): void {
+        if (shift(0, 1)) return;
+        if (perks.includes("tetris.softLock")) { if (!lockPending) { lockPending = true; lockTimer.restart(); } }
+        else lock();
+    }
     function drop(): void {
         let d = 0;
         while (shift(0, 1)) d++;
         score += d * 2;
         if (d > 3) fx("shake", null, 0, 0, "4", Theme.text);
+        lockPending = false; lockTimer.stop();
         lock();
     }
     function swapHold(): void {
@@ -137,6 +219,7 @@ Item {
         if (hold) spawn(hold); else spawn("");
         hold = k;
         holdUsed = true;
+        held = true;
     }
     function ghostY(): int {
         if (!cur) return 0;
@@ -148,12 +231,13 @@ Item {
     Timer {
         running: root.active && root.started && !root.over && !root.paused
         repeat: true
-        interval: Math.max(70, 800 - (root.level - 1) * 75)
+        interval: Math.max(70, 800 - (root.level - 1) * 75) * (root.slowMo ? 2.5 : 1)
         onTriggered: root.tick()
     }
 
     Keys.onPressed: e => {
         const L = K.letter(e);
+        feed(L);
         const k = e.key;
         if (L === "r") { restart(); e.accepted = true; return; }
         if (over) return;
@@ -211,6 +295,15 @@ Item {
         ColumnLayout {
             Layout.alignment: Qt.AlignTop
             spacing: 12
+            Side {
+                visible: root.modes.includes("tetris.sprint")
+                title: I18n.tr("Режим")
+                SSegment {
+                    options: [{ value: "marathon", label: "∞" }, { value: "sprint", label: "40" }]
+                    current: root.mode
+                    onPicked: v => { root.mode = v; root.forceActiveFocus(); }
+                }
+            }
             Side { title: I18n.tr("Отложено (C)"); PieceView { k: root.hold; opacity: root.holdUsed ? 0.4 : 1 } }
             Side {
                 title: I18n.tr("Управление")
@@ -243,11 +336,23 @@ Item {
                     g.lineWidth = 1;
                     for (let x = 1; x < root.cols; x++) { g.beginPath(); g.moveTo(x * s + 0.5, 0); g.lineTo(x * s + 0.5, height); g.stroke(); }
                     for (let y = 1; y < root.rows; y++) { g.beginPath(); g.moveTo(0, y * s + 0.5); g.lineTo(width, y * s + 0.5); g.stroke(); }
+                    const retro = root.skin === "tetris.retro", glass = root.skin === "tetris.glass";
                     const cellAt = (x, y, col, ghost) => {
                         g.beginPath();
-                        g.roundedRect(x * s + 1, y * s + 1, s - 2, s - 2, s * 0.18, s * 0.18);
-                        if (ghost) { g.strokeStyle = col; g.lineWidth = 2; g.stroke(); }
-                        else { g.fillStyle = col; g.fill(); }
+                        const r = retro ? 0 : s * 0.18;
+                        g.roundedRect(x * s + 1, y * s + 1, s - 2, s - 2, r, r);
+                        if (ghost) { g.strokeStyle = col; g.lineWidth = 2; g.stroke(); return; }
+                        if (glass) {
+                            g.fillStyle = Theme.alpha(col, 0.32); g.fill();
+                            g.strokeStyle = col; g.lineWidth = 1.5; g.stroke();
+                            g.fillStyle = Qt.rgba(1, 1, 1, 0.25); g.fillRect(x * s + 4, y * s + 4, s * 0.35, 2.5);
+                            return;
+                        }
+                        g.fillStyle = col; g.fill();
+                        if (retro) {   // фаска, как на старых консолях
+                            g.fillStyle = Qt.rgba(1, 1, 1, 0.35); g.fillRect(x * s + 1, y * s + 1, s - 2, 3); g.fillRect(x * s + 1, y * s + 1, 3, s - 2);
+                            g.fillStyle = Qt.rgba(0, 0, 0, 0.3); g.fillRect(x * s + 1, y * s + s - 4, s - 2, 3); g.fillRect(x * s + s - 4, y * s + 1, 3, s - 2);
+                        }
                     };
                     root.grid.forEach((row, y) => row.forEach((k, x) => { if (k) cellAt(x, y, root.colorOf(k), false); }));
                     if (root.cur && !root.over) {
@@ -300,7 +405,7 @@ Item {
             Side {
                 title: I18n.tr("Дальше")
                 Repeater {
-                    model: root.queue.slice(0, 3)
+                    model: root.queue.slice(0, root.perks.includes("tetris.next5") ? 5 : 3)
                     PieceView { required property string modelData; k: modelData }
                 }
             }

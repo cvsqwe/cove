@@ -9,6 +9,10 @@ import qs.services
 Item {
     id: root
     property bool active: false
+    // профиль (GamesWindow) — у всех игр одинаковый набор, иначе Binding в окне зацикливается
+    property var cheats: []
+    property string skin: ""
+    property var modes: []
     property string lang: Settings.general.language === "en" ? "en" : "ru"
     property int duration: 30
     readonly property string status: running ? Math.ceil(remain) + I18n.tr(" с · ") + liveWpm + " WPM"
@@ -17,6 +21,11 @@ Item {
     readonly property bool lowerBetter: false
     function bestText(v: real): string { return Math.round(v) + " WPM"; }
     signal record(real value)
+    // профиль (GamesWindow)
+    property bool legacy: false
+    property var perks: []
+    signal event(string name, var data)
+    property int fixedErrors: 0     // перк «мягкий счёт»: исправленные ошибки возвращаются в точность
     signal sfx(string name)
     signal fx(string kind, Item at, real x, real y, string text, color tint)
 
@@ -54,7 +63,7 @@ Item {
     function restart(): void {
         words = gen(120);
         typed = [""];
-        wi = 0; running = false; finished = false; remain = duration; keys = 0; keysOk = 0;
+        wi = 0; running = false; finished = false; remain = duration; keys = 0; keysOk = 0; fixedErrors = 0;
         rev++;
         root.forceActiveFocus();
     }
@@ -81,7 +90,8 @@ Item {
         for (let i = 0; i <= wi; i++) all += (typed[i] ?? "").length + (i < wi ? 1 : 0);
         resWpm = Math.round(correctChars() / 5 / (duration / 60));
         resRaw = Math.round(all / 5 / (duration / 60));
-        resAcc = keys > 0 ? Math.round(keysOk / keys * 100) : 0;
+        resAcc = keys > 0 ? Math.round(Math.min(keys, keysOk + (perks.includes("typing.forgive") ? fixedErrors : 0)) / keys * 100) : 0;
+        event("end", { wpm: resWpm, acc: resAcc, duration, lang });
         sfx("win");
         record(resWpm);
     }
@@ -102,7 +112,12 @@ Item {
         let cur = t[wi] ?? "";
         if (e.key === Qt.Key_Backspace) {
             if (e.modifiers & Qt.ControlModifier) cur = "";
-            else if (cur.length) cur = cur.slice(0, -1);
+            else if (cur.length) {
+                // стёрли неверную букву — с перком она не считается ошибкой
+                const k = cur.length - 1;
+                if (cur[k] !== words[wi][k]) fixedErrors++;
+                cur = cur.slice(0, -1);
+            }
             else if (wi > 0 && t[wi - 1] !== words[wi - 1]) { t.pop(); wi--; typed = t; rev++; e.accepted = true; return; }   // вернуться в слово с ошибкой
             t[wi] = cur; typed = t; rev++; e.accepted = true; return;
         }

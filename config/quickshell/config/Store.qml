@@ -27,6 +27,10 @@ Singleton {
     property alias shelf: data.shelf           // полка острова [{ path, name, mime } | { text, name }] (services/Shelf.qml)
     property alias gameScores: data.gameScores // рекорды игр { ключ: число } (games/GamesWindow.qml)
     property alias gameSound: data.gameSound   // звуки в играх
+    property alias gameCheats: data.gameCheats // открытые читы в играх (id из games/GamesWindow.qml)
+    property alias gameSecrets: data.gameSecrets // страница «Секреты» найдена (код Konami на витрине)
+    property alias gameProfile: data.gameProfile // опыт, достижения, перки, скины (games/Profile.qml)
+    property alias gameRhythm: data.gameRhythm // «Ритм»: режим, сложность, сдвиг звука
 
     // Живые обои: видео показывает слой wallpaper/LiveWallpaper.qml, а всё, что берёт обои как картинку
     // (палитра, экран блокировки, превью), — кадр-постер из кэша (его готовит services/Wallpapers.qml).
@@ -40,11 +44,20 @@ Singleton {
     function posterOf(p: string): string { return `${cacheDir}/poster-${hash(p)}.jpg`; }
     readonly property string still: isVideo(wallpaper) ? posterOf(wallpaper) : wallpaper
 
+    // запись откладываем: writeAdapter() прямо из onAdapterUpdated откатывает свойство к прошлому значению,
+    // и из нескольких записей подряд (конец партии: мета, рекорд, опыт, статистика) выживает не всё
+    Timer {
+        id: saveDelay
+        interval: 100
+        onTriggered: file.writeAdapter()
+    }
+
     FileView {
+        id: file
         path: Quickshell.env("HOME") + "/.local/state/quickshell/state.json"
         blockLoading: true
         // до первой загрузки не пишем: иначе при старте умолчания затирают файл
-        onAdapterUpdated: if (loaded) writeAdapter()
+        onAdapterUpdated: if (loaded) saveDelay.restart()
         onLoaded: root.ready = true
         onLoadFailed: err => { if (err === FileViewError.FileNotFound) writeAdapter(); root.ready = true; }
 
@@ -65,6 +78,10 @@ Singleton {
             property var shelf: []
             property var gameScores: ({})
             property bool gameSound: true
+            property var gameCheats: []
+            property bool gameSecrets: false
+            property var gameProfile: ({})
+            property var gameRhythm: ({})
             property bool welcomed: false
             property int savedProfile: -1
         }

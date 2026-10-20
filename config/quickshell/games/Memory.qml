@@ -8,6 +8,8 @@ import qs.components
 Item {
     id: root
     property bool active: false
+    // профиль (GamesWindow) — у всех игр одинаковый набор, иначе Binding в окне зацикливается
+    property var modes: []
     property string size: "16"
     readonly property int count: Number(size)
     readonly property int cols: count === 16 ? 4 : 6
@@ -26,6 +28,46 @@ Item {
     signal sfx(string name)
     signal fx(string kind, Item at, real x, real y, string text, color tint)
 
+    // ---- читы: окно проставляет cheats (открытые id); слово набирается во время игры ----
+    property var cheats: []
+    // профиль (GamesWindow)
+    property bool legacy: false
+    property var perks: []
+    property string skin: ""
+    signal event(string name, var data)
+    property int luckRun: 0          // пары подряд с первой попытки с начала партии
+    property bool luckBroken: false
+    onPerksChanged: if (moves === 0 && perks.includes("memory.glimpse")) glimpse()
+    function glimpse(): void { peeking = true; peekTimer.interval = 1000; peekTimer.restart(); }
+    readonly property var cheatCodes: [
+        { id: "memory.peek", code: "peek", run: () => { if (won) return false; peeking = true; peekTimer.interval = 1500; peekTimer.restart(); return true; } },
+        { id: "memory.duo", code: "duo", run: () => {
+            if (won || hideTimer.running || peeking) return false;
+            // пара к уже открытой карточке, иначе — первая ненайденная
+            const a = picked.length ? picked[0] : cardState.findIndex(v => v === 0);
+            if (a < 0) return false;
+            const b = cards.findIndex((c, i) => i !== a && c.icon === cards[a].icon);
+            cardState[a] = 2; cardState[b] = 2; found++; picked = [];
+            luckBroken = true;
+            sfx("match");
+            for (const k of [a, b]) { const it = rep.itemAt(k); if (it) fx("burst", it, it.width / 2, it.height / 2, "14", cards[k].color); }
+            rev++;
+            if (won) finishWin();
+            return true;
+        } }
+    ]
+    property bool peeking: false
+    Timer { id: peekTimer; interval: 1500; onTriggered: root.peeking = false }
+    signal unlock(string id)
+    signal cheatUsed(string id)
+    property string typedBuf: ""
+    function feed(L: string): void {
+        if (!L) return;
+        typedBuf = (typedBuf + L).slice(-8);
+        for (const c of cheatCodes)
+            if (typedBuf.endsWith(c.code) && cheats.includes(c.id)) { typedBuf = ""; if (c.run() !== false) cheatUsed(c.id); }
+    }
+
     focus: true
     onSizeChanged: restart()
 
@@ -34,6 +76,7 @@ Item {
     readonly property var tints: [Theme.red, Theme.yellow, Theme.accent, Theme.green, Theme.peach, Theme.pink, Theme.accent2, Theme.teal]
 
     function restart(): void {
+        if (moves > 0 && !won) event("end", { won: false, size: count, moves });
         const pairs = [];
         for (let i = 0; i < count / 2; i++) {
             const c = { icon: icons[i], color: tints[i % tints.length] };
@@ -42,13 +85,14 @@ Item {
         for (let i = pairs.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pairs[i], pairs[j]] = [pairs[j], pairs[i]]; }
         cards = pairs;
         cardState = new Array(count).fill(0);
-        picked = []; moves = 0; found = 0;
+        picked = []; moves = 0; found = 0; peeking = false; luckRun = 0; luckBroken = false;
+        if (perks.includes("memory.glimpse")) Qt.callLater(glimpse);
         rev++;
     }
     Component.onCompleted: restart()
 
     function flip(i: int): void {
-        if (hideTimer.running || cardState[i] !== 0 || won) return;
+        if (hideTimer.running || peeking || cardState[i] !== 0 || won) return;
         cardState[i] = 1;
         sfx("flip");
         picked = picked.concat([i]);
@@ -57,15 +101,23 @@ Item {
             const [a, b] = picked;
             if (cards[a].icon === cards[b].icon) {
                 cardState[a] = 2; cardState[b] = 2; found++; picked = [];
+                if (!luckBroken && moves === found) { luckRun++; event("luck", { n: luckRun }); }
                 sfx("match");
                 for (const k of [a, b]) {
                     const it = rep.itemAt(k);
                     if (it) fx("burst", it, it.width / 2, it.height / 2, "14", cards[k].color);
                 }
-                if (won) { sfx("win"); fx("confetti", null, 0, 0, "", Theme.accent); record(moves); }
-            } else hideTimer.restart();
+                if (won) finishWin();
+            } else { luckBroken = true; hideTimer.restart(); }
         }
         rev++;
+    }
+    function finishWin(): void {
+        if (count === 16 && moves <= 12) unlock("memory.peek");
+        if (count === 24) unlock("memory.duo");
+        event("win", { size: count, moves });
+        event("end", { won: true, size: count, moves });
+        sfx("win"); fx("confetti", null, 0, 0, "", Theme.accent); record(moves);
     }
     Timer {
         id: hideTimer
@@ -102,7 +154,7 @@ Item {
                     height: grid.cell
 
                     // переворот: половина поворота — рубашка, вторая — лицо
-                    property real angle: s > 0 ? 180 : 0
+                    property real angle: s > 0 || root.peeking ? 180 : 0
                     Behavior on angle { NumberAnimation { duration: 260; easing.type: Easing.InOutQuad } }
                     transform: Rotation { origin.x: card.width / 2; origin.y: card.height / 2; axis { x: 0; y: 1; z: 0 } angle: card.angle }
 
@@ -110,8 +162,11 @@ Item {
                         anchors.fill: parent
                         radius: Theme.radius + 2
                         visible: card.angle < 90
-                        color: cm.containsMouse ? Theme.surface2 : Theme.surface1
-                        MIcon { anchors.centerIn: parent; icon: "cove"; size: card.width * 0.3; color: Theme.overlay1 }
+                        color: root.skin === "memory.neon" ? Qt.hsla((card.index * 0.07) % 1, 0.7, cm.containsMouse ? 0.4 : 0.32, 1)
+                            : cm.containsMouse ? Theme.surface2 : Theme.surface1
+                        border.width: root.skin === "memory.neon" ? 2 : 0
+                        border.color: Qt.hsla((card.index * 0.07) % 1, 0.9, 0.65, 1)
+                        MIcon { anchors.centerIn: parent; icon: "cove"; size: card.width * 0.3; color: root.skin === "memory.neon" ? Qt.hsla((card.index * 0.07) % 1, 0.9, 0.75, 1) : Theme.overlay1 }
                     }
                     Rectangle {
                         anchors.fill: parent
@@ -149,5 +204,5 @@ Item {
         }
     }
 
-    Keys.onPressed: e => { const L = K.letter(e); if (L === "r") { restart(); e.accepted = true; } }
+    Keys.onPressed: e => { const L = K.letter(e); feed(L); if (L === "r") { restart(); e.accepted = true; } }
 }

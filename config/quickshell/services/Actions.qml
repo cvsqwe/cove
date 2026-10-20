@@ -36,6 +36,7 @@ Singleton {
         { id: "shell.overviewPrev", group: I18n.tr("Шелл"), icon: "󰕰", label: I18n.tr("Переключение окон назад"), lua: () => ipc("overview", "prev") },
         { id: "shell.wallpaper", group: I18n.tr("Шелл"), icon: "󰸉", label: I18n.tr("Выбор обоев"), lua: () => ipc("wallpaper", "toggle") },
         { id: "shell.games", group: I18n.tr("Шелл"), icon: "sports_esports", label: I18n.tr("Игры"), lua: () => ipc("games", "toggle") },
+        { id: "shell.gamesLegacy", group: I18n.tr("Шелл"), icon: "history", label: I18n.tr("Игры Legacy"), lua: () => ipc("gamesLegacy", "toggle") },
         { id: "shell.session", group: I18n.tr("Шелл"), icon: "󰐥", label: I18n.tr("Меню питания"), lua: () => ipc("session", "toggle") },
         { id: "shell.settings", group: I18n.tr("Шелл"), icon: "󰒓", label: I18n.tr("Настройки"), lua: () => ipc("settings", "toggle") },
         { id: "shell.cheatsheet", group: I18n.tr("Шелл"), icon: "󰌌", label: I18n.tr("Шпаргалка хоткеев"), lua: () => ipc("cheatsheet", "toggle") },

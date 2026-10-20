@@ -10,7 +10,16 @@ Item {
     id: root
     property bool active: false
     property string level: "easy"
-    readonly property var levels: ({ easy: [9, 9, 10], medium: [16, 16, 40], hard: [30, 16, 99] })
+    readonly property var levels: ({ easy: [9, 9, 10], medium: [16, 16, 40], hard: [30, 16, 99], extreme: [30, 20, 150] })
+
+    // профиль (GamesWindow)
+    property bool legacy: false
+    property var perks: []
+    property string skin: ""
+    property var modes: []
+    signal event(string name, var data)
+    property bool flagged: false            // ставили ли флажки (достижение «без флажков»)
+    property bool vestUsed: false           // перк «сапёрский жилет»
     readonly property int cols: levels[level][0]
     readonly property int rows: levels[level][1]
     readonly property int mines: levels[level][2]
@@ -35,6 +44,38 @@ Item {
     signal sfx(string name)
     signal fx(string kind, Item at, real x, real y, string text, color tint)
 
+    // ---- читы: окно проставляет cheats (открытые id); слово набирается во время игры ----
+    property var cheats: []
+    readonly property var cheatCodes: [
+        { id: "mines.xray", code: "eye", run: () => { if (over || !started) return false; xray = true; xrayTimer.restart(); return true; } },
+        { id: "mines.hint", code: "hint", run: () => {
+            if (over || !started) return false;
+            // безопасная закрытая клетка рядом с открытой; таких нет — любая безопасная
+            const safe = [];
+            for (let k = 0; k < n; k++) if (st[k] === 0 && !mine[k]) safe.push(k);
+            if (!safe.length) return false;
+            const edge = safe.filter(k => nb(k).some(j => st[j] === 1));
+            const pool = edge.length ? edge : safe;
+            const k = pool[Math.floor(Math.random() * pool.length)];
+            reveal(k);
+            const c = cellCenter(k);
+            fx("burst", grid_, c.x, c.y, "12", Theme.accent);
+            checkWin(); rev++;
+            return true;
+        } }
+    ]
+    property bool xray: false
+    Timer { id: xrayTimer; interval: 2500; onTriggered: root.xray = false }
+    signal unlock(string id)
+    signal cheatUsed(string id)
+    property string typedBuf: ""
+    function feed(L: string): void {
+        if (!L) return;
+        typedBuf = (typedBuf + L).slice(-8);
+        for (const c of cheatCodes)
+            if (typedBuf.endsWith(c.code) && cheats.includes(c.id)) { typedBuf = ""; if (c.run() !== false) cheatUsed(c.id); }
+    }
+
     focus: true
     onLevelChanged: restart()
 
@@ -43,6 +84,7 @@ Item {
         cnt = new Array(n).fill(0);
         st = new Array(n).fill(0);
         started = false; over = false; won = false; flags = 0; seconds = 0; boom = -1;
+        xray = false; flagged = false; vestUsed = false;
         rev++;
     }
     Component.onCompleted: restart()
@@ -74,7 +116,18 @@ Item {
             const k = stack.pop();
             if (st[k] !== 0) continue;
             st[k] = 1;
-            if (mine[k]) { boom = k; lose(); return; }
+            if (mine[k]) {
+                if (perks.includes("mines.secondChance") && !vestUsed) {
+                    vestUsed = true;
+                    st[k] = 2; flags++;
+                    sfx("boom");
+                    fx("shake", null, 0, 0, "8", Theme.peach);
+                    const c = cellCenter(k);
+                    fx("float", grid_, c.x, c.y, I18n.tr("жилет спас!"), Theme.peach);
+                    continue;
+                }
+                boom = k; lose(); return;
+            }
             if (cnt[k] === 0) for (const j of nb(k)) if (st[j] === 0) stack.push(j);
         }
     }
@@ -86,6 +139,7 @@ Item {
         const bc = cellCenter(boom);
         fx("burst", grid_, bc.x, bc.y, "40", Theme.peach);
         for (let k = 0; k < n; k++) if (mine[k] && st[k] !== 2) st[k] = 1;
+        event("end", { won: false, level, seconds });
     }
     function checkWin(): void {
         if (over) return;
@@ -95,6 +149,10 @@ Item {
         flags = mines;
         sfx("win");
         fx("confetti", null, 0, 0, "", Theme.green);
+        unlock("mines.hint");
+        if (level !== "easy") unlock("mines.xray");
+        event("win", { level, seconds, flagged });
+        event("end", { won: true, level, seconds });
         record(Math.max(1, seconds));
     }
     function open(i: int): void {
@@ -121,6 +179,7 @@ Item {
     function flag(i: int): void {
         if (over || st[i] === 1) return;
         st[i] = st[i] === 2 ? 0 : 2;
+        if (st[i] === 2) flagged = true;
         sfx("flag");
         flags += st[i] === 2 ? 1 : -1;
         rev++;
@@ -144,6 +203,7 @@ Item {
         SSegment {
             Layout.alignment: Qt.AlignHCenter
             options: [{ value: "easy", label: I18n.tr("Новичок") }, { value: "medium", label: I18n.tr("Любитель") }, { value: "hard", label: I18n.tr("Профи") }]
+                .concat(root.modes.includes("mines.extreme") ? [{ value: "extreme", label: I18n.tr("Экстрим") }] : [])
             current: root.level
             onPicked: v => { root.level = v; root.forceActiveFocus(); }
         }
@@ -190,7 +250,8 @@ Item {
                         }
                         MIcon {
                             anchors.centerIn: parent
-                            visible: c.s === 2 || (c.s === 1 && c.isMine)
+                            visible: c.s === 2 || (c.s === 1 && c.isMine) || (root.xray && c.isMine)
+                            opacity: c.s === 0 ? 0.55 : 1
                             icon: c.s === 2 ? "flag" : "brightness_7"
                             fill: true
                             size: board.cell * 0.5
@@ -239,5 +300,5 @@ Item {
         }
     }
 
-    Keys.onPressed: e => { const L = K.letter(e); if (L === "r") { restart(); e.accepted = true; } }
+    Keys.onPressed: e => { const L = K.letter(e); feed(L); if (L === "r") { restart(); e.accepted = true; } }
 }

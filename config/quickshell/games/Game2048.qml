@@ -13,52 +13,108 @@ Item {
     property bool won: false
     property bool keepGoing: false
     readonly property string status: I18n.tr("Счёт: ") + score
-    readonly property string bestKey: "g2048"
+    readonly property string bestKey: n === 5 ? "g2048-5" : "g2048"
     readonly property bool lowerBetter: false
     signal record(real value)
     signal sfx(string name)
     signal fx(string kind, Item at, real x, real y, string text, color tint)
 
+    // ---- читы: окно проставляет cheats (открытые id); слово набирается во время игры ----
+    property var cheats: []
+    readonly property var cheatCodes: [
+        { id: "g2048.undo", code: "nope", run: () => undo() },
+        { id: "g2048.clean", code: "pop", run: () => {
+            if (over || removeTimer.running) return false;
+            let n = 0;
+            for (let i = tiles.count - 1; i >= 0; i--) { const t = tiles.get(i); if (!t.dying && t.v === 2) { tiles.remove(i); n++; } }
+            if (!n) return false;
+            history = [];          // после уборки отмена вернула бы двойки
+            if (!tiles.count) { spawn(); spawn(); }
+            fx("float", board, board.width / 2, board.height / 2, "−" + n + " × 2", Theme.accent);
+            return true;
+        } }
+    ]
+    property var history: []        // снимки до хода: [{ tiles: [{v, r, c}], score, won }]
+    function snapshot(): var {
+        const t = [];
+        for (let i = 0; i < tiles.count; i++) { const x = tiles.get(i); if (!x.dying) t.push({ v: x.v, r: x.r, c: x.c }); }
+        return { tiles: t, score, won };
+    }
+    function undo(): bool {
+        if (!history.length || removeTimer.running) return false;
+        const s = history[history.length - 1];
+        history = history.slice(0, -1);
+        tiles.clear();
+        for (const t of s.tiles) tiles.append({ tid: nextId++, v: t.v, r: t.r, c: t.c, dying: false });
+        score = s.score; won = s.won; over = false;
+        undone = true;
+        return true;
+    }
+    signal unlock(string id)
+    signal cheatUsed(string id)
+    property string typedBuf: ""
+    function feed(L: string): void {
+        if (!L) return;
+        typedBuf = (typedBuf + L).slice(-8);
+        for (const c of cheatCodes)
+            if (typedBuf.endsWith(c.code) && cheats.includes(c.id)) { typedBuf = ""; if (c.run() !== false) cheatUsed(c.id); }
+    }
+
     focus: true
     property int nextId: 1
+    // профиль (GamesWindow): перки, скин, открытые режимы
+    property bool legacy: false
+    property var perks: []
+    property string skin: ""
+    property var modes: []
+    signal event(string name, var data)
+    property string size: "4"                 // "4" | "5" (режим g2048.5x5)
+    readonly property int n: size === "5" && modes.includes("g2048.5x5") ? 5 : 4
+    onNChanged: restart()
+    property int maxTile: 0
+    property bool undone: false               // была ли отмена хода в партии
+    property bool freeUsed: false             // перк «право на ошибку»
+    function finish(): void { event("end", { score, max: maxTile }); }
     property var merges: []
 
     ListModel { id: tiles }
 
     function cellsFree(): var {
         const used = {};
-        for (let i = 0; i < tiles.count; i++) { const t = tiles.get(i); if (!t.dying) used[t.r * 4 + t.c] = true; }
+        for (let i = 0; i < tiles.count; i++) { const t = tiles.get(i); if (!t.dying) used[t.r * root.n + t.c] = true; }
         const out = [];
-        for (let k = 0; k < 16; k++) if (!used[k]) out.push(k);
+        for (let k = 0; k < n * n; k++) if (!used[k]) out.push(k);
         return out;
     }
     function spawn(): void {
         const free = cellsFree();
         if (!free.length) return;
         const k = free[Math.floor(Math.random() * free.length)];
-        tiles.append({ tid: nextId++, v: Math.random() < 0.9 ? 2 : 4, r: Math.floor(k / 4), c: k % 4, dying: false });
+        tiles.append({ tid: nextId++, v: Math.random() < 0.9 ? 2 : 4, r: Math.floor(k / n), c: k % n, dying: false });
     }
     function restart(): void {
         if (score > 0) record(score);
+        if (score > 0 && !over) finish();
         tiles.clear();
         score = 0; over = false; won = false; keepGoing = false;
+        history = []; maxTile = 0; undone = false; freeUsed = false;
         spawn(); spawn();
     }
     Component.onCompleted: restart()
 
     function grid(): var {
         const g = [];
-        for (let r = 0; r < 4; r++) g.push([-1, -1, -1, -1]);
+        for (let r = 0; r < n; r++) g.push(new Array(n).fill(-1));
         for (let i = 0; i < tiles.count; i++) { const t = tiles.get(i); if (!t.dying) g[t.r][t.c] = i; }
         return g;
     }
     function canMove(): bool {
         if (cellsFree().length) return true;
         const g = grid();
-        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+        for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
             const v = tiles.get(g[r][c]).v;
-            if (c < 3 && tiles.get(g[r][c + 1]).v === v) return true;
-            if (r < 3 && tiles.get(g[r + 1][c]).v === v) return true;
+            if (c < n - 1 && tiles.get(g[r][c + 1]).v === v) return true;
+            if (r < n - 1 && tiles.get(g[r + 1][c]).v === v) return true;
         }
         return false;
     }
@@ -66,14 +122,15 @@ Item {
     // dr, dc — направление сдвига
     function move(dr: int, dc: int): void {
         if (over || (won && !keepGoing) || removeTimer.running) return;
+        const before = snapshot();
         const g = grid();
         let moved = false;
         merges = [];
-        for (let line = 0; line < 4; line++) {
+        for (let line = 0; line < n; line++) {
             // клетки линии в порядке «от стенки, к которой едем»
             const cells = [];
-            for (let k = 0; k < 4; k++) {
-                const p = dr === 0 ? [line, dc < 0 ? k : 3 - k] : [dr < 0 ? k : 3 - k, line];
+            for (let k = 0; k < n; k++) {
+                const p = dr === 0 ? [line, dc < 0 ? k : n - 1 - k] : [dr < 0 ? k : n - 1 - k, line];
                 cells.push(p);
             }
             let t = 0, last = -1, lastMerged = false;
@@ -105,6 +162,11 @@ Item {
             }
         }
         if (!moved) return;
+        history = history.concat([before]).slice(-3);
+        if (merges.some(m => m.v >= 256)) unlock("g2048.undo");
+        if (merges.some(m => m.v >= 1024)) unlock("g2048.clean");   // v — уже удвоенное значение
+        const top = merges.reduce((a, m) => Math.max(a, m.v), 0);
+        if (top > maxTile) { maxTile = top; if (top >= 128) event("tile", { v: top, undone }); }
         if (merges.length) {
             sfx("merge");
             const sum = merges.reduce((a, m) => a + m.v, 0);
@@ -122,45 +184,70 @@ Item {
         onTriggered: {
             for (let i = tiles.count - 1; i >= 0; i--) if (tiles.get(i).dying) tiles.remove(i);
             root.spawn();
-            if (!root.canMove()) { root.over = true; root.sfx("over"); root.fx("shake", null, 0, 0, "6", Theme.red); root.record(root.score); }
+            if (!root.canMove()) { root.over = true; root.finish(); root.sfx("over"); root.fx("shake", null, 0, 0, "6", Theme.red); root.record(root.score); }
         }
     }
 
     Keys.onPressed: e => {
         const L = K.letter(e);
+        feed(L);
         const k = e.key;
         if (k === Qt.Key_Left || L === "a" || L === "h") move(0, -1);
         else if (k === Qt.Key_Right || L === "d" || L === "l") move(0, 1);
         else if (k === Qt.Key_Up || L === "w" || L === "k") move(-1, 0);
         else if (k === Qt.Key_Down || L === "s" || L === "j") move(1, 0);
         else if (L === "r") restart();
+        else if (L === "u" && perks.includes("g2048.freeUndo") && !freeUsed) {
+            if (undo()) { freeUsed = true; sfx("cheat"); fx("float", board, board.width / 2, board.height / 2, I18n.tr("↶ отмена"), Theme.accent); }
+        }
         else return;
         e.accepted = true;
     }
 
     function tileColor(v: int): color {
+        const i = Math.round(Math.log2(v)) - 1;
+        if (skin === "g2048.classic") {
+            const cs = ["#eee4da", "#ede0c8", "#f2b179", "#f59563", "#f67c5f", "#f65e3b", "#edcf72", "#edcc61", "#edc850", "#edc53f", "#edc22e"];
+            return cs[Math.min(cs.length - 1, i)];
+        }
+        if (skin === "g2048.neon") return Qt.hsla((0.55 + i * 0.07) % 1, 0.9, 0.62, 1);
         const cs = [Theme.surface1, Theme.surface2, Theme.teal, Theme.green, Theme.yellow, Theme.peach,
             Theme.red, Theme.pink, Theme.accent2, Theme.accent, Theme.lavender];
-        return cs[Math.min(cs.length - 1, Math.round(Math.log2(v)) - 1)];
+        return cs[Math.min(cs.length - 1, i)];
+    }
+    function textColor(v: int): color {
+        if (skin === "g2048.classic") return v <= 4 ? "#776e65" : "#f9f6f2";
+        return v <= 4 && skin !== "g2048.neon" ? Theme.text : Theme.crust;
+    }
+
+    SSegment {
+        visible: root.modes.includes("g2048.5x5")
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: 8
+        z: 5
+        options: [{ value: "4", label: "4 × 4" }, { value: "5", label: "5 × 5" }]
+        current: root.size
+        onPicked: v => { root.size = v; root.forceActiveFocus(); }
     }
 
     // ---- поле ----
     Rectangle {
         id: board
         readonly property real gap: 12
-        readonly property real cell: (width - 5 * gap) / 4
-        width: Math.min(parent.width - 60, parent.height - 60)
+        readonly property real cell: (width - (root.n + 1) * gap) / root.n
+        width: Math.min(parent.width - 60, parent.height - (root.modes.includes("g2048.5x5") ? 110 : 60))
+        anchors.verticalCenterOffset: root.modes.includes("g2048.5x5") ? 22 : 0
         height: width
         anchors.centerIn: parent
         radius: Theme.radius + 6
         color: Theme.mantle
 
         Repeater {
-            model: 16
+            model: root.n * root.n
             Rectangle {
                 required property int index
-                x: board.gap + (index % 4) * (board.cell + board.gap)
-                y: board.gap + Math.floor(index / 4) * (board.cell + board.gap)
+                x: board.gap + (index % root.n) * (board.cell + board.gap)
+                y: board.gap + Math.floor(index / root.n) * (board.cell + board.gap)
                 width: board.cell
                 height: board.cell
                 radius: Theme.radius
@@ -202,7 +289,7 @@ Item {
                     text: tile.v
                     font.pixelSize: board.cell * (tile.v >= 1024 ? 0.28 : tile.v >= 128 ? 0.34 : 0.42)
                     font.bold: true
-                    color: tile.v <= 4 ? Theme.text : Theme.crust
+                    color: root.textColor(tile.v)
                 }
             }
         }

@@ -44,14 +44,27 @@ Rectangle {
                 width: lbl.implicitWidth + 24
                 height: root.height - 8
 
-                StyledText {
+                // значок (Nerd-глиф или имя Material Symbols) + подпись
+                Row {
                     id: lbl
                     anchors.centerIn: parent
-                    text: (modelData.icon ? modelData.icon + (modelData.label ? "  " : "") : "") + (modelData.label ?? "")
-                    color: index === root.idx ? Theme.onAccent : Theme.subtext1
-                    font.pixelSize: Theme.fontSizeSmall + 1
-                    font.bold: index === root.idx
-                    Behavior on color { ColorAnimation { duration: Theme.anim } }
+                    spacing: modelData.icon && modelData.label ? 6 : 0
+                    readonly property color tint: index === root.idx ? Theme.onAccent : Theme.subtext1
+                    MIcon {
+                        visible: !!modelData.icon
+                        anchors.verticalCenter: parent.verticalCenter
+                        icon: modelData.icon ?? ""
+                        size: Theme.fontSizeSmall + 2
+                        color: lbl.tint
+                    }
+                    StyledText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: modelData.label ?? ""
+                        color: lbl.tint
+                        font.pixelSize: Theme.fontSizeSmall + 1
+                        font.bold: index === root.idx
+                        Behavior on color { ColorAnimation { duration: Theme.anim } }
+                    }
                 }
                 MouseArea {
                     anchors.fill: parent

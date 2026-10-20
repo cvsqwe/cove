@@ -47,6 +47,7 @@ ShellRoot {
     Lock {}
     SettingsWindow {}
     GamesWindow {}
+    GamesWindow { legacy: true }   // «Игры Legacy»: без прокачки, достижений и читов
     Cheatsheet {}
     NotesDrawer {}
     TasksPanel {}

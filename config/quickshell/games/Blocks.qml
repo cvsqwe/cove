@@ -14,19 +14,61 @@ Item {
     property int combo: 0
     property bool over: false
     readonly property string status: I18n.tr("Счёт: ") + score + (combo > 1 ? I18n.tr(" · серия ×") + combo : "")
-    readonly property string bestKey: "blocks"
+    readonly property string bestKey: size === 10 ? "blocks-10" : "blocks"
+
+    // профиль (GamesWindow)
+    property bool legacy: false
+    property var perks: []
+    property string skin: ""
+    property var modes: []
+    signal event(string name, var data)
+    property string mode: "8"                 // "8" | "10" (режим blocks.10x10)
+    onSizeChanged: restart()
+    readonly property bool holdOn: perks.includes("blocks.hold")
+    property int grace: 0                     // перк «серия не слетает»: один ход без линии прощён
+    function finish(): void { event("end", { score }); }
     readonly property bool lowerBetter: false
     signal record(real value)
     signal sfx(string name)
     signal fx(string kind, Item at, real x, real y, string text, color tint)
 
+    // ---- читы: окно проставляет cheats (открытые id); слово набирается во время игры ----
+    property var cheats: []
+    readonly property var cheatCodes: [
+        { id: "blocks.swap", code: "swap", run: () => { if (over) return false; refill(); rev++; return true; } },
+        { id: "blocks.tiny", code: "tiny", run: () => {
+            if (over) return false;
+            const keep = holdOn ? [tray[3] ?? null] : [];
+            tray = [0, 1, 2].map(() => ({ cells: [[0, 0]], color: Math.floor(Math.random() * tints.length) })).concat(keep);
+            rev++; return true;
+        } },
+        { id: "blocks.wipe", code: "wipe", run: () => {
+            if (over || board.every(v => v < 0)) return false;
+            board = new Array(size * size).fill(-1);
+            fx("flash", null, 0, 0, "", Theme.accent);
+            sfx("combo");
+            rev++; return true;
+        } }
+    ]
+    signal unlock(string id)
+    signal cheatUsed(string id)
+    property string typedBuf: ""
+    function feed(L: string): void {
+        if (!L) return;
+        typedBuf = (typedBuf + L).slice(-8);
+        for (const c of cheatCodes)
+            if (typedBuf.endsWith(c.code) && cheats.includes(c.id)) { typedBuf = ""; if (c.run() !== false) cheatUsed(c.id); }
+    }
+
     focus: true
-    readonly property int size: 8
+    readonly property int size: mode === "10" && modes.includes("blocks.10x10") ? 10 : 8
     property var board: []          // size*size: -1 — пусто, иначе номер цвета
     property var tray: []           // три фигуры { cells: [[r, c]…], color } или null
     property int rev: 0
 
-    readonly property var tints: [Theme.red, Theme.peach, Theme.yellow, Theme.green, Theme.teal, Theme.accent2, Theme.accent, Theme.pink]
+    readonly property var tints: skin === "blocks.gold" ? ["#f5d06a", "#e8b84a", "#d9a338", "#f7e199", "#c9912e", "#efc25a", "#fde7a6", "#b8822a"]
+        : [Theme.red, Theme.peach, Theme.yellow, Theme.green, Theme.teal, Theme.accent2, Theme.accent, Theme.pink]
+    readonly property real cellRound: skin === "blocks.jelly" ? 0.42 : 0.16
     // фигуры: клетки относительно левого верхнего угла
     readonly property var shapes: [
         [[0, 0]],
@@ -54,10 +96,11 @@ Item {
     // можно поставить хотя бы в одном порядке (с учётом линий, которые исчезнут по пути). Не нашлось за 60 попыток —
     // берём фигуры помельче, лишь бы каждая куда-то вставала.
     function refill(): void {
+        const keep = holdOn ? [tray[3] ?? null] : [];   // запасная фигура (перк) переживает новый набор
         for (let attempt = 0; attempt < 60; attempt++) {
             const set = [newPiece(), newPiece(), newPiece()];
             // каждая встаёт уже сейчас (иначе в лотке бледная «недоступная» фигура) и весь набор проходим
-            if (set.every(x => anyFitOn(board, x)) && solvable(board, set)) { tray = set; return; }
+            if (set.every(x => anyFitOn(board, x)) && solvable(board, set)) { tray = set.concat(keep); return; }
         }
         const small = shapes.filter(s => s.length <= 3);
         const set = [];
@@ -66,7 +109,7 @@ Item {
             const pick = (fit.length ? fit : small)[Math.floor(Math.random() * (fit.length || small.length))];
             set.push({ cells: pick, color: Math.floor(Math.random() * tints.length) });
         }
-        tray = set;
+        tray = set.concat(keep);
     }
 
     // ---- проверка набора на чужой доске (не трогает board) ----
@@ -114,9 +157,10 @@ Item {
         return false;
     }
     function restart(): void {
-        if (score > 0 && !over) record(score);
+        if (score > 0 && !over) { record(score); finish(); }
         board = new Array(size * size).fill(-1);
-        score = 0; combo = 0; over = false;
+        score = 0; combo = 0; over = false; grace = 0;
+        tray = [];
         refill();
         rev++;
     }
@@ -156,24 +200,34 @@ Item {
         const before = score;
         if (n > 0) {
             combo++;
+            grace = 0;
+            if (combo >= 3) unlock("blocks.swap");
+            if (combo >= 6) unlock("blocks.tiny");
             const gone = new Set();
             for (const i of clr.rows) for (let j = 0; j < size; j++) gone.add(i * size + j);
             for (const i of clr.cols) for (let j = 0; j < size; j++) gone.add(j * size + i);
             for (const k of gone) board[k] = -1;
+            if (board.every(v => v < 0)) unlock("blocks.wipe");
             score += gone.size * n * combo;
             lastClear = Array.from(gone);
             sfx(n > 1 || combo > 1 ? "combo" : "line");
             const cell = board_.cell, pad = board_.pad;
-            for (const i of clr.rows) fx("burst", board_, pad + 4 * cell, pad + (i + 0.5) * cell, "22", tints[p.color]);
-            for (const i of clr.cols) fx("burst", board_, pad + (i + 0.5) * cell, pad + 4 * cell, "22", tints[p.color]);
+            for (const i of clr.rows) fx("burst", board_, pad + size / 2 * cell, pad + (i + 0.5) * cell, "22", tints[p.color]);
+            for (const i of clr.cols) fx("burst", board_, pad + (i + 0.5) * cell, pad + size / 2 * cell, "22", tints[p.color]);
+            event("clear", { combo, lines: n, empty: board.every(v => v < 0) });
             fx("float", board_, pad + (c + 1) * cell, pad + (r + 0.5) * cell, "+" + (score - before + p.cells.length), Theme.yellow);
             if (n >= 3) fx("shake", null, 0, 0, "7", Theme.yellow);
-        } else { combo = 0; sfx("pop"); }
+        } else {
+            // перк: первый ход без линии серию не сбрасывает
+            if (combo > 0 && grace === 0 && perks.includes("blocks.keepStreak")) grace = 1;
+            else { combo = 0; grace = 0; }
+            sfx("pop");
+        }
         const t = tray.slice();
         t[slot] = null;
-        tray = t.every(x => !x) ? (refill(), tray) : t;
+        tray = t.slice(0, 3).every(x => !x) ? (refill(), tray) : t;
         rev++;
-        if (!tray.some(x => x && anyFit(x))) { over = true; sfx("over"); fx("shake", null, 0, 0, "8", Theme.red); record(score); }
+        if (!tray.some(x => x && anyFit(x))) { over = true; sfx("over"); fx("shake", null, 0, 0, "8", Theme.red); record(score); finish(); }
         return true;
     }
 
@@ -202,10 +256,17 @@ Item {
         anchors.centerIn: parent
         spacing: 22
 
+        SSegment {
+            visible: root.modes.includes("blocks.10x10")
+            Layout.alignment: Qt.AlignHCenter
+            options: [{ value: "8", label: "8 × 8" }, { value: "10", label: "10 × 10" }]
+            current: root.mode
+            onPicked: v => { root.mode = v; root.forceActiveFocus(); }
+        }
         Rectangle {
             id: board_
             readonly property real pad: 8
-            readonly property real cell: Math.floor(Math.min(58, (root.height - 230) / root.size, (root.width - 80) / root.size))
+            readonly property real cell: Math.floor(Math.min(58, (root.height - (root.modes.includes("blocks.10x10") ? 290 : 230)) / root.size, (root.width - 80) / root.size))
             Layout.alignment: Qt.AlignHCenter
             implicitWidth: cell * root.size + 2 * pad
             implicitHeight: implicitWidth
@@ -231,7 +292,7 @@ Item {
                     Rectangle {
                         anchors.fill: parent
                         anchors.margins: 2
-                        radius: Math.max(4, board_.cell * 0.16)
+                        radius: Math.max(4, board_.cell * root.cellRound)
                         color: cellItem.v >= 0 ? root.tints[cellItem.v]
                             : cellItem.ghost ? Theme.alpha(root.tints[root.dragPiece.color], 0.45)
                             : Theme.alpha(Theme.surface0, 0.55)
@@ -302,17 +363,29 @@ Item {
             Layout.alignment: Qt.AlignHCenter
             spacing: 18
             Repeater {
-                model: 3
+                model: root.holdOn ? 4 : 3
                 Rectangle {
                     id: slot
+                    readonly property bool isHold: index === 3
                     required property int index
                     readonly property var p: { void root.rev; return root.tray[index] ?? null; }
                     readonly property bool usable: !!p && root.anyFit(p)
                     readonly property real mini: Math.min(24, board_.cell * 0.45)
-                    width: 150
+                    width: isHold ? 120 : 150
                     height: 150
                     radius: Theme.radius + 2
                     color: sm.containsMouse && usable ? Theme.surface0 : Theme.mantle
+                    border.width: isHold ? 1 : 0
+                    border.color: Theme.alpha(Theme.accent, 0.5)
+                    StyledText {
+                        visible: slot.isHold
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.top: parent.top
+                        anchors.topMargin: 6
+                        text: I18n.tr("запас · ПКМ")
+                        color: Theme.overlay1
+                        font.pixelSize: Theme.fontSizeSmall - 1
+                    }
                     Item {
                         anchors.centerIn: parent
                         visible: !!slot.p && root.dragSlot !== slot.index
@@ -339,7 +412,18 @@ Item {
                         hoverEnabled: true
                         preventStealing: true
                         cursorShape: slot.usable ? (pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor) : Qt.ArrowCursor
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
                         onPressed: m => {
+                            if (m.button === Qt.RightButton) {
+                                // фигуру — в запас (или поменять с той, что там лежит)
+                                if (!root.holdOn || root.over || slot.isHold || !slot.p) return;
+                                const t = root.tray.slice();
+                                [t[slot.index], t[3]] = [t[3] ?? null, t[slot.index]];
+                                root.tray = t.slice(0, 3).every(x => !x) ? (root.refill(), root.tray) : t;
+                                root.rev++;
+                                root.sfx("flip");
+                                return;
+                            }
                             if (!slot.usable || root.over) return;
                             root.dragSlot = slot.index;
                             root.dragPos = mapToItem(root, m.x, m.y);
@@ -377,12 +461,12 @@ Item {
                 y: modelData[0] * board_.cell + 2
                 width: board_.cell - 4
                 height: board_.cell - 4
-                radius: Math.max(4, board_.cell * 0.16)
+                radius: Math.max(4, board_.cell * root.cellRound)
                 color: root.tints[root.dragPiece?.color ?? 0]
                 opacity: root.target ? 0.95 : 0.7
             }
         }
     }
 
-    Keys.onPressed: e => { const L = K.letter(e); if (L === "r") { restart(); e.accepted = true; } }
+    Keys.onPressed: e => { const L = K.letter(e); feed(L); if (L === "r") { restart(); e.accepted = true; } }
 }

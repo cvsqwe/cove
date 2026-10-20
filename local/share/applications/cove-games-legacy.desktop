@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Cove Games Legacy
+Name[ru]=Игры Legacy
+GenericName=Games
+GenericName[ru]=Игры
+Comment=The same games without progression, achievements and cheats — separate records
+Comment[ru]=Те же игры без прокачки, достижений и читов — свои рекорды
+Exec=qs ipc call gamesLegacy open hub
+Icon=applications-games
+Terminal=false
+Categories=Game;ArcadeGame;
+Keywords=games;legacy;classic;игры;классика;

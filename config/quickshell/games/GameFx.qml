@@ -18,7 +18,7 @@ Item {
 
     // ---- звук: на каждое имя — несколько SoundEffect по кругу, чтобы частые звуки не обрывали друг друга ----
     readonly property var names: ["move", "pop", "merge", "line", "combo", "boom", "flag", "reveal", "jump", "flap",
-        "point", "hit", "over", "win", "record", "key", "err", "flip", "match", "start"]
+        "point", "hit", "over", "win", "record", "key", "err", "flip", "match", "start", "cheat"]
     property var pool: ({})
     property var turn: ({})
     Component {

@@ -8,16 +8,44 @@ import qs.components
 Item {
     id: root
     property bool active: false
+    // профиль (GamesWindow) — у всех игр одинаковый набор, иначе Binding в окне зацикливается
+    property var modes: []
     property int score: Math.floor(dist / 12)
     property real dist: 0
     property bool running: false
     property bool over: false
-    readonly property string status: I18n.tr("Очки: ") + score
+    readonly property string status: I18n.tr("Очки: ") + score + (god ? I18n.tr(" · бессмертие") : "")
     readonly property string bestKey: "dino"
     readonly property bool lowerBetter: false
     signal record(real value)
     signal sfx(string name)
     signal fx(string kind, Item at, real x, real y, string text, color tint)
+
+    // ---- читы: окно проставляет cheats (открытые id); слово набирается во время игры ----
+    property var cheats: []
+    // профиль (GamesWindow)
+    property bool legacy: false
+    property var perks: []
+    property string skin: ""
+    signal event(string name, var data)
+    property int ducked: 0          // сколько птиц пронырнули пригнувшись
+    readonly property var cheatCodes: [
+        { id: "dino.double", code: "jump", run: () => { if (doubleJump) return false; doubleJump = true; return true; } },
+        { id: "dino.god", code: "god", run: () => { if (over || !running || god) return false; god = true; godTimer.restart(); return true; } }
+    ]
+    property bool god: false           // «бессмертие»: препятствия не страшны
+    Timer { id: godTimer; interval: 6000; onTriggered: root.god = false }
+    property bool doubleJump: false     // до конца забега
+    property bool airJumped: false
+    signal unlock(string id)
+    signal cheatUsed(string id)
+    property string typedBuf: ""
+    function feed(L: string): void {
+        if (!L) return;
+        typedBuf = (typedBuf + L).slice(-8);
+        for (const c of cheatCodes)
+            if (typedBuf.endsWith(c.code) && cheats.includes(c.id)) { typedBuf = ""; if (c.run() !== false) cheatUsed(c.id); }
+    }
 
     focus: true
 
@@ -36,7 +64,7 @@ Item {
     function restart(): void {
         if (score > 0 && !over) record(score);
         dist = 0; dy = 0; vy = 0; obs = []; spawnIn = 1; t = 0; speed = 380;
-        ducking = false; over = false; running = false;
+        ducking = false; over = false; running = false; doubleJump = false; ducked = 0; god = false;
         canvas.requestPaint();
     }
     Component.onCompleted: Qt.callLater(restart)
@@ -46,11 +74,13 @@ Item {
         if (over) restart();      // и сразу дальше — новая партия с первого нажатия
         if (!running) sfx("start");
         running = true;
-        if (dy <= 0.5) { vy = 780; sfx("jump"); }
+        if (dy <= 0.5) { vy = 780; airJumped = false; sfx("jump"); }
+        else if (doubleJump && !airJumped && running) { vy = 700; airJumped = true; sfx("jump"); fx("burst", field, dinoX + 20, ground - dy, "8", Theme.accent); }
     }
     property real diedAt: 0
     function die(): void {
         over = true; running = false; diedAt = Date.now();
+        event("end", { score, ducked });
         sfx("hit");
         fx("shake", null, 0, 0, "12", Theme.red);
         fx("burst", field, dinoX + 22, ground - dy - 26, "24", Theme.accent);
@@ -58,14 +88,19 @@ Item {
         canvas.requestPaint();
     }
     // каждые 100 очков — звон и вспышка счёта
-    onScoreChanged: if (running && score > 0 && score % 100 === 0) { sfx("point"); fx("float", field, fw - 70, 60, String(score), Theme.yellow); }
+    onScoreChanged: {
+        if (!running || score <= 0) return;
+        if (score >= 500) unlock("dino.double");
+        if (score >= 1500) unlock("dino.god");
+        if (score % 100 === 0) { sfx("point"); fx("float", field, fw - 70, 60, String(score), Theme.yellow); }
+    }
 
     FrameAnimation {
         running: root.active && root.running
         onTriggered: {
             const dt = Math.min(0.033, frameTime);
             root.t += dt;
-            root.speed = Math.min(950, 380 + root.t * 9);
+            root.speed = Math.min(950, 380 + root.t * (root.perks.includes("dino.calm") ? 4.5 : 9));
             root.dist += root.speed * dt;
             // прыжок: пока держишь — гравитация слабее
             const g = root.ducking ? 5200 : root.holding && root.vy > 0 ? 1900 : 3000;
@@ -75,6 +110,7 @@ Item {
 
             root.spawnIn -= dt;
             let os = root.obs.map(o => Object.assign({}, o, { x: o.x - root.speed * dt * (o.bird ? 1.12 : 1) })).filter(o => o.x + o.w > -20);
+            for (const o of os) if (o.bird && !o.counted && o.x + o.w < root.dinoX && o.y > 30 && o.y < 60 && root.ducking) { o.counted = true; root.ducked++; }
             if (root.spawnIn <= 0) {
                 if (root.score > 300 && Math.random() < 0.3) {
                     const lvl = [14, 46, 80][Math.floor(Math.random() * 3)];
@@ -89,7 +125,7 @@ Item {
             root.obs = os;
             // столкновение с небольшим запасом
             const dh = root.ducking ? 30 : 50, dw = root.ducking ? 58 : 42;
-            for (const o of os) {
+            for (const o of root.god ? [] : os) {
                 const ox1 = o.x + 4, ox2 = o.x + o.w - 4, oy1 = o.y + 3, oy2 = o.y + o.h - 3;
                 if (root.dinoX + dw - 8 > ox1 && root.dinoX + 6 < ox2 && root.dy + 4 < oy2 && root.dy + dh - 6 > oy1) { root.die(); break; }
             }
@@ -99,6 +135,7 @@ Item {
 
     Keys.onPressed: e => {
         const L = K.letter(e);
+        feed(L);
         if (e.isAutoRepeat) { e.accepted = true; return; }
         if (e.key === Qt.Key_Space || e.key === Qt.Key_Up || L === "w") { holding = true; jump(); }
         else if (e.key === Qt.Key_Down || L === "s") { if (running) ducking = true; }
@@ -119,7 +156,7 @@ Item {
         height: 300
         anchors.centerIn: parent
         radius: Theme.radius + 4
-        color: Theme.mantle
+        color: root.skin === "dino.night" ? "#0b0e18" : Theme.mantle
         clip: true
 
         Canvas {
@@ -129,6 +166,10 @@ Item {
                 const g = getContext("2d");
                 g.reset();
                 const gy = root.ground;
+                if (root.skin === "dino.night") {
+                    g.fillStyle = Qt.rgba(1, 1, 1, 0.5);
+                    for (let i = 0; i < 24; i++) g.fillRect(((i * 137 - root.dist * 0.05) % width + width) % width, (i * 53) % 150 + 10, 2, 2);
+                }
                 // облака
                 g.fillStyle = Theme.alpha(Theme.text, 0.06);
                 for (let i = 0; i < 4; i++) {
@@ -162,7 +203,7 @@ Item {
                 }
                 // динозавр
                 const x = root.dinoX, y = gy - root.dy;
-                g.fillStyle = root.over ? Theme.red : Theme.accent;
+                g.fillStyle = root.over ? Theme.red : root.god ? Theme.yellow : root.skin === "dino.night" ? "#e8eef8" : root.skin === "dino.pink" ? Theme.pink : Theme.accent;
                 if (root.ducking && root.dy < 1) {
                     g.beginPath(); g.roundedRect(x, y - 30, 58, 24, 8, 8); g.fill();
                     g.beginPath(); g.roundedRect(x + 40, y - 34, 24, 18, 5, 5); g.fill();

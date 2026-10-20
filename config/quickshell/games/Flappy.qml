@@ -7,6 +7,8 @@ import qs.components
 Item {
     id: root
     property bool active: false
+    // профиль (GamesWindow) — у всех игр одинаковый набор, иначе Binding в окне зацикливается
+    property var modes: []
     property int score: 0
     property bool running: false
     property bool over: false
@@ -16,6 +18,39 @@ Item {
     signal record(real value)
     signal sfx(string name)
     signal fx(string kind, Item at, real x, real y, string text, color tint)
+
+    // ---- читы: окно проставляет cheats (открытые id); слово набирается во время игры ----
+    property var cheats: []
+    // профиль (GamesWindow)
+    property bool legacy: false
+    property var perks: []
+    property string skin: ""
+    signal event(string name, var data)
+    onPerksChanged: if (!running && !over && score === 0) shield = perks.includes("flappy.startShield")
+    readonly property var cheatCodes: [
+        { id: "flappy.shield", code: "shield", run: () => { if (over || shield) return false; shield = true; return true; } },
+        { id: "flappy.calm", code: "calm", run: () => { if (over || calm) return false; calm = true; calmTimer.restart(); return true; } }
+    ]
+    property bool calm: false          // «штиль»: всё вдвое медленнее
+    Timer { id: calmTimer; interval: 8000; onTriggered: root.calm = false }
+    property bool shield: false
+    // щит гасит одно столкновение: трубу, в которую врезались, дальше не проверяем
+    function useShield(p): void {
+        shield = false;
+        if (p) p.ghost = true;
+        sfx("pop");
+        fx("flash", null, 0, 0, "", Theme.accent2);
+        fx("burst", field, birdX, by, "20", Theme.accent2);
+    }
+    signal unlock(string id)
+    signal cheatUsed(string id)
+    property string typedBuf: ""
+    function feed(L: string): void {
+        if (!L) return;
+        typedBuf = (typedBuf + L).slice(-8);
+        for (const c of cheatCodes)
+            if (typedBuf.endsWith(c.code) && cheats.includes(c.id)) { typedBuf = ""; if (c.run() !== false) cheatUsed(c.id); }
+    }
 
     focus: true
 
@@ -33,7 +68,7 @@ Item {
     function restart(): void {
         if (score > 0 && !over) record(score);
         by = fh * 0.45; vy = 0; pipes = []; spawnIn = 0.6; t = 0;
-        score = 0; over = false; running = false;
+        score = 0; over = false; running = false; shield = perks.includes("flappy.startShield"); calm = false;
         canvas.requestPaint();
     }
     Component.onCompleted: Qt.callLater(restart)
@@ -49,6 +84,7 @@ Item {
     property real diedAt: 0
     function die(): void {
         over = true;
+        event("end", { score });
         diedAt = Date.now();
         sfx("hit");
         fx("shake", null, 0, 0, "12", Theme.red);
@@ -62,7 +98,7 @@ Item {
     FrameAnimation {
         running: root.active && root.running
         onTriggered: {
-            const dt = Math.min(0.033, frameTime);
+            const dt = Math.min(0.033, frameTime) * (root.calm ? 0.5 : 1);
             root.t += dt;
             const speed = 170 + Math.min(150, root.score * 4);
             const gap = Math.max(130, 175 - root.score * 1.5);
@@ -79,21 +115,30 @@ Item {
                 if (!p.passed && p.x + 30 < root.birdX) {
                     p.passed = true;
                     root.score++;
+                    if (root.score >= 20) root.unlock("flappy.shield");
+                    if (root.score >= 40) root.unlock("flappy.calm");
                     root.sfx("point");
                     if (root.score % 10 === 0) root.fx("float", field, root.birdX, root.by - 40, root.score + "!", Theme.yellow);
                 }
                 // столкновение: круг птицы с прямоугольниками трубы
                 const inX = root.birdX + root.birdR > p.x - 30 && root.birdX - root.birdR < p.x + 30;
-                if (inX && (root.by - root.birdR < p.gapY - p.gap / 2 || root.by + root.birdR > p.gapY + p.gap / 2)) { root.die(); break; }
+                if (!p.ghost && inX && (root.by - root.birdR < p.gapY - p.gap / 2 || root.by + root.birdR > p.gapY + p.gap / 2)) {
+                    if (root.shield) root.useShield(p); else { root.die(); break; }
+                }
             }
             root.pipes = ps;
-            if (root.by + root.birdR > root.fh - 24 || root.by < -40) root.die();
+            if (root.by + root.birdR > root.fh - 24 || root.by < -40) {
+                // о землю щит подбрасывает вверх
+                if (root.shield && root.running) { root.useShield(null); root.vy = -520; root.by = Math.min(root.by, root.fh - 24 - root.birdR - 1); }
+                else root.die();
+            }
             canvas.requestPaint();
         }
     }
 
     Keys.onPressed: e => {
         const L = K.letter(e);
+        feed(L);
         if (e.key === Qt.Key_Space || e.key === Qt.Key_Up || L === "w") { flap(); e.accepted = true; }
         else if (L === "r") { restart(); e.accepted = true; }
     }
@@ -139,7 +184,12 @@ Item {
                 g.save();
                 g.translate(root.birdX, root.by);
                 g.rotate(Math.max(-0.5, Math.min(1.2, root.vy / 600)));
-                g.fillStyle = Theme.yellow;
+                if (root.shield) {
+                    g.strokeStyle = Theme.alpha(Theme.accent2, 0.8);
+                    g.lineWidth = 3;
+                    g.beginPath(); g.arc(0, 0, root.birdR + 7 + Math.sin(root.t * 8) * 1.5, 0, Math.PI * 2); g.stroke();
+                }
+                g.fillStyle = root.skin === "flappy.cardinal" ? "#e8484f" : root.skin === "flappy.ghost" ? Qt.rgba(0.92, 0.95, 1, 0.55) : Theme.yellow;
                 g.beginPath(); g.arc(0, 0, root.birdR, 0, Math.PI * 2); g.fill();
                 g.fillStyle = Theme.peach;
                 g.beginPath(); g.moveTo(10, -2); g.lineTo(24, 3); g.lineTo(10, 8); g.fill();
